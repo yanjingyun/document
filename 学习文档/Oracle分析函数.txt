@@ -1,0 +1,130 @@
+
+分析函数(over)：
+	详情：https://blog.csdn.net/Alen_Liu_SZ/article/details/90552174?utm_source=app
+	Oracle从8.1.6开始提供分析函数，分析函数用于计算基于组的某种聚会值，对于每个组返回多行，而聚会函数对于每个组只返回一行。
+	3个基本组成部分：分区子句、排序子句、开窗子句
+	语法：fun(arg1, arg2, ...) over([partition-by-clause] [order-by-clause] [windowing-clause])
+	例如：
+		--查询每个人的薪资、及部门薪资总和、部门累计薪资
+		select empno, sal, sum(sal) over(partition by deptno) as 部门薪资总和, sum(sal) over(partition by deptno order by sal asc) as 部门累计薪资 from t_temp;
+
+
+例如：
+create table t_score(stuId varchar2(20), stuName varchar2(50), classId number, score float);
+insert into t_score values ('111', 'testAA1', 1, 92);
+insert into t_score values ('112', 'testAA2', 1, 90);
+insert into t_score values ('113', 'testAA3', 1, 100);
+insert into t_score values ('114', 'testAA4', 2, 92);
+insert into t_score values ('115', 'testAA5', 2, 90);
+insert into t_score values ('116', 'testAA6', 2, 92);
+
+查询每个人的成绩、所有班级平均分、及所属班级平均分：
+	select t.*, round(avg(score) over(), 2) avg_score, round(avg(score) over(partition by t.classid), 2) class_avg_score from t_score t;
+
+查询每个人成绩、及所属班级总成绩、平均成绩、最高成绩、最低成绩：
+	select t.*, --每个人信息
+		sum(score) over(partition by t.classid) class_sum_score, --所属班级总分
+		avg(score) over(partition by t.classid) class_avg_score, --所属班级平均分
+		min(score) over(partition by t.classid) class_min_score, --所属班级最低分
+		max(score) over(partition by t.classid) class_max_score  --所属班级最高分
+	from t_score t;
+
+
+row_number、rank和dense_rank使用：
+	区别：
+		--都是用于排序，row_number只返回一条数据，不适合有两条相同成绩的记录。
+		-1）row_number有两个并列第一，row_number()只返回一个结果。只返回一条数据，不适合有两条相同成绩的记录。
+		-2）rank会跳跃排序，有两个第二名时接下来就是第四名。若两条相同成绩的记录则并列排名。测试中的testAA4和testAA6成绩相同，并排第1名，而testAA5排第3名，第2名无人
+		-3）dense_rank是连续排序，有两个第二名时仍然跟着第三名。是rank的补充，因为rank排序时无第2名，dense_rank排名时testAA5是第2名。
+	--班级里按成绩排名(三种写法区别)
+		select t.*,
+			row_number() over(partition by classId order by score desc) rn,
+			rank() over(partition by classId order by score desc) r,
+			dense_rank() over(partition by classId order by score desc) dr
+		from t_score t;
+
+
+
+first_value与last_value使用：
+	用于返回一个排序结果集中的第一个值。
+	--返回每个人的成绩及所属班级的最高成绩（last_value不会用）
+	select t.*, first_value(score) over(partition by classid order by score desc) f_score from t_score t;
+	select t.*, last_value(score) over(partition by classid order by score range between unbounded preceding and unbounded following) l_score from t_score t;
+
+listagg使用：
+	用于分组内对数据排序后再对值拼接。
+	格式：listagg(expr, delimiter) with group(order_by_clause) [over(partition_by_clause)]
+	例如：
+		--成绩由高到低排名
+		select listagg(t.stuname, '、') within group(order by t.score desc) names from t_score t;
+		--查询班级成绩由高到低排名
+		select classid, listagg(stuname, '、') within group(order by score desc) as names from t_score group by classid;
+		--查询每个人的成绩、及所属班级排名
+		select t.*, listagg(t.stuname, '、') within group(order by t.score desc) over(partition by t.classid) names from t_score t;
+
+
+Oracle wm_concat(colName)函数：
+	行合并成一行，用“,”分隔。(注：需将colb转成string)
+	语法：to_cahr(wm_concat(to_char(colName))) --说明：wm_concat返回clob类型，会出现乱码问题，需转化为string类型
+	select type, to_char(wm_concat(to_char(name))) names from test group by type;	--按照type分组（不可排序）
+	注：与order by连用会出现缺失右括号，建议使用listagg()函数
+	
+	--测试：将行中每个列拼接在一起，再将所有行拼接成一行后输出
+	select hb1.hb_special_id,
+	       replace(to_char(wm_concat(to_char(
+	       		to_char(hb1.start_time, 'yyyy/mm/dd') || '<$>' ||
+	       		to_char(hb1.end_time, 'yyyy/mm/dd') || '<$>' ||
+	       		hb1.dose || '<$>' ||
+	            hb1.drug_name))) , ',', '；') hb_drug_dose
+	  from infe_hb_drug_dose hb1
+	 group by hb1.hb_special_id
+	注：上述语句可能会报错，原因如下：
+		-1）wm_concat查询出的是LOB类型（包括BLOB和CLOB两种）
+		-2）oralce的SQL语句中若查询了LOB字段是不能使用distinct，union，和group by等关键字的
+
+	--改良1：
+	select distinct hb1.hb_special_id,
+	    (select replace(to_char(wm_concat(to_char(temp.drug_name))), ',', '、')
+		  from infe_hb_drug_dose temp where temp.hb_special_id=hb1.hb_special_id
+		) hb_drug_dose
+	  from infe_hb_drug_dose hb1
+
+	--改良2(使用listagg函数)：
+	select hb1.hb_special_id,
+	       listagg(to_char(hb1.drug_name), '、') within group(order by hb1.hb_special_id) as drug_names
+	 from infe_hb_drug_dose hb1
+	 group by hb1.hb_special_id
+
+Oracle listagg()函数：
+	将多行结果合并成一行
+	语法：listagg(列名1, 分隔符号) within group(order by 列名2)
+
+查询某个对象的最新联系记录：
+1.常规
+select b.*
+  from gp_contact_info b,
+       (select a.group_id, max(a.contact_date) max_contact_date
+          from gp_contact_info a
+         group by a.group_id) c
+ where b.group_id = c.group_id
+   and b.contact_date = c.max_contact_date;
+2.通过分区查询(partition by ...)
+select *
+  from (select row_number() over(partition by c.group_id order by c.contact_date desc) rowIndex,
+               c.GROUP_ID,
+               c.NEXT_CONTACT_DATE,
+               c.NEXT_TODO,
+               c.NEXT_CONTACT_PG_WEEK,
+               c.NEXT_CONTACT_AGE,
+               c.NEXT_CONTACT_MONTH
+          from gp_contact_info c) t
+ where t.rowIndex = 1
+
+合并某一列：
+--关键字：ListAgg
+--实例：根据personId和age分段，从而获取某段存在多少个体检日期
+select a.person_id, a.age,
+       ListAgg(to_char(a.visit_date, 'yyyy-mm-dd'), '、') within group(order by a.person_id) as sss
+  from ph_children_health_check_two a
+ group by a.person_id, a.age;
+

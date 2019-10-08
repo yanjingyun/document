@@ -1,0 +1,404 @@
+
+精通Oracle
+	详情：https://www.jianshu.com/nb/4871765 --未整理（重要）
+
+	https://www.jianshu.com/p/0124c0cb052c	//数据库SQL性能优化（一）
+
+
+表空间：
+概念：
+	表空间里ORACLE中的一个逻辑概念，它用于存放数据库文件，而数据库文件是存放在磁盘的数据文件，是物理概念。
+	一个房间可以存储很多箱子，箱子里面可以存储物品！表空间可以看成房间，箱子可以看成数据文件，物品可以看成表。用户指定表空间也就是希望把属于这个用户的表放在那个房间（表空间）里面。
+
+创建数据库：
+	connect system/0529;
+	--创建表空间
+	--格式：create tablespace 表空间名 datafile '数据文件名' size 表空间大小;
+	create tablespace oe_tablespace datafile 'E:\stu\oe.dbf' size 200M;
+	--创建用户
+	--格式：create user 用户名 identified by 密码 [default tablespace 表空间名];
+	create user testuser identified by 1230 default tablespace oe_tablespace;
+	--将表空间分配给用户
+	alter user testuser default tablespace oe_tablespace;
+	--授权给新建用户
+	grant create session,create table,unlimited oe_tablespace to testuser;
+	grant connect,resource,dba to testuser; --把connect、resource权限授予testuser用户
+	--用户登录，登录之后创建表即可
+	conn testuser/1230;
+
+
+Oracle笔记3：访问与联结方法
+	两种基本的数据访问途径：全扫描、索引扫描
+
+
+变量：
+分4大类：
+	-1）number。如（i number(2) := 100;）
+	-2）varchar2。如（msg varchar2(12) := '结果是：';）
+	-3）与列名类型相同。如（pname emp.ename%type;）
+	-4）与整个表的列类型相同。如（emp_record emp%rowtype;）
+实例1：输出7369号员工姓名和工资，格式如下：7369号员工的姓名是SMITH,薪水是800，语法：使用表名.字段%type
+declare
+	pname	emp.ename%type;
+	psal	emp.sal%type;
+begin
+	select ename into pname, sal into psal from emp where emp_id = 7369;
+	dbms_output.put_line('7369号员工的姓名是' || pename || ',薪水是' || psal);
+end;
+/
+
+实例2：输出7788号员工姓名和工资，格式如下：7788号员工的姓名是SMITH,薪水是3000，语法：使用表名%rowtype
+declare
+	emp_record	emp%rowtype;
+begin
+	select * into emp_record from emp where empno = 7788;
+	dbms_output.put_line('7788号员工的姓名是' || emp_record.ename || ',薪水是' || emp_record.sal);
+end;
+/
+
+
+判断体(if)：
+语法：
+	if 条件1 then
+		SQL语句...
+	elsif 条件2 then
+		SQL语句...
+	else
+		SQL语句...
+	end if;
+测试：
+	declare
+	    pday varchar2(10);
+	begin
+		select to_char(sysdate,'day') into pday from dual;
+		
+		dbms_output.put_line('今天是'||pday);
+		if pday in ('星期六','星期日') then
+			dbms_output.put_line('休息日');
+		else
+			dbms_output.put_line('工作日');
+		end if;
+	end;
+	/
+
+
+
+
+
+循环体：
+1.while循环：
+	while total <= 2500
+	loop
+		total := total + salary;
+	end loop;
+
+	--实例
+	declare
+		i 	number(2):=1;
+	begin
+		while i<1000
+		loop
+			delete from emp where empno = i;
+			i := i + 1;
+		end loop;
+	end;
+	/
+2.for循环：
+	declare
+		i 	number(2):=20;
+	begin
+		for i in 20 .. 30
+		loop
+			dbms_output.put_line(i);
+		end loop;
+	end;
+	/
+
+
+
+Oracle 游标(cursor)：
+	语法：cursor 光标名[(参数名 数据类型, ...)] is select语句;
+	作用：用于临时存储从数据库中提取的数据块
+	隐式游标：MDL操作会使用隐式游标，即：inset、update、delete、select
+	显式游标：
+		--1.声明游标
+		cursor cursorName[(param1 type, param2 type...)] is select_clause;
+		参数可选，如果定义了参数，则必须在打开游标时传递相应的实际参数。
+		--2.打开游标
+		open cursorName into 变量1[,变量2...];
+		打开游标时，select语句的查询结果就被传送到游标工作区
+		--3.提取游标
+		fetch cursorName into 变量名1[, 变量2...];
+		游标打开后有一个指针指向数据区，fetch语句一次返回指针所指的一行数据，可使用循环语句来实现返回多行数据。
+		定义记录变量名格式：变量名 表名|游标名%ROWTYPE;
+		--4.关闭游标
+		close cursorName;
+	测试：
+	--实例：使用无参游标cursor，查询所有员工的姓名和工资【如果需要遍历多条记录，使用游标cursor，无记录时使用cemp%found】
+	declare
+		cursor cemp is select ename, sal from emp;
+		vename	emp.ename%type;
+		vsal	emp.sal%type;
+	begin
+		open cemp;
+		loop
+			fetch cemp into vname,vsal;
+			exit when cemp%notfound;
+			dbms_output.put_line(vename||'--------'||vsal);
+		end loop;
+		close cemp;
+	end;
+	/
+
+
+Oracle 触发器(trigger)：
+	触发器是一中特殊的存储过程，主要是通过事件来触发而被执行的。它可以强化约束，来维护数据的完整性和一致性，可以跟踪数据库内的操作从而不允许未经许可的更新和变化。可以联级运算。如，某表上的触发器上包含对另一个表的数据操作，而该操作又会导致该表触发器被触发。
+	当满足触发器条件，则系统自动执行触发器的触发体。
+	触发时间：有before,after.
+	触发事件：有insert,update,delete三种。	
+	分类：DML触发器、DDL触发器和登陆触发器
+	--语法：
+	create [or replace] trigger 触发器名 before/after insert/update/delete
+		on tableName [for each row]
+	begin
+		sql语句...
+	end;
+
+
+
+Oracle 视图(view)：
+	是一种虚拟的表，具有和物理表相同的功能。可以对视图进行增，改，查，操作，试图通常是有一个表或者多个表的行或列的子集。对视图的修改不影响基本表。它使得我们获取数据更容易，相比多表查询。
+	create view viewName as (select ...) //创建视图
+
+
+
+Oracle 函数(function)：
+基本语法：
+	create [or replace] function functionName [(paramlist)] //函数名称，参数可省略
+		return dataType //返回类型
+	{is | as}
+		[local_declarations] //局部变量声明.例如：id char2(32); empName varchar2(30);
+	begin
+		executable_statements; //可执行语句
+		raise exceptionName; //抛出异常
+	[exception
+		when exceptionName then ...] //异常捕获
+	end functionName;
+测试：
+	--实例：得到年份
+	create or replace function FUN_GET_EXPLAN_YEAR(emp_type in varchar2)
+		return number 
+	is
+		explanYear number;
+	begin
+		select to_number(t.c1) into explanYear from biz_bm_dbase t where t.type = emp_type;
+		return explanYear;
+	end FUN_GET_EXPLAN_YEAR;
+
+	--实例：通过函数查询数据返回游标（函数不能直接返回数据集合）
+	--详情：https://blog.csdn.net/nohero1/article/details/44174701
+	create or replace function test111(itemNumber in varchar2)
+		return SYS_REFCURSOR
+	is
+		return_cursor SYS_REFCURSOR; 
+	begin
+		OPEN return_cursor FOR SELECT 'a' FROM dual WHERE '1' = itemNumber; 
+		RETURN return_cursor;
+	end test111;
+	--测试（点击后能看到对应数据）：
+		select test111(1) from dual;
+
+
+
+Oracle 存储过程(procedure)：
+基本语法：
+	create [or replace] procedure procedureName [(paramlist)] //存储过程名称，参数可省略。paramlist格式：param1 in type, param2 out type
+	{is | as}
+		[local_declarations] //局部变量声明.例如：id char2(32); empName varchar2(30);
+	begin
+		executable_statements; //可执行语句
+		raise exceptionName; //抛出异常
+	[exception
+		when exceptionName then ...] //异常捕获
+	end procedureName;
+调用存储过程：exec procedureName;
+	测试：exec p_rep_echarts_050801('44', '201908');
+删除存储过程：drop procedure procedureName;
+基本概念：
+	存储过程就是编译好了的一些sql语句。
+	存储过程是一个预编译的SQL语句，优点是允许模块化的设计，就是说只需创建一次，以后在该程序中就可以调用多次。如果某次操作需要执行多次SQL，使用存储过程比单纯SQL语句执行要快。可以用一个命令对象来调用存储过程。
+优点：
+	-1）SQL语句已经预编绎过了，因此运行的速度比较快。
+	-2）可保证数据的安全性和完整性。可设定只有某此用户才具有对指定存储过程的使用权，保证数据的安全性。通过存储过程可以使相关的动作在一起发生，从而可以维护数据库的完整性。
+	-3）存储过程运行在服务器上，减少对客户机的压力。
+	-4）可以接受参数、输出参数、返回单个或多个结果集以及返回值。可以向程序返回错误原因
+	-5）可以包含程序流、逻辑以及对数据库的查询。同时可以实体封装和隐藏了数据逻辑。
+测试：
+	--实例1
+	create or replace procedure P_RER(p_date_scope in varchar2, p_data in char)
+	is
+		v_begin_date varchar2(6) := substr(p_date_scope, 1, 6);
+		v_sysdate    date := sysdate;
+		v_insert_sql varchar(500) := 'insert into tableName (data, begin_date, v_sysdate) t values (:1, :2, :3)';
+	begin
+		execute immediate v_survey_sql using p_data, v_begin_date, v_sysdate;
+		commit;
+	end P_RER;
+
+	--实例2：uuid
+	create or replace procedure test_procedure
+	is
+		c_row	 biz_project_temp%rowtype;
+		v_guid    VARCHAR2(100);
+	begin
+		FOR c_row IN (select rowid from biz_project_temp) LOOP
+			select sys_guid() into v_guid from dual;
+			insert into ...
+		END LOOP;
+	end test_procedure;
+
+
+
+
+参数列表中的in、out、in out说明：
+	附：in，out，in out是形参的模式。
+	in --默认，在程序运行中已有值，不能被修改。只能将实参传递给形参，进入函数内部，但只能读不能写，函数返回时实参的值不改变；
+	out --只能在过程内部赋值，表示该参数可以将某个值传递回调。形参初始值总是null，但函数内部可以被读写，函数返回时形参的值赋给实参；可用于存储过程调用存储过程，传入参数会跟着改变的场景。
+	in out --高参数可以向该过程中传递值，也可以将某个值传出去。调用时实参的值总是传递给形参，结束时，形参的值传递给实参。
+
+	演示in效果：
+	--例如：根据id查找该雇员姓名(默认编号为79)
+	create or replace procedure findEmp(empId in number)
+	as
+		empName varchar2(30);
+	begin
+		select ename into empName from emp where id = empId;
+		dbms_output.put_line('雇员姓名是'||empName);
+	exception
+		when no_data_found then
+			dbms_output.put_line('该编号雇员未找到');
+	end findEmp;
+	调用：excute findEmp(79);
+
+	演示out效果：
+	--例如：存储过程调用另一存储过程，参数值会跟着改变
+	create or replace procedure test(empId varchar2, str2 out number);
+	is 
+		identity number;
+	begin
+		select sal into identity from emp where empno = empId;
+		if identity < 2000 then
+			str2 := 1000;
+		else
+			str2 := 500;
+		end if;
+	end test;
+	调用：
+	declare
+		str2 number;
+	begin
+		test('79', str2);
+		dbms_output.put_line(str2);
+	end;
+
+	演示in out效果：
+	--例如：两个数据交换
+	create or replace procedure swap(p1 in out number, p2 in out number)
+	is
+		p_temp number;
+	begin
+		p_temp := p1;
+		p1 := p2;
+		p2 := p_temp;
+	end;
+	调用：
+	declare
+		num1 number := 100;
+		num2 number := 200;
+	begin
+		swap(num1, num2);
+		dbms_output.put_line('num1='||num1);
+		dbms_output.put_line('num2='||num2);
+	end;
+
+
+
+索引(index):
+	概念：
+		数据库中查找操作非常普遍，索引就是提升查找速度的一种手段。索引可以是唯一的，允许指定单个列或者是多个列。
+		缺点是它减慢了数据录入的速度，同时也增加了数据库的尺寸大小。
+	创建索引：
+		create (unique) index indexName on tableName(colName);
+		alter table tableName add index indexName (colName); //Oracle用不了？
+	分类：
+		B+树索引、哈希索引、全文索引、RTree索引
+	优点：
+		-1）创建唯一性索引，可以保证数据库表中每一行数据的唯一性；
+		-2）可以大大加快数据的检索速度；
+		-3）加速了表与表之间的连接，特别是实现数据参照完整性有特别意义；
+		-4）在使用分组和排序子句进行数据检索时，显著减少查询中分组和排序的时间；
+		-5）通过使用索引，可以在查询的过程中，使用优化隐藏器，提高系统的性能。
+	缺点：
+		-1）创建和维护需要耗费时间，随着数据量的增加而增加；
+		-2）对表的数据进行增、删、改操作时，索引也需要动态维护；
+		-3）当修改性能远远大于检索性能时，不应创建索引。
+	or查询：
+		or的两侧若有一侧没索引时，引擎会放弃索引而产生全表扫描。
+	不走索引的地方：
+		-1）在索引列上使用函数不会使用索引。（如：to_char(hire_date,'yyyymm')='201809'条件不使用索引）
+		-2）等号两边类型不同。（如：'a'=1时不走索引，1=1时走索引）
+		-3）索引字段is null
+		-4）like后面的字符首位为通配符时不走索引
+		-5）使用<>不走索引，当<>会返回少量的结果时使用(< or >)来替代
+	什么时候使用索引：
+		-1）经常出现用作查询选择的字段
+		-2）在作为主键的列上，强制该列的唯一性和组织表中数据的排列结构
+		-3）在经常用在连接的列上，这些列主要是一些外键，可以加快连接的速度
+		-4）经常出现在group by,order by和distinc关键字后面的字段
+		-5）经常出现在Where子句中的字段
+	哪些情况不加索引：
+		-1）很少出现在查询选择的字段
+		-2）那些只有很少数据值的列也不应该增加索引。比如性别，在查询的结果中，结果集的数据行占了表中数据行的很大比例，即需要在表中搜索的数据行的比例很大
+		-3）数据类型为text、image和bit的列不应该增加索引
+		-4）当修改性能远远大于检索性能时，不应该创建索引。
+
+
+联合索引：
+	详情：https://blog.csdn.net/Abysscarry/article/details/80792876
+
+	对多个字段同时建立索引，有顺序，ABC和ACB是完全不同的两种联合索引。建立联合索引abc，则相当于建立了a、ab、abc三个索引。一个索引顶三个索引当然是好事，毕竟每多一个索引都会增加写操作的开销和磁盘空间的开销。
+	最左匹配原则：abc三列，mysql会首先匹配a，然后再b、c。若使用bc来检索时会找不到a使得索引失效。若使用ac索引，会先找到所有a的值然后匹配c，此时联合索引是失效的。
+	联合索引类似电话簿，人名由姓和名构成，电话簿首先按姓氏排序，再对相同姓氏的人排序。若仅知道姓，电话簿将非常有用；若知道姓和名，电话簿则更有用；若仅知道名，电话簿将没用处。
+	--实例：有1000w条数据的表，使用select * from table where a=1 and b=2 and c=3。假设每个条件可以筛选出10%的数据。
+		-1）若为单值索引，通过索引能筛选出1000w*10%=100w条数据，然后在回表从100w条数据中找到符合b=2 and c=3的数据，最后再排序、分页等操作；
+		-2）若为符合索引，通过索引筛选出1000w*10%*10%*10%=1w，最后再排序、分页等操作。
+
+	创建联合索引abc：
+		--相当于创建了单列索引a、联合索引ab、联合索引abc
+		-1）查询条件a，联合索引有效
+		-2）查询条件b，联合索引无效。查询条件c，联合索引无效。
+		-3）查询条件ab，联合索引有效。查询条件ba，联合索引有效。
+		-4）查询条件ac，联合索引有效，但实际上只用到了a的索引，c并没有用到！
+		-5）查询条件bc，联合索引无效。
+		-6）查询条件abc，联合索引有效。
+		-7）查询条件a or b，联合索引无效。
+	注意：
+		多个单列索引在多条件查询时优化器会选择最优索引策略，可能只用一个索引，也可能将多个索引全用上！但多个单列索引底层会建立多个B+索引树，比较占用空间，也会浪费一定搜索效率，故如果只有多条件联合查询时最好建联合索引！
+		单值索引需要注意的事项，组合索引全部通用。如索引列不参与计算、or的两侧要么都索引或都不是索引、模糊匹配时%不要在头部等。
+		建索引有一定开销，若数据量少则没必要创建索引（速度反而慢）。
+		or的两侧要么都索引，要么都不索引。若两侧有一侧没索引，引擎会放弃索引而产生全表扫描
+		联合索引比对每个列分别索引更有优势，因为建立索引越多越占磁盘空间，再更新数据时速度会更慢。
+		建立联合索引时需按顺序添加查询条件，这样效率更高。（感觉这句话不需要，mysql执行优化器会对其进行优化）
+	问题：
+		问1：同时存在联合索引和单列索引，这时mysql会怎么用索引？
+			这个涉及到mysql本身的查询优化器策略，当一个表有多条索引可走时，mysql根据查询语句的成本来选择走哪条索引。
+		问2：最左前缀原则，以最左边的为起点任何连续的索引都能匹配上？
+			abc联合索引，a放在最左边。
+
+	index_merge作用:
+		索引合并是把几个索引的范围扫描合并成一个索引；
+		索引合并时，会对索引进行并集、交集或先交集再并集操作，以便合并成一个索引。
+		这些需要合并的索引只能是一个表的。不能对多表进行索引合并。
+		应用场景：
+			-1）如“c1='xx' or c2='xx'”的or操作，c1和c2列分别有索引，可以按照c1和c2条件查询，再将查询结果并集(union)操作，得到最终结果
+			-2）如“c1='xx' and c2='xx'”的and操作，c1和c2列分别有索引，可以按照c1和c2条件查询，再将查询结果交集(intersect)操作，得到最终结果

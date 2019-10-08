@@ -1,0 +1,515 @@
+
+查询当前用户的定时任务表：
+	select * from user_jobs;
+查询所有表结构、表描述：
+	select * from user_tab_comments a where a.comments like '%住院分娩%'	
+查询某列/字段存在哪些表：
+	select * from user_col_comments a where a.COMMENTS like '%轮次%'; --字段描述
+	select t.* from user_tab_columns t where t.COLUMN_NAME = 'PERSON_NAME';	 --字段名
+查询某个时间点数据：
+	select * from tableName as of timestamp sysdate - 1/24/60*10; --查询十分钟之前的数据
+查询某个字段出现的重复的条数：
+	select a.column_name, count(1) from que_theme_column a where a.theme_id='0201' group by a.column_name having count(1)>1
+不用in的情况下查询多条数据：
+	select a.* from ehr_person a where '2c796fdc9fba45d287fc9547fdeec1a8,6aaac473f66a41c39d2375ac045b5841' like '%'||a.id||'%'
+
+
+
+超键、候选键、主键、外键区别：
+
+数据抽象：物理抽象、概念抽象、视图级抽象,内模式、模式、外模式 ？？？？？
+
+SQL语言：数据定义、数据操作、数据控制
+1.数据定义语言(Data Definition language, DDL):create table/view/function/produce, alter table, drop table, create/drop index等
+	create table student(
+		id number primary key,
+		name varchar(20) not null
+	); --创建表
+	create or replace view viewName as (select ...) --创建视图
+	alter table t_order add constraint fk_customer_id foreign key(customer_id) references t_customer(id) on delete cascade; --添加外键，级联删除
+	alter table tableName add/modify/drop colName dataType; --添加/修改/删除列
+	create (unique) index indexName on tableName(colName); --创建(唯一)索引
+	drop index indexName on tableName; --删除索引
+2.数据库操作语言(Data Manipulation language, DML):select, insert, delete, update
+	insert into tableName(col1, col2) values (val1, val2); --插入数据
+	update tableName set col='val' where... --更新数据
+	delete from tableName where... --删除数据
+3.数据控制语言(Data Control language, DCL):grant, revoke, commit, rollback
+	grant (select,delete,…) on (用户) TO (用户) [WITH GRANT OPTION]; --授权
+	grant all privileges on zhang.person to chenmh; --授予用户chenmh用户zhang下person表的所有权限
+	revoke (权限表) on (用户) from (用户) [WITH GRANT OPTION]; --撤权
+
+创建表/复制表
+	create table test2 like test1;
+	create table t1 as select * from t2 where 1=0; --只复制表结构
+	create table t1 as select * from t2 where 1=1; --复制表结构及数据
+快速插入数据/复制数据：
+	select c1, c2 into t2 from t1;
+	insert into t2 select c1, c2 from t1;
+
+select * from t1 order by name+0; --按aa1,aa2,aa10,aa11的顺序来显示排序
+
+
+drop、delete和truncate的区别：
+delete :删除数据
+	删除数据: delete from tableName where... 
+drop :删除数据库/表/字段
+	删除数据库: drop database 数据库名称
+	删除数据表: drop table tableName1,tableName2,...
+	删除列: alter table tableName drop column colName
+truncate :删除数据表中的数据（仅数据表中的数据，不删除表）
+	删除数据: truncate table tableName
+	truncate table语句是一种快速、无日志记录的方法。
+delete与truncate相比：
+	delete语句每次删除一行，并在事务日志中为所删除的每行记录一项。
+	truncate table通过释放用于存储表数据的数据页来删除数据，并且在事务日志中只记录页释放。
+	使用的锁通常较少。
+	当使用行锁执行delete语句时，将锁定表中各行以便删除。truncate table始终锁定表和页，而不是锁定各行。
+	使用truncate table语句清空的表的定义与其索引和其他关联对象一起保留在数据库中。
+remove :删除数据库文件
+	alter database Mydatabase1 remove file Mydatabase1_log;
+
+Oracle 删除重复数据（最高效）
+	delete from t1 where t1.rowid > (select min(t2.rowid) from t2 where t2.name = t1.name);
+用truncate代替delete：
+	delete删除表中数据时，通常情况下回滚段(rollback segments)用来存放开头被恢复的信息。如果你没有COMMIT事务,ORACLE会将数据恢复到删除之前的状态(准确地说是恢复到执行删除命令之前的状况)。
+	当运用TRUNCATE时, 回滚段不再存放任何可被恢复的信息.当命令运行后,数据不能被恢复.因此很少的资源被调用,执行时间也会很短.
+
+
+
+三个范式：
+1）第一范式(1NF)：有主键，每个属性不可再分，同一列中不能又多种值
+	若某一列有多种值，可以将该列单独拆分成一个实体，原实体与新实体间是一对多的关系。
+2）第二范式(2NF)：满足1NF，数据表的每条记录必须是唯一的（主键约束），且非主键列完全依赖主键列。
+	依赖性：如在一张学生信息表（id为主键），不应该出现course_name(课程名称，依赖于course_id)这样的字段。因为需要改课程表时，还得回来修改学生信息表的课程名称
+
+	例如：学生表Student(学号，姓名，性别，课程，课程学分)，存在关系：(课程)->(课程学分)
+	若存在非主属性依赖于其它非主属性，则将该组属性单独新建一实体，并且旧实体与新实体间是一对多的关系。
+3）第三范式(3NF)：满足2NF，非主键列不可传递依赖主键。
+	数据表中不应该存在多余的字段，即每个字段都不能由其它字段推理得到。
+	例如：学生信息表里不能同时存在province_id(省份ID)、city_id(城市ID)这两个字段，因为province_id可以由city_id推理得到。
+	例如：学生表Student(学号，姓名，性别，系id，系名称)，存在关系：(学号)->(姓名，性别，系id，系名称)，但存在决定关系：(学号)->(所在学院)->(系名称)，因此存在非关键字段“系名称”对关键字段“学号”存在传递函数依赖，因此不是3NF
+	它也会存在数据冗余、更新异常、插入异常等问题。
+
+字段冗余：
+1.概念
+	如在订单表存在订单信息，商品id，商品名称等字段，这里的商品名称是冗余的。
+2.考虑
+	--1）性能方面：
+	以时间换空间，对一些字段做冗余到关联表中，以避免大表之间的join。
+	弊端：更新时需要同步更新多张表。如更改username字段时，需要更新所有username字段的表。
+	--2）业务方面：
+	快照场景。交易场景大部分是数据快照。
+	用户下单时间时的用户名、地址、商品名称、商品描述等，若采用关联，商品在下单后发生了更新时再去做关联查询就会导致和用户操作时的数据不一致，从而产生纠纷。
+	比如，order表有id、goodsId，goods表有id、price。用户今天下单，价格位100.过几天卖家涨价了，价格涨为200.用户申请退款，系统给他退款200，这显然不合理，所以这里的price需要冗余，order表中的price表示“下订单时的商品价格”。
+	
+
+
+数据完整性：
+1.实体完整性：规定表的每一行在表中是唯一的实体(id不一样)
+2.参照完整性：指两个表的主键和外键的数据应一致(从表的外键值全部都应来自于主表的id)
+3.域完整性：表中的列满足某种特定的数据类型约束(主要体现在check语句、default语句上)
+4.用户定义完整性：针对某种特定的关系数据库的约束条件
+
+维护数据库的完整性和一致性，你喜欢用触发器还是自写业务逻辑？为什么？
+	我是这样做的，尽可能使用约束，如check,主键，外键，非空字段等来约束，这样做效率最高，也最方便。其次是使用触发器，这种方法可以保证，无论什么业务系统访问数据库都可以保证数据的完整新和一致性。最后考虑的是自写业务逻辑，但这样做麻烦，编程复杂，效率低下。
+	疑问：有时候需要从其他公司的数据库推送过来的数据，而这部分数据的某些字段允许为空，但我们的数据库的这些字段不为空？
+
+5种约束：
+1.主键约束(primary key constraint)
+	语法：alter table tableName add constraint pk_name primary key (colName);
+2.唯一性约束(unique constraint)
+	语法：alter table tableName add constraint uq_name unique (colName);
+3.检查约束(check constraint)
+	alter table tableName add constraint ck_age check (age between 18 and 30); //年龄18~30之间
+	alter table tableName add constraint ck_sex check (sex='男' or sex='女'); //性别只能是男女
+4.默认约束(default constraint)
+	alter table tableName add colName dataType default 0; //添加默认为0的字段
+5.外键约束(foreign key constraint)
+	alter table tableName add constraint fk_name foreign key(user_id) references t_user(id);
+
+
+列举几种表连接方式：
+	answer：等连接（内连接）、非等连接、自连接、外连接（左、右、全）
+内连接和外连接描述：
+	1）内连接(inner join)是保证两个表中所有的行都要满足连接条件，而外连接则不然。
+	2）在外连接（左、右、全）中，某些不满条件的列也会显示出来，也就是说，只限制其中一个表的行，而不限制另一个表的行。
+	3）左连接(left join)：返回包括左表中的所有记录，和右表中连接字段相等的部分记录
+	4）右连接(right join)：返回包括右表中的所有记录，和左表中联结字段相等的部分记录
+	5）全连接(full join)：返回完整外部联接返回左表和右表中的所有行
+外连接：
+1.完全外连接语法：
+	select A.c1, B.c2 from A, B where A.id = B.id(+)
+	union
+	select A.c1, B.c2 from A, B where A.id(+) = B.id
+2.左外连接：包含左边表的全部行（不管右边的表中是否存在与它们匹配的行）以及右边表中全部匹配的行
+	select A.c1, B.c2 from A left join B on A.c3 = B.c3;
+3.右外连接：包含右边表的全部行（不管左边的表中是否存在与它们匹配的行）以及左边表中全部匹配的行
+	select A.c1, B.c2 from A right join B on A.c3 = B.c3;
+4.全外连接：包含左、右两个表的全部行，不管在另一边的表中是否存在与它们匹配的行
+	select A.c1,B.c2 from A full join B on A.c3 = B.c3;
+5.theta连接：使用等值以外的条件来匹配左、右两个表中的行
+	select A.c1,B.c2 from A join B on A.c3 != B.c3;
+6.交叉连接：生成笛卡尔积——它不使用任何匹配或者选取条件，而是直接将一个数据源中的每个行与另一个数据源的每个行一一匹配
+	select A.c1,B.c2 from A,B;
+
+左外连接(左表不变，右表+null)：where t1.c3=t2.c3(+) 或者 left outer join t2 on t1.c3=t2.c3
+右外连接(右表不变，左表+null)：where t1.c3(+)=t2.c3 或者 right outer join t2 on t1.c3=t2.c3
+
+
+
+SQL优化：
+	执行顺序：select--from--where--group by--having--order by 
+	具体链接：http://blog.csdn.net/u011463470/article/details/51016928
+	引导语：不管何种调优方式，索引是最基本的方法
+	1.在经常需要进行检索的字段上创建索引
+		比如要按照姓名进行检索，则应该在姓名字段上创建索引。
+		创建索引给检索带来的性能是巨大的，因此在发现检索速度过慢的时候应该首先想到的就是创建索引。
+	2.使用预编译查询
+		动态执行SQL，尽量使用参数化SQL，不仅防止漏洞攻击，数据库还会对这些参数化SQL进行预编译，这样再次执行该SQL时直接使用预编译的结果。
+	3.执行顺序
+		from子句：从右到左，即写在最右边的表最先被处理。一般尽量把数据量小的表放在最右边。多对多表的选择交叉表放最右边
+		where子句：从右到左，但条件的顺序对SQL性能没有影响。一般把能使结果最少的条件放在最右边。
+	4.使用表的别名
+	5.用exists替代in，用not exists替代not in，因为not in对子查询中的表执行一个全表遍历
+	如：把a表中存在但在b表中不存在的数据插入的b表中
+		insert into b select * from a where not exists (select * from b where id=a.id)
+	6.用union all替换union
+	7.避免在索引列上使用(is null 或 is not null)，不能用null做索引，任何包含null值的列都将不会被包含在索引中。 
+
+
+数据库表拆分:
+	当数据库表中数据非常大，DB已经成为系统瓶颈时，可以考虑将表进行拆分。
+	分类：水平拆分、垂直拆分
+	--1）水平拆分：
+		一般水平拆分是根据表中的某一字段（通常是主键ID）进行取模，将一张表的数据拆分到多个表中。这样每张表的表结构相同但数据不同。
+		除ID取模分表外，还可以通过时间分表（如每月生成一张表），还可以按照范围分表（如一张表最多存储100w数据，超出部分就进行分表）。
+		ID取模分表后，我们的查询、修改、删除也是取模。如新增时先生成ID，再根据ID取模得到该存放到哪张表。
+	--2）垂直拆分：
+		当一张表的字段过多时可以考虑垂直拆分。通常是将一张表的字段拆分为主表及扩展表，使用频率高的字段放在主表，其余的字段放在扩展表。
+
+
+
+MySQL 连接云数据库：
+数据库：extranet4example.mysql.rds.aliyuncs.com
+用户名：Username
+密码：Password
+> mysql -h extranet4example.mysql.rds.aliyuncs.com -p 3306 -u Username -pPassword
+
+自定义sql编写：
+	and p.create_time >= to_date($createTime,'YYYY-MM-DD') 		--日期(将$替换成:)
+	and p.create_time > (to_char($createTime, 'yyyy-mm-dd') -1) --优化
+
+count()函数：
+	count(*)=count(1)	--返回表中记录总数
+	count(expr)			--返回expr不为空的记录总数，null不计算入内
+	count(distinct 列名)	--得到列名不重复的记录总数
+
+
+Oracle 查看版本：
+	select * from v$version;
+
+Oracle nvl()函数：
+	nvl(str1, str2):若str1为空，则返回str2，否则返回str1
+	nvl2(E1, E2, E3):若E1为空则返回E3，否则返回E2
+
+Oracle case()函数：
+	实例1：select id, case when nvl(t.aid_time, 0) = 0 then '01' else '02' end as item_code from ehr_person t;
+	实例2：
+		(case when mod(rownum,10)=0 then 1.4 when mod(rownum,5)=0 then 0.6 else 1 end) as 测试
+
+Oracle decode()函数:
+	语法：decode(条件, 值1, 返回值1, 值2, 返回值2, ...)
+	--含义：
+	if 条件=值1 then
+		return (返回值1)
+	elsif 条件=值2 then
+		return(返回值2)
+	elsif 条件=值n then
+		return(返回值n)
+	else
+		return(缺省值)
+	end if;
+	例如：查询某班男生和女生的数量分别是
+		--以前
+		select count(*) from 表 where 性别＝男;
+		select count(*) from 表 where 性别＝女;
+		--现在
+		select sum(decode(性别, 男, 1, 0)), sum(decode(性别, 女, 1, 0)) from 表;
+
+Oracle substr()函数：
+	用于截取字符串。语法：substr(str, start, length)
+	测试：
+		substr('1234567', 2)	--从2开始截取
+		substr('1234567', 2, 3)	--从2开始截取3位数
+		substr('1234567', -2)	--去除最后2位
+		substr(t.construct_type, 0, 2) --截取前2位数
+		substr(t.person_mark, 0, length(t.person_mark) - 1) --去除最后一位数
+
+Oracle trim()函数：
+sql拼接字符串后去掉最后一位字符：
+	--用途：拼接的字符串"AA、BB、CC、DD、"后的想去掉最后的字符"、"
+	详情：http://blog.csdn.net/sinat_33819452/article/details/52908782
+	trim(trailing 'O' from 'ODWEYEO') //ODWEYE
+	trim(leading 'O' from 'ODWEYEO')  //DWEYEO
+	--实例：
+	select 
+		trim(trailing '、' from 
+		  decode(p.child, 1, '0-6岁儿童、', '') ||
+		  decode(p.pregnancy, 1, '孕产妇、', '') ||
+		  decode(p.old_man, 1, '老年人、', '') ||
+		  decode(p.hypertensive, 1, '高血压患者、', '') ||
+		  decode(p.diabetic, 1, '糖尿病患者、', '') ||
+		  decode(p.psychopath, 1, '严重精神障碍患者、', '') ||
+		  decode(p.tuberculosis, 1, '结核病患者、', '') ||
+		  decode(p.disability, 1, '残疾人、', '') ||
+		  decode(p.special_family, 1, '特殊家庭、', '') ||
+		  decode(p.needy_family, 1, '贫困人口、', '') ||
+		  decode(p.veteran, 1, '退伍军人、', '')
+		) as person_mark
+	from ehr_person p;
+Oracle中trim、ltrim、rtrim函数：
+	作用1：去除两端空格、去除左边空格、去除右边空格
+		测试：select ' aaa ', trim(' aaa '), ltrim(' aaa '), rtrim(' aaa ') from dual;
+	作用2：去除指定字符。trim只能去除单个字符，而ltrim、rtrim可以去除多个字符。
+	格式：
+		trim(leading|trailing|both ch from str) --字符串str中去除左边|右边|左右边指定的字符ch
+		ltrim(str1, str2)
+		rtrim(str1, str2)
+	测试：select trim(both '1' from '1123411') from dual;
+
+
+replace(str, ',', '|')	--替换字符串
+
+sys_guid()	--获取uuid/guid
+
+
+Oracle 锁表：
+	--查看那个用户那个进程照成死锁
+	select b.username,b.sid,b.serial#,logon_time from v$locked_object a,v$session b where a.session_id = b.sid order by b.logon_time;
+	--杀掉进程 sid,serial#
+	alter system kill session '76,16776';
+
+
+sysdate 	--获取当前时间(格式如：2018/10/17 11:13:07)
+(sysdate - 1/24/60*10)	--前10分钟
+to_char(sysdate, 'yyyy') --日期转字符串
+to_date('2017-12-30', 'yyyy-mm-dd') --字符串转日期
+to_timestamp('2018-10-16 15:30:46', 'yyyy-mm-dd hh24:mi:ss') --字符串转时间戳
+时间戳转date
+	to_date(start_time, 'yyyy-mm-dd hh24:mi:ss') //方式一
+	cast(start_time as date) //方式二
+
+Oracle cast()函数：
+	用于数据类型转换。格式：cast(colName as 数据类型)
+	测试：
+		cast(123 as varchar2(20)) --number转varchar2
+		cast('123.6' as int) --字符串转整型(cast具备四舍五入操作)
+		cast('123.447654' as decimal(5,2)) --截断小数。decimal(5,2)表示值总位数为5，精确到小数点后2位
+		cast(start_time as date) --将timestamp转为date
+Oracle round()函数：
+	四舍五入的方法，指定的小数位元数进行四舍五入运算的结果。
+Oracle mod(m, n)函数：
+	返回m除以n的余数，如果n是0，返回m
+
+Oracle add_months()函数
+	add_months(times, months) --计算times在加上months月份后的时间，months可以为负数
+	add_months(sysdate,-6) //半年前的时间
+
+Oracle extract()函数：
+	截取时间，返回number类型。
+	语法：extract(year|month|day|hour|minute|second from sysdate)
+	--例如：
+	extract(year from p.birthday) //截取年份
+	extract(month from sysdate) //截取月份
+	extract(day from t.date2 - t.date1) //返回两个时间相隔天数(不能求相隔多少年/月)
+
+
+rownum --表示行号，实际上此是一个列，但是这个列是一个伪列。
+rowid --表示每一列对应的十六进制物理地址值
+
+
+Oracle 分页：
+int page = 2; //页数
+int rows = 5; //显示行数
+List<User> list = userService.select(page*rows+1, (page-1)*rows); //对应着select(11, 5)，即5<rownum<11，查询第二页数据
+1.根据rowid查询(优)：
+	# select rowid rid, cid from tableName [where条件] [orderBy条件]; //步骤一：获取数据物理地址rowid
+	# select rownum rn, rid from (步骤一SQL) where rownum < 11; //步骤二：获取最大页数
+	# select rid from (步骤二SQL) where rn > 5; //步骤三：获取最小页数
+	# select * from tableName where rowid in (步骤三SQL); //步骤四：根据物理地址获取具体数据
+	select * from tableName where rowid in (
+		select rowid from (
+			select rownum rn, rid from (
+				select rowid rid, cid from tableName [where条件] [orderBy条件] --步骤一
+			) where rn < 11 --步骤二
+		) rn > 5 --步骤三
+	); --步骤四
+2.根据rownum查询
+	# select * from tableName [where条件] [orderBy条件]; //步骤一：获取全部符合条件的数据
+	# select t.*, rownum rn from (步骤一SQL) t where rownum < 21; //步骤二：获取最大页数
+	# select * from (步骤二SQL) where rn > 10; //步骤三：获取最小页数
+
+MySQL大数据分页优化：
+原始mysql> select * from t_user where uid=123 order by aid desc limit 44000,10;
+优化mysql> select * from t_user a, (select aid from t_user where uid=123 order by aid desc limit 4400,10) b where a.aid=b.aid;
+
+
+
+minus、union与union all描述：
+语法：
+	[sql语句1] union [sql语句2]; --两个以上表的查询结果合并（不存在不重复语句）
+	[sql语句1] union all [sql语句2]; --两个以上表的查询结果合并（存在不重复语句）
+概念：
+	union all是直接连接，将所有sql的数据合并，记录可能有重复；union是取得唯一值，记录没有重复。
+	union描述：orderBy只能在最后一行使用，列名必须统一
+	minus描述：返回只在一个表中出现的记录
+
+
+
+
+Oracle 虚拟列(Virtual Column)：
+	虚拟列是一个表达式，在运行时计算，不存储在数据库中，不能更新虚拟列的值。
+	虚拟列的值由表达式的值填充，只有当通过动态地一个或一个列表达式被查询时,虚拟列的值才被计算
+	虚拟列的数据并没有存储在数据文件中，而是oracle通过列数据的生成放到数据字典中。
+	虚拟列的数值是通过真实列中的数据计算而来的。
+	虚拟列可以用在where条件中！！
+	列位置随意,不过要添加后面的列字段时，必须在后面列字段先添加后再改变原来的列数据！
+	例如：虚拟列记录num1+num2+num4的添加顺序
+		alter table AA_ATEST add num1 NUMBER(18,6);
+		alter table AA_ATEST add num2 NUMBER(18,6);
+		alter table AA_ATEST add cc as (NVL("NUM1",0)+NVL("NUM2",0));
+		alter table AA_ATEST add num4 NUMBER(18,6);
+		alter table AA_ATEST modify cc as (NVL("NUM1",0)+NVL("NUM2",0)+NVL("NUM4",0));
+	创建带虚拟列的表：
+		create table employee(
+			id 			number,
+			username 	varchar(50),
+			monthly_sal number(10, 2),
+			bonus 		number(10, 2),
+			total_sal 	number(10, 2) generated always as (monthly_sal*12 + bonus) --虚拟列
+		);
+
+
+
+Oracle 临时表(两种)：
+1.oracle中的with tableName as描述：
+	with tableName as 相当于建个临时表(用于一个语句中某些中间结果放在临时表空间的SQL语句)
+	语法：with tempName as (select ...)
+2.全局临时表(Global Temporary Tables)
+	--1）特点
+	隔离性：数据只在会话或事务级别可见。不同用户可以使用同一临时表，但看到的是各自的数据。
+	可创建索引、视图、触发器。索引仅在表数据为空时才可创建。
+	语法：create global temporary table tableName(columns) [on commint preserve|delete rows]
+	例如：create global temporary table temp_emp(eno number) on commit delete rows;
+	--2）可分2种类型
+	on commit delete rows --事务级别，默认
+		表示临时表的数据仅在事务过程中有效。当事务提交(commit)或回滚(rollback)时，数据就会被清空(truncate)掉，但表结构和元数据还在。
+		测试：
+			create global temporary table bm_temp_base(code varchar(30), name varchar(50)) on commit delete rows;
+			insert into bm_temp_base select a.code, a.name from bm_base a where a.type='BM_YES_NO';
+			select * from bm_temp_base; //有数据
+			commit;
+			select * from bm_temp_base; //无数据
+	on commit preserve rows --会话级别
+		表示临时表的数据跨事务存在，不过当会话结束时，数据就会被清空(truncate)掉，但表结构和元数据还在。
+
+
+Oracle dblink使用(dabase link):
+--用于访问其它Oracle的表、视图
+1.创建dblink
+	--1）当前用户需具备创建dblink权限
+	select * from user_sys_privs t where t.privilege like upper('%link%');
+	--若又返回行，则说明具备创建database link权限，否则需要使用sys登录后为test_user赋予权限
+	grant create public database link to test_user; --为test_user用户创建dblink权限
+	--2）创建dblink
+	create database link db_dblink connect to db217user identified by "123" using '192.168.0.217:1521/orcl';
+	--3）测试
+		步骤一：在217中使用db217user用户创建一张表t_user表，并插入数据
+		步骤二：在218中查询：select * from t_user@db_dblink;
+
+
+事务管理:
+	是一系列的数据库操作作为一个逻辑工作单元，是数据库应用的一个基本逻辑单元。
+	一个逻辑单元包括四个属性(ACID)：原子性、一致性、隔离性和持久性。
+	-1)原子性：即不可切割。对于其数据修改，要么全部执行，要么全部不执行。
+	-2)一致性：事务的执行使得数据库从一种正确状态转换成另一种正确状态。
+	-3)隔离性：由并发事务所作的修改必须与任何其它并发事务所做的修改隔离。在事务正确提交之前，不允许把该事务对数据的任何改变提供给任何其他事务。
+	-4)持久性：事务正确提交后，其结果将永久保存在数据库中。
+事务在并发过程中存在的问题：
+	-1)脏读：指在一个事务处理过程中读取了另一个未提交事务的数据。 操作流程：改(T1 改两条数据)->读(T2 在改完第一条数据后读取)
+	-2)不可重复读：指在数据库查询中，一个事务范围内多次查询却返回了不同的数据值。例如事务T1在读取某一数据，而事务T2立马修改了这个数据并且提交事务给数据库，事务T1再次读取该数据就得到了不同的结果，发送了不可重复读。 操作流程：读(T1)->改(T2 提交)->读(T1 前后结果不一样) 即多次查询结果不一致
+	-3)虚读（幻读）：事务非独立执行时发生的一种现象。 操作流程：改(T1)->插(T2 与修改前的数据一致)->读(T1 觉得数据还未修改一样)
+
+死锁：
+	死锁处理：预防死锁协议，死锁恢复机制
+
+游标：
+	是对查询出来的结果集作为一个单元来有效的处理。游标可以定在该单元中的特定行，从结果集的当前行检索一行或多行。可以对结果集当前行做修改。一般不使用游标，但是需要逐条处理数据的时候，游标显得十分重要。
+
+数据库中的连接池：
+	服务器启动时会建立一定数量的连接，并一直维持这些池连接客户端程序需要连接时，池驱动程序会返回一个未使用的池连接并将其标记为忙。
+
+
+
+
+已知模型：
+student:sid sname sage ssex
+teacher:tid tname
+course:cid cname tid
+sc:sid cid score
+
+# 删除选修课成绩小于50分的学生选课记录
+delete from sc t where t.score < 50 or t.score is null;
+
+# 查询哪些没人选的课程号和课程名
+--使用not exists替换not in
+select a.cid, a.cname from course a where not exists (select 1 from cs t where t.cid=a.cid);
+
+# 查询课程的课程名、选修人数和考试最高分
+select a.cname, b.count_sid, b.max_score from course a,
+	(select t.cid, count(t.sid) count_sid, max(t.score) max_score from sc t group by t.cid) b
+	where a.cid=b.cid;
+
+# 查询课程“c001”比课程“c002”成绩高的所有学生学号
+select a.sid from sc a, sc b where a.sid=b.sid 
+	and a.cid='c001' and b.cid='c002' and a.score > b.score;
+或者
+select a.sid from
+	(select t.sid, t.score from sc t where t.cid='c001') a,
+	(select t.sid, t.score from sc t where t.cid='c002') b,
+	where a.sid=b.sid and a.score > b.score;
+
+# 查询选修了课程“c001”和“c002”的学生
+select t.sid from sc t where t.cid in('c001', 'c002') group by t.sid having count(t.cid) = 1
+
+# 查询平均成绩大于60分的同学的学号、姓名和平均成绩
+select a.sid, a.sname, b.avg_score from student a,
+	(select t.sid, avg(t.score) avg_score from sc t group by t.sid having avg(t.score) > 60) b
+	where a.sid=b.sid;
+
+# 查询所有同学的学号、姓名、选课数、总成绩
+select a.sid, a.sname, b.count_cid, b.sum_score from student a,
+	(select t.sid, count(t.cid) count_cid, sum(t.score) sum_score from sc t group by sid) b
+	where a.sid=b.sid;
+
+# 查询两门以上不及格课程的同学学号和姓名
+select a.sid, a.sname from student a where 
+	exists (select t.sid from sc t where t.sid=a.sid and t.score > 60 group by t.sid having count(t.cid) > 1);
+
+# 查询各课程的选修人数(注：某些课程可能没人选)
+select a.cid, a.cname, b.count_sid from course a
+	left join (select t.cid, count(t.sid) count_sid from sc t group by cid) b on b.cid=a.cid;
+
+
+
+
+
+
+
+
+
+
+
+
+

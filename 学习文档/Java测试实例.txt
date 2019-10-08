@@ -1,0 +1,202 @@
+
+
+
+实例：
+	String str1 = "hello";
+	String str2 = "java";
+	String str3 = "hellojava";
+	String str4 = str1+str2;
+	boolean flag = str3==str4;//false
+	说明：str4是两个引用类型结合而成，它的值无法在编译期确定
+
+实例：
+	final String str1 = "hello";
+	final String str2 = "java";
+	String str3 = "hellojava";
+	String str4 = str1+str2;
+	boolean flag = str3==str4;//true
+	说明：str1和str2都是被final修饰的字符串常量，那么str4在编译期就可以被确定
+
+
+
+实例：
+	String s1 = "ab";
+	String s2 = "a";
+	String s3 = "b";
+	String s4 = s2 + "b";
+	String s5 = s2 + s3;
+	String s6 = "a" + "b";
+	System.out.println(s1 == s4); //false
+	System.out.println(s1 == s5); //false
+	System.out.println(s1 == s6); //true
+
+
+实例：
+int i = 5;
+int s = (i++)+(++i)+(i--)+(--i); //s=5+7+7+5=24
+
+
+实例：
+byte b1=1,b2=2,b3,b6,b8;
+final byte b4=4,b5=5,b7;
+b3=(b1+b2); //错误
+b6=b4+b5;
+b8=(b1+b4); //错误
+b7=(b2+b5); //错误
+
+
+实例：
+public class Test{
+	static{
+		int x=5;
+	}
+	static int x,y;
+	public static void main(String args[]){
+		x--;
+		myMethod( );
+		System.out.println(x+y+ ++x);
+	}
+	public static void myMethod( ){
+		y=x++ + ++x;
+	}
+}
+输出结果为prints:3
+解析：
+1.静态语句中x为局部变量，不影响静态变量x的值
+2.x和y为静态变量，默认初始值为0，属于当前类，其值的改变会影响整个类的运行
+3.Java中自增操作非原子性的
+main方法中：
+	执行x--后，x=-1
+	调用myMethod方法，x执行x++结果为-1（后++），但x=0，++x结果为1，则x=1，y=0
+	x+y+ ++x，先执行x+y，结果为1，执行++x结果为2，最终结果为3
+
+
+
+实例：
+public class foo {
+	public static void main(String sgf[]) {
+		StringBuffer a=new StringBuffer(“A”);
+		StringBuffer b=new StringBuffer(“B”);
+		operate(a,b);
+		System.out.println(a+”.”+b);
+	}
+	static void operate(StringBuffer x,StringBuffer y) {
+		x.append(y);
+		y=x;
+	}
+}
+输出结果为“AB.B”
+解析：
+	1.刚调用operate方法时，引用a、x指向对象A，而引用b、y指向对象B；
+	2.执行“x.append(y)”后，引用x指向的对象A被连接了B，对象A也就变成了AB。此时，引用a、引用x指向对象AB，而引用b、引用y指向对象B；
+	3.执行“y=x”后，引用a、x、y指向对象AB，而引用b没有发生任何改变，仍然指向对象B。
+
+
+
+实例：
+public class Demo {
+	class Super{  
+		int flag=1;
+		Super(){ test();}  
+		void test(){ System.out.println("Super.test() flag="+flag); }
+	}
+	class Sub extends Super{
+		Sub(int i){ flag=i;
+			System.out.println("Sub.Sub()flag="+flag);
+		}  
+		void test(){System.out.println("Sub.test()flag="+flag);}
+	}  
+	public static void main(String[] args) {
+		new Demo().new Sub(5);
+	}
+}
+
+输出结果：
+Sub.test() flag=1
+Sub.Sub() flag=5
+解析：
+	1.首先调用父类构造方法，即super（）
+	2.调用test（）方法。
+	3.由于在子类sub（）中重写了test（）方法，所以调用子类test（）
+	4.输出Sub.test() flag=1
+	5.调用sub的有参构造方法
+	6.输出Sub.Sub() flag=5
+	重点：要时刻记得子类重写父类方法，调用时会调用子类重写之后的方法
+
+
+
+
+实例：
+static String str0="0123456789";
+static String str1="0123456789";
+String str2=str1.substring(5);
+String str3=new String(str2);
+String str4=new String(str3.toCharArray());
+str0=null;
+假定str0,...,str4后序代码都是只读引用。
+Java 7中，以上述代码为基础，在发生过一次FullGC后，上述代码在Heap空间（不包括PermGen）保留的字符数为15。
+解析：
+	substring实际是new，5字符
+	str3和str4也是new，都有5字符
+	常量池是PermGen的
+	经过fullgc之后，年老区的内存回收，则年轻区的占了15个，不算PermGen。因此一共15个字符
+	由于new了 三个长度为5的String对象，首先会先存入新生代Eden区，结果发现Eden区也存不下了，故转存入Survivor区，发现Survivor区也存不下了，故此时需要有老年代进行内存担保
+
+
+
+实例：
+public static void main(String[]args)throws Exception {
+    final Object obj = new Object();
+    Thread t1 = new Thread() {
+        public void run() {
+            synchronized (obj) {
+                try {
+                    obj.wait();
+                    System.out.println("Thread 1 wake up.");
+                } catch (InterruptedException e) {
+                }
+            }
+        }
+    };
+    t1.start();
+    Thread.sleep(1000);//We assume thread 1 must start up within 1 sec.
+    Thread t2 = new Thread() {
+        public void run() {
+            synchronized (obj) {
+                obj.notifyAll();
+                System.out.println("Thread 2 sent notify.");
+            }
+        }
+    };
+    t2.start();
+}
+输出：
+Thread 2 sent notify.
+Thread 1 wake up
+解析：
+	执行obj.wait();时已释放了锁，所以t2可以再次获得锁，然后发消息通知t1执行，但这时t2还没有释放锁，所以肯定是执行t2，然后释放锁，之后t1才有机会执行。
+
+
+
+public class B {
+	public static B t1 = new B();
+	public static B t2 = new B();
+	{
+		System.out.println("构造块");
+	}
+	static {
+		System.out.println("静态块");
+	}
+	public static void main(String[] args) {
+		B t = new B();
+	}
+}
+输出：构造块 构造块 静态块 构造块
+说明：
+	开始时JVM加载B.class，对所有的静态成员进行声明，t1 t2被初始化为默认值，为null，又因为t1 t2需要被显式初始化，所以对t1进行显式初始化，初始化代码块→构造函数（没有就是调用默认的构造函数），咦！静态代码块咋不初始化？因为在开始时已经对static部分进行了初始化，虽然只对static变量进行了初始化，但在初始化t1时也不会再执行static块了，因为JVM认为这是第二次加载类B了，所以static会在t1初始化时被忽略掉，所以直接初始化非static部分，也就是构造块部分（输出''构造块''）接着构造函数（无输出）。接着对t2进行初始化过程同t1相同（输出'构造块'），此时就对所有的static变量都完成了初始化，接着就执行static块部分（输出'静态块'），接着执行，main方法，同样也，new了对象，调用构造函数输出（'构造块'）
+
+
+
+
+
+

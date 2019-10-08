@@ -1,0 +1,87 @@
+
+
+优化概述：
+	-1）首先建立适当索引。索引字段不可加函数，保证索引起效。复合索引需要注意sql顺序。
+	-2）最大数据量的表放在最前，最小的表放在最后面。sql是从最后面开始反向解析的。
+	-3）其次是要把最有效缩小范围的条件放到sql末尾去。尤其是主键或者索引字段的条件。
+
+
+
+from子句的表顺序：
+	Oracle解析器按照从右到右的顺序解析。FROM子句中写在最后的表(基础表 driving table)将被最先处理。
+	建议：记录条数最少的表放在最后！！！
+	在FROM子句中包含多个表的情况下,你必须选择记录条数最少的表作为基础表。当ORACLE处理多个表时，会运用排序及合并的方式连接它们。首先，扫描第一个表(FROM子句中最后的那个表)并对记录进行派序，然后扫描第二个表(FROM子句中最后第二个表)，最后将所有从第二个表中检索出的记录与第一个表中合适记录进行合并。
+	例如：
+		例如：表tab1有16,384条记录，表tab2有1条记录
+		--选择tab2作为基础表(最好)
+		select count(*) from tab1,tab2 --执行时间0.96秒
+		--选择tab1作为基础表(低效)
+		select count(*) from tab2,tab1 --执行时间26.09秒
+
+where子句中的连接顺序：
+	Oracle采用自下而上的顺序解析。
+	建议：表连接条件写在where句首；可以过滤最大数量记录的条件写在where末尾。
+	例如：
+		--低效，执行时间156.3秒
+		select * from emp e where sal > 5000 and job = 'manager' and 25 < (select count(*) from emp where mgr = e.empno);
+		--高效，执行时间10.6秒
+		select * from emp e where 25 < (select count(*) from emp where mgr = e.empno) and sal > 5000 and job = 'manager';
+
+
+尽量多使用commit
+	在程序中尽量多使用commit，这样程序的性能得到提高，需求也会因为commit所释放的资源而减少。
+	commit所释放的资源：
+		a)回滚段上用于恢复数据的信息
+		b)被程序语句获得的锁
+		c)redo log buffer中的空间
+		d)Oracle为管理上述3种资源中的内部花费
+
+
+
+减少对表的查询
+	--查询
+	select * from table1 where a = (select a from table2 where version = 604) and b = (select b from table2 where version  = 604); --低效
+	select * from table1 where (a, b) = (select a, b from table2 where version = 604); --高效
+	--update多个列
+	update table1 set a = (select max(a) from table2), b = (select max(b) from table2) where table1.name = '002'; --低效
+	update table1 set (a, b) = (select max(a), max(b) from table2) where table1.name = '002'; --高效
+
+
+用exists代替in
+	select * from emp where dept_id in (select id from dept where name = 'A'); --低效
+	select * from emp a where exists (select 1 from dept b where b.id = a.dept_id and name = 'A'); --高效
+
+
+用not exists代替not in
+	在子查询中，not in子句将执行一个内部的排序和合并。无论哪种情况下，not in都是最低效的（因为它对子查询中的表执行全表遍历）。
+	可以使用外连接(outer join)或not exists代替。
+	例如：
+		--低效(not in)
+		select * from emp where dept_id not in (select id from dept where dept_cat='A')
+		--高效(表关联，直接两表关联的速度是最快的！)
+		select * from emp a, dept b where a.dept_id = b.id(+) and b.id is null and b.dept_cat(+) = 'A';
+		--高效(not exists)
+		select * from emp a where not exists (select 1 from dept b where b.id = a.dept_id and dept_cat = 'A')
+
+
+识别“低效执行”的SQL语句
+SELECT EXECUTIONS, --所有子游标的执行这条语句次数
+       DISK_READS, --所有子游标运行这条语句导致的读磁盘次数
+       BUFFER_GETS, --所有子游标运行这条语句导致的读内存次数
+       ROUND((BUFFER_GETS - DISK_READS) / BUFFER_GETS, 2) HIT_RADIO, --命中率
+       ROUND(DISK_READS / EXECUTIONS, 2) READS_PER_RUN, --每次执行读写磁盘数
+       SQL_TEXT	--执行的SQL语句
+  FROM V$SQLAREA
+ WHERE EXECUTIONS > 0
+   AND BUFFER_GETS > 0
+   AND (BUFFER_GETS - DISK_READS) / BUFFER_GETS < 0.8
+ ORDER BY 4 DESC;
+
+
+
+
+
+
+
+
+

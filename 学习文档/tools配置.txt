@@ -1,0 +1,171 @@
+
+
+
+
+
+
+***************************PL/SQL*************
+PL/SQL 中断正在执行的查询语句
+	shift + esc
+
+可以帮助找出并标记sql效率低的地方 Plsql的执行计划 按F5  ？？？？？？
+
+PL/SQL 导入excel数据：
+	-1）打开plsql之后，在工具栏点击【tools】--【ODBC Imoprter】
+	-2）选择导入文件的类型，这里是excel文件，所以选择Excel Files(可以不用输入用户名和密码)，点击connect
+	-3）选择excel文件所在的磁盘，双击磁盘或者文件夹名，然后选中需要导入的excel文件名
+	-4）点击文件名称，下面的数据就是在excel中存储的数据(如sheet1)
+	-5）点击菜单【Data to Oracle】选择导入这些数据的数据库"拥有者","数据库表名"
+
+
+explain plan的性能参数说明：
+	--步骤：file->new->explain plan->输入sql
+	--附：执行计划里的各项指标值越小越好。
+	-1）Cost：Oracle计算出来的执行该操作的代价
+	-2）Cardinality：表示预期从一个行源返回的记录数
+	-3）Bytes：Oracle估算当前操作的影响的数据量（单位byte）
+
+
+
+***************************eclipse*************
+eclipse的Java代码突然报错：
+	检查是否引入的jar包是否丢失了，试着“maven->update project”就好了。
+
+
+eclipse在git提交时忽略不必要的文件:
+	--相关教程： https://blog.csdn.net/mafan121/article/details/68071508
+	方案一：为项目添加.gitignore文件，在该文件中配置需要忽略的文件。
+		a.打开Navigator窗口，找到.gitignore文件（如果没有就添加一个）。
+		b.配置需要忽略的文件。
+	window -> show view -> navigator -> 找到对应的项目的.gitignore文件，填写内容如下：
+		/.project
+		/.settings/
+		/logs/
+
+Eclipse 提示 @Override must override a superclass method 问题解决：
+	原因：Eclipse 默认的 Compiler是jdk5,(5不支持@Override等形式的批注）, 只要把它改为1.7以上就可以了
+	1）将window->preferences->java-compiler中的Compiler compliance level修改为1.7
+	2）项目右键选择Properties -> Java Compiler -> 将Compiler compliance level修改为1.7
+
+Eclipse properties文件 乱码
+	解决：Window->Perferences->General->Content Types ->选中Java Properties File，将Default encoding值改为UTF-8
+
+使用eclipse管理非Java项目的git项目：
+	import -> Project from Git ->选中git项目
+
+
+快捷键：
+
+	大写转换小写 ctrl+shift+y
+	小写转换大写 ctrl+shift+x
+
+
+
+***************************excel*************
+excel相关：
+1.提取指定字符之前的字段：
+	1）假设列A是一组产品的编码，我们需要的数据是“-”之前的字段
+	2）在B1单元格输入公式“=LEFT(A1,SEARCH("-",A1)-1)”然后选中B1至B4单元格，按“CTRL+D”向下填充，就可以得出其它几行“-”之前的字段。
+
+2.复制的时候只复制内容，不复制格式：
+	1）复制
+	2）右键，选择性粘贴
+	3）选数值
+
+3.列转行操作：
+	1）打开excel，复制要行转列的数据
+	2）选择要粘贴的列，右键找到‘选择性粘贴’一项点击，弹出一个选项框，选择'转置'，(默认未选中)，点击确定。
+
+4.将数据复制到excel中的格式转换问题：
+	注：在将数据复制到excel表之前，先将excel表的格式转成“文本”，这样就不会格式转换问题。
+
+
+
+***************************word*************
+word方框（□）中打钩（√）的3种方法:
+	1.把光标定位于需要打钩的地方，输入大写字母R
+	2.选中字母R，将字体改为【Windings2】
+
+word文档标题部分华文中宋打印突然开始乱码：
+	可能是你的华文中宋字体被破坏了。下载一个字体管家，到里面从下载。
+
+
+
+***************************HBuilder*************
+HBuilder的快捷键：
+    ctrl+w 			关闭
+    ctrl+shift+s 	全部保存
+    atl+shift+？ 	显示方法参数提示
+    ctrl+C 			复制光标所在区或整行
+    ctrl+shift+C 	复制文件路径
+    ctrl+D 			删除当前行
+    ctrl+shift+F 	整理代码格式
+    ctrl+向上 		向上移动行
+    ctrl+向下 		向下移动行
+    ctrl+R 			运行
+    ctrl+T 			快速打开
+
+
+
+***************************sublime*************
+sublime 解决中文问题：
+	http://blog.csdn.net/qq_22260641/article/details/70666960
+
+sublime 密钥 !!!
+
+sublime快捷方式：
+	Ctrl+G 			跳转到第几行
+	Ctrl+W 			关闭当前打开文件
+	Ctrl+Shift+W 	关闭所有打开文件
+	Ctrl+L 			选择行，重复可依次增加选择下一行
+	Ctrl+X 			删除当前行
+	Ctrl+M 			跳转到对应括号
+	Ctrl+Shift+M 	选中当前括号内容，重复可选着括号本身
+	Ctrl+T			新开页面，Ctrl+W关闭页面，Ctrl+Tab切换页面	
+
+
+
+***************************其它*************
+win10系统点击文件资源管理器打开"此电脑"的设置方法：
+具体教程: https://www.kafan.cn/edu/81566564.html
+	1、打开“此电脑”或“文件资源管理器”，然后点击上面的“查看”—然后点“选项”;
+	2、在“文件夹选项”中将“打开文件资源管理器时打开”将“快速访问”换成“此电脑”，然后确定;
+
+https://freessr.win/ --shadowsocks免费账号
+
+
+httpWatch使用：通过httpWatch查看请求数据
+
+https://www.ngrok.cc/ --内网穿透
+
+
+excel poi
+csv	opencsv
+
+linux下javaEE系统安装部署:
+	http://www.cnblogs.com/coderhuang/p/5394849.html
+
+
+Linux相关工具：
+	SecureCRT
+	Xshell
+	WinSCP ---是一个 Windows 环境下使用的 SSH 的开源图形化 SFTP 客户端。同时支持 SCP 协议。它的主要功能是在本地与远程计算机间安全地复制文件，并且可以直接编辑文件。
+
+JSR 303 校验框架
+
+docx4j介绍：docx4j是一个用于创建和操作Microsoft Open XML (Word docx, Powerpoint pptx, 和 Excel xlsx)文件的Java类库。
+
+
+jenkins自动化部署：
+过程：
+	git同步最新代码
+	maven打包(停止tomcat)
+	部署应用(启动tomcat)
+	验证结果
+
+
+
+
+
+
+
