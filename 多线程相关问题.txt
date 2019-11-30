@@ -1,0 +1,181 @@
+
+
+
+如何让主线程等待子线程执行完后再执行？
+	现主线程X，和两个子线程A和B，主线程X需要在线程A和B执行完成之后再执行。
+	方法1：使用join方法。在主线程X中添加 threadA.join(); threadB.join();
+	方法2：使用CountDownLatch实现。
+	方法3：使用Callable和FutureTask类，通过等待子线程返回值
+
+volatile关键字
+
+Synchronized关键字
+
+CAS概念、ABA问题、Unsafe底层实现
+
+ThreadLocal用途
+
+线程池：
+	作用
+	4种线程池区别：newFixedThreadPool、newCachedThreadPool、newSingleThreadExecutor、newScheduledThreadPool
+	ThreadPoolExecutor构造函数及对应参数说明
+		参数说明：corePoolSize、maximumPoolSize、keepAliveTime、workQueue、threadFactory、handler
+
+
+多线程有什么用？
+	1、发挥多核CPU优势。
+		单核CPU上所谓的"多线程"那是假的多线程，同一时间处理器只会处理一段逻辑，只不过线程之间切换得比较快，看着像多个线程"同时"运行罢了。
+		多核CPU上的多线程才是真正的多线程，它能让你的多段逻辑同时工作，多线程，可以真正发挥出多核CPU的优势来，达到充分利用CPU的目的。
+	2、防止阻塞
+
+什么是线程安全？
+	如果你的代码在多线程下执行和在单线程下执行永远都能获得一样的结果，那么你的代码就是线程安全的。
+
+什么是多线程的上下文切换？
+	指CPU控制权由一个已经正在运行的线程切换到另外一个就绪并等待获取CPU执行权的线程的过程。
+
+
+线程之间通信？
+	线程之间通过wait/notify/notifyAll、await/signal/signalAll进行唤起和等待。
+	阻塞队列BlockingQueue就是为线程之间共享数据而设计的。
+	问：wait/notify/notifyAll必须在同步快中被调用，没被锁怎么会存在唤醒和等待。
+
+Thread.sleep(0)的作用是什么？
+	由于Java采用抢占式的线程调度算法，因此可能会出现某条线程常常获取到CPU控制权的情况，为了让某些优先级比较低的线程也能获取到CPU控制权，可以使用Thread.sleep(0)手动触发一次操作系统分配时间片的操作，这也是平衡CPU控制权的一种操作。
+
+什么是自旋？
+	synchronized里面的代码执行得非常快，不妨让等待锁的线程不要被阻塞，而是在synchronized的边界做忙循环，这就是自旋。如果做了多次忙循环发现还没有获得锁，再阻塞，这样可能是一种更好的策略。	
+
+
+
+什么是Java内存模型？
+	Java内存模型将内存分为了主内存和工作内存。
+
+
+volatile关键字作用？
+	主要作用：可见性、禁止指令重排序(详情查看volatile重排序规则)。
+	实践：volatile和cas结合，能保证原子性。
+
+synchronized底层原理：
+	进入时，执行monitorenter，将计数器+1，释放锁monitorexit时，将计数器-1。当一个线程判断到计数器为0时，则当前锁空闲，可以占用；反之当前线程进入等待状态。
+
+ThreadLocal关键字作用？
+	创建线程的本地变量。目的是为了线程隔离，让每个线程都能拥有属于自己的变量空间，线程之间互不影响。
+	内部维护了ThreadLocal.ThreadLocalMap，把数据进行隔离
+
+
+CyclicBarrier和CountDownLatch的区别？
+	CyclicBarrier的某个线程运行到某个点上之后，该线程即停止运行，直到所有的线程都到达了这个点，所有线程才重新运行。
+	CountDownLatch的某线程运行到某个点上之后，只是给某个数值-1而已，该线程继续运行。
+	CyclicBarrier可以重复使用，CountDownLatch变成0后不能重复使用。
+
+Semaphore作用？
+	Semaphore就是一个信号量，它的作用是限制某段代码块的并发数。
+	Semaphore有一个构造函数，可以传入一个int型整数n，表示某段代码最多只可有n个线程可以访问，若超过n个则等待，直到某线程执行完毕这段代码块后再进入。
+
+什么是CAS？
+	CAS，全程compare and swap，即比较并替换。
+	假设有三个操作数：内存值V、旧的预期值A、要修改的值B，当且仅当预期值A和内存值V相同时，才会将内存值修改为B并返回true，否则什么都不做并返回false。
+	当然CAS一定要volatile变量配合，这样才能保证每次拿到的变量是主内存中最新的那个值，否则旧的预期值A对某条线程来说，永远是一个不会变的值A，只要某次CAS操作失败，永远都不可能成功。
+
+
+
+什么是AQS？
+	AQS为AbstractQueuedSychronizer类，翻译为抽象队列同步器。
+	如果说java.util.concurrent的基础是CAS的话，那么AQS就是整个Java并发包的核心了，ReentrantLock、CountDownLatch、Semaphore等等都用到了它。
+	AQS实际上以双向队列的形式连接所有的Entry，比方说ReentrantLock，所有等待的线程都被放在一个Entry中并连成双向队列，前面一个线程使用ReentrantLock好了，则双向队列实际上的第一个Entry开始运行。
+	AQS定义了对双向队列所有的操作，而只开放了tryLock和tryRelease方法给开发者使用，开发者可以根据自己的实现重写tryLock和tryRelease方法，以实现自己的并发功能。
+
+AQS实现公平锁和非公平锁：
+基于AQS的锁（如ReentrantLock）原理：
+	1）有一变量state，初始值为0，若当前线程A获取一次锁则state++，释放一次则state--，锁会记录当前持有的线程。
+	2）当线程A拥有锁时(state>0)。线程B尝试获取锁时对该state进行CAS(0, 1)操作，尝试几次失败后就挂起，进入一个等待队列。
+	3）若线程A恰好释放(--state == 0)，线程A会唤醒等待队列中第一个线程，即在等待队列的线程B，线程B被唤醒后再去对该state进行CAS(0, 1)操作
+非公平锁实现：
+	线程A唤醒线程B时，若此时有线程C也在尝试对state进行CAS(0, 1)操作，会与等待队列中的线程B进行抢夺，谁抢到就算谁的。
+公平锁实现：
+	线程A唤醒线程B时，若此时线程C发现有线程B在等待队列，直接将自己进入等待并挂起，线程B优先获取锁。
+
+
+
+
+为什么要用线程池？怎么设计？
+	避免频繁地创建和销毁线程，达到线程对象的重用。
+	核心线程数(corePoolSize)、最大线程数(maximumPoolSize)、线程存活时间(keepAliveTime)、阻塞队列(workQueue)、拒绝策略(handler)
+
+Linux环境查找哪个线程使用CPU最高。
+	1）获取项目的pid
+		jps或ps -ef | grep java
+	2）查看项目中每条线程占用CPU百分比
+		top -h -p pid
+		使用"top -H -p pid"+"jps pid"可以很容易地找到某条占用CPU高的线程的线程堆栈，从而定位占用CPU高的原因
+
+
+
+生产者和消费者：
+--实例：使用BlockingQueue存储商品
+public class ProducerAndConsumer {
+	public static void main(String[] args) {
+		BlockingQueue<Integer> messageQueue = new ArrayBlockingQueue<Integer>(10);
+		new Thread(new Producer(messageQueue)).start();
+		new Thread(new Consumer(messageQueue)).start();
+		new Thread(new Consumer(messageQueue)).start();
+	}
+}
+class Producer implements Runnable {
+	private BlockingQueue<Integer> messageQueue;
+	public Producer(BlockingQueue<Integer> messageQueue) {
+		this.messageQueue = messageQueue;
+	}
+	
+	@Override
+	public void run() {
+		while(true) {
+			try {
+				Thread.sleep(500);
+				int n = new Random().nextInt(10)+1;
+				System.out.println(Thread.currentThread().getName() + "生产产品数：" + n);
+				messageQueue.put(n);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+class Consumer implements Runnable {
+	private BlockingQueue<Integer> messageQueue;
+	public Consumer(BlockingQueue<Integer> messageQueue) {
+		this.messageQueue = messageQueue;
+	}
+	
+	@Override
+	public void run() {
+		while(true) {
+			try {
+				if (!messageQueue.isEmpty()) {
+					Thread.sleep(500);
+					Integer take = messageQueue.take();
+					System.out.println(Thread.currentThread().getName() + "消费产品数：" + take);
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+
+
+并发高、任务执行时间短的业务怎样使用线程池？并发不高、任务执行时间长的业务怎样使用线程池？并发高、任务执行时间长的业务怎样使用线程池？
+1.并发高、任务执行时间短的业务：
+	线程池中线程数目可以设值为CPU核数+1，减少线程上下文切换。
+2.并发不高、任务执行时间长的业务分两种情况：
+	-1）业务时间长集中在IO操作上，也就是IO密集型任务，因为IO操作并不占用CPU，所以不要让所有CPU闲下来，可以加大线程池中线程数目，让CPU处理更多业务。
+	-2）业务时间长集中在计算操作上，也就是计算密集型任务，设值为CPU核数+1，减少线程上下文切换。
+3.并发高、任务执行时间长的业务：
+	这类任务的关键不在于线程池，而在于整体架构的设计。
+	考虑将业务里的数据做缓存、或增加服务器、或者将业务拆分成一个一个小任务。
+
+
+
+synchronize的底层实现？与reentryLock的区别？
+	

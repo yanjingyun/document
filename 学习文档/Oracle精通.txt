@@ -116,6 +116,18 @@ end;
 
 
 
+存储过程抛异常：
+create or replace procedure P_PHYSICAL_EXAMINATION_FETCH is
+	... //省略
+	exception
+		when others then
+			--回退
+			ROLLBACK;
+			--存日志
+			p_bg_log('P_PHYSICAL_EXAMINATION_FETCH', 'jktj_physical_examination/jktj_physical_exam_result', ...);
+	end;
+end P_PHYSICAL_EXAMINATION_FETCH;
+
 Oracle 游标(cursor)：
 	语法：cursor 光标名[(参数名 数据类型, ...)] is select语句;
 	作用：用于临时存储从数据库中提取的数据块

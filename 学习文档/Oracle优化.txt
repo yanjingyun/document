@@ -1,31 +1,72 @@
-
-
 优化概述：
-	-1）首先建立适当索引。索引字段不可加函数，保证索引起效。复合索引需要注意sql顺序。
+	-1）首先建立适当索引。索引字段不可加函数，保证索引起效。复合索引需要注意sql顺序，不要跨列。
 	-2）最大数据量的表放在最前，最小的表放在最后面。sql是从最后面开始反向解析的。
 	-3）其次是要把最有效缩小范围的条件放到sql末尾去。尤其是主键或者索引字段的条件。
 
-
+优化方向：
+	查询字段：
+		查询字段可能来自表本身，也可能来自关联表。当字段来自关联表，且不作为查询条件时，可以直接在select子句查询，以减少对表的连接，若查询该字段频繁可考虑做成冗余字段。
+		查询字段可能是多个字段合并而成，也可能是关联表多条记录排序后合并。
+	查询条件：
+		查询条件很大程度上取决于索引。
+		若传入的条件不走索引时我们应该换一种思路去实现，如证件号码后六位匹配，使用like右匹配不走索引，但可以创建substr函数的索引，从而达到快速查询到结果。
 
 from子句的表顺序：
-	Oracle解析器按照从右到右的顺序解析。FROM子句中写在最后的表(基础表 driving table)将被最先处理。
+	Oracle解析器按照从右到左的顺序解析。FROM子句中写在最后的表将被最先处理。
 	建议：记录条数最少的表放在最后！！！
-	在FROM子句中包含多个表的情况下,你必须选择记录条数最少的表作为基础表。当ORACLE处理多个表时，会运用排序及合并的方式连接它们。首先，扫描第一个表(FROM子句中最后的那个表)并对记录进行派序，然后扫描第二个表(FROM子句中最后第二个表)，最后将所有从第二个表中检索出的记录与第一个表中合适记录进行合并。
-	例如：
-		例如：表tab1有16,384条记录，表tab2有1条记录
-		--选择tab2作为基础表(最好)
-		select count(*) from tab1,tab2 --执行时间0.96秒
-		--选择tab1作为基础表(低效)
-		select count(*) from tab2,tab1 --执行时间26.09秒
+	当ORACLE处理多个表时，会运用排序及合并的方式连接它们。首先，扫描第一个表（FROM子句中最后的那个表）并对记录进行排序，然后扫描第二个表（FROM子句中倒数第二张表），最后将所有从第二个表中检索出的记录与第一个表中合适记录进行合并。
+	--例如：表tab1有16,384条记录，表tab2有1条记录
+	select count(*) from tab1,tab2; --tab2放最后（高效），执行时间0.96秒
+	select count(*) from tab2,tab1; --tab1放最后（低效），执行时间26.09秒
 
-where子句中的连接顺序：
+where子句的连接顺序：
 	Oracle采用自下而上的顺序解析。
-	建议：表连接条件写在where句首；可以过滤最大数量记录的条件写在where末尾。
-	例如：
-		--低效，执行时间156.3秒
-		select * from emp e where sal > 5000 and job = 'manager' and 25 < (select count(*) from emp where mgr = e.empno);
-		--高效，执行时间10.6秒
-		select * from emp e where 25 < (select count(*) from emp where mgr = e.empno) and sal > 5000 and job = 'manager';
+	建议：表连接条件写在where句首；可以过滤最大数量记录的条件写在where末尾！！
+	--例如：
+	select * from emp e where sal > 5000 and job = 'manager' and 25 < (select count(*) from emp where mgr = e.empno);	--低效，执行时间156.3秒
+	select * from emp e where 25 < (select count(*) from emp where mgr = e.empno) and sal > 5000 and job = 'manager';	--高效，执行时间10.6秒
+
+
+索引：
+	唯一索引：在创建外键约束和唯一约束时会自动创建
+	普通索引：create index idx_age on t_user(age);
+约束：
+	alter table t_user add constraint pk_user primary key (id); --主键约束(会自动创建唯一索引)
+	alter table t_user add constraint uq_user_name unique (name); --唯一约束(会自动创建唯一索引)
+	alter table t_user add constraint fk_user_role_id foreign key (role_id) references t_role (id);	--外键约束
+	alter table t_user add constraint check_age check (age > 18 and age < 55); --check约束1
+	alter table t_user add constraint check_age check (age between 1 and 100); --check约束2
+
+
+索引使用原则：
+1.避免where条件的null值判断，否则将导致引擎放弃索引而进行全表扫描。
+	索引字段不可设值为null，非索引字段可使用null值。
+	设置非空：alter table t_user modify username not null;
+	若char(100)型，在字段创建时空间就固定了，不管是null值，都是100个字符；若是varchar等可变长字段，null不占空间。
+	--测试：
+	create index idx_age on t_user(age);
+	select * from t_user where age is null;	--不走索引
+2.避免!= 或 <> 操作符，否则将导致引擎放弃索引而进行全表扫描。
+
+3.避免使用 or 连接。
+	若一个字段有索引，一个字段无索引，将导致引擎放弃索引而进行全表扫描。
+	可使用union all代替or
+4.避免使用select*
+	--测试：2千万条数据，username未添加索引
+	select * from t_user where username = 'PQVQX8L4VF18AJD0ZOWH'; --耗时4.672s
+	select id,birthday,age,username from t_user where username = 'PQVQX8L4VF18AJD0ZOWH'; --耗时耗时2.469
+5.避免like使用右匹配
+	--测试：
+	select * from t_user where username like '%test'; --不走索引
+	select * from t_user where username like 'test%'; --走索引
+6.避免索引字段上添加函数、算术运算、或表达式运算
+	select id from t where substring(name,1,3) = 'abc'; --未使用索引
+	select id from t where name like 'abc%';	--使用索引
+7.复合索引命中问题
+	参照最左匹配原则，注意写条件顺序，不要跨列使用。
+8.其它
+	一个表的索引数最好不要超过6个，若太多则应考虑一些不常使用到的列上建的索引是否有必要。
+	尽可能使用varchar代替char，尽可能使用数字型代替字符型。
 
 
 尽量多使用commit
@@ -36,8 +77,6 @@ where子句中的连接顺序：
 		c)redo log buffer中的空间
 		d)Oracle为管理上述3种资源中的内部花费
 
-
-
 减少对表的查询
 	--查询
 	select * from table1 where a = (select a from table2 where version = 604) and b = (select b from table2 where version  = 604); --低效
@@ -45,7 +84,6 @@ where子句中的连接顺序：
 	--update多个列
 	update table1 set a = (select max(a) from table2), b = (select max(b) from table2) where table1.name = '002'; --低效
 	update table1 set (a, b) = (select max(a), max(b) from table2) where table1.name = '002'; --高效
-
 
 用exists代替in
 	select * from emp where dept_id in (select id from dept where name = 'A'); --低效
@@ -64,6 +102,21 @@ where子句中的连接顺序：
 		select * from emp a where not exists (select 1 from dept b where b.id = a.dept_id and dept_cat = 'A')
 
 
+实战：
+--生成千万条数据
+create table t_user as
+select rownum as id,
+	(sysdate + rownum/24/3600) as create_time,
+	trunc(dbms_random.value(0, 100)) as age,
+ 	dbms_random.string('x', 20) username
+from dual
+	connect by level <= 10; --生成10条数据
+	--connect by level <= 10000000;
+
+
+PL/SQL按F5查询sql执行顺序。
+
+
 识别“低效执行”的SQL语句
 SELECT EXECUTIONS, --所有子游标的执行这条语句次数
        DISK_READS, --所有子游标运行这条语句导致的读磁盘次数
@@ -76,12 +129,3 @@ SELECT EXECUTIONS, --所有子游标的执行这条语句次数
    AND BUFFER_GETS > 0
    AND (BUFFER_GETS - DISK_READS) / BUFFER_GETS < 0.8
  ORDER BY 4 DESC;
-
-
-
-
-
-
-
-
-

@@ -269,6 +269,13 @@ sql拼接字符串后去掉最后一位字符：
 		) as person_mark
 	from ehr_person p;
 Oracle中trim、ltrim、rtrim函数：
+	trim(str)	--去除字符的前后空格
+	ltrim(str)	--去除字符左边的空格
+	rtrim(str)	--去除字符右边的空格
+	trim(leading|trailing|both ch from str) --字符串str中去除左边|右边|左右边指定的字符ch。
+	注：trim只能去除单个字符，而ltrim和rtrim能去除多个字符
+	
+
 	作用1：去除两端空格、去除左边空格、去除右边空格
 		测试：select ' aaa ', trim(' aaa '), ltrim(' aaa '), rtrim(' aaa ') from dual;
 	作用2：去除指定字符。trim只能去除单个字符，而ltrim、rtrim可以去除多个字符。
@@ -277,6 +284,7 @@ Oracle中trim、ltrim、rtrim函数：
 		ltrim(str1, str2)
 		rtrim(str1, str2)
 	测试：select trim(both '1' from '1123411') from dual;
+	
 
 
 replace(str, ',', '|')	--替换字符串
@@ -300,6 +308,11 @@ to_timestamp('2018-10-16 15:30:46', 'yyyy-mm-dd hh24:mi:ss') --字符串转时�
 	to_date(start_time, 'yyyy-mm-dd hh24:mi:ss') //方式一
 	cast(start_time as date) //方式二
 
+得到某月份的第一天和最后一天：
+	to_date('20188', 'yyyymm')	--第一天
+	last_day(to_date('20188', 'yyyymm')) 	--最后一天
+
+
 Oracle cast()函数：
 	用于数据类型转换。格式：cast(colName as 数据类型)
 	测试：
@@ -320,9 +333,13 @@ Oracle extract()函数：
 	截取时间，返回number类型。
 	语法：extract(year|month|day|hour|minute|second from sysdate)
 	--例如：
-	extract(year from p.birthday) //截取年份
-	extract(month from sysdate) //截取月份
+	extract(year from p.birthday) //获取年份
+	extract(month from sysdate) //获取月份
 	extract(day from t.date2 - t.date1) //返回两个时间相隔天数(不能求相隔多少年/月)
+
+满足65周岁：
+	and (to_number($year) - extract(year from p.BIRTHDAY) > 64); --所选年份满65周岁
+	months_between(to_date('2018-12-12', 'yyyy-mm-dd') + 1, to_date('1953-12-12', 'yyyy-mm-dd')) > 780; --当天满65周岁，精确到天
 
 
 rownum --表示行号，实际上此是一个列，但是这个列是一个伪列。
