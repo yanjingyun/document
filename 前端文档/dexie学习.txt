@@ -1,0 +1,237 @@
+Dexie学习：
+	dexie是indexedDB的包装类库。IndexedDB的API难用，难上手，不想用。
+	--详情查看dexie官方文档：https://dexie.org/docs/Tutorial/Design
+
+引入dexie.js
+	<script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+	<script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+
+1.创建数据库
+	--若浏览器中不存在数据库时，直接创建数据库
+	var db = new Dexie("testDB"); //testDB-数据库名称
+2.创建数据库表
+	--表是对对象存储进行所有操作的入口点，例如查询、添加、put、删除、清除和修改数据。
+	db.version(1).stores({
+		user: "++id, username, password",
+		friends: "++id, name, birthday, age"
+	});
+
+3.获取表描述
+	var tables = db.tables; //获取所有表
+	var friendTable = db.friends; //方式一：获取特定表
+	var friendTable = db.table("friends"); //方式二：获取特定表
+4.添加数据
+	db.table("friends").add({name: "testAA", birthday: new Date('1996-02-10'), age: 21}); 
+	db.table("friends").bulkAdd([{name: "testBB", birthday: new Date('1997-02-10'), age: 22}]); // 添加批量数据
+5.更新数据
+	db.friends.update(7, {name: "testAAD"}); //方式一：仅更新需要的字段
+	db.friends.put({id: 4, name: "testAAA", age: 33}); //方式二：相当于整条记录更新，其它字段值也会被更新
+	db.friends.bulkPut([{id: 4, name: "testAAB", age: 34},{id: 5, name: "testAAC", age: 44}]); //方式三：批量更新，其它字段值也会被更新
+	db.friends.where("name").equals('testAAD').modify({birthday: new Date('1995-03-20')}); //查询后更新数据
+6.删除数据
+	db.friends.delete(3);
+	db.friends.bulkDelete([4, 5]); //批量删除
+	db.friends.where("name").equals('testAAD').delete().then(function(deleteCount) {...}); //查询后删除，得到删除总数
+7.查询数据
+	--更多详情查看官方文档的“whereClause”关键字模块：https://dexie.org/docs/Tutorial/Design
+	--具体查询方法可在dexie.js中的“WhereClause public methods”模块！！！
+--1）get()方法:
+	返回第一个匹配结果。
+	--两种格式：
+		table.get(primaryKey, callback); //primaryKey-主键，callback-回调函数（格式：function(data){...}）
+		table.get({keyPath1: value1, keyPath2: value2, ...}, callback); //{keyPath1: value1, keyPath2: value2, ...}-标准筛选
+	--使用：
+		db.table("user").get(2, (firstUser)=> { console.log(firstUser); });
+		db.table("user").get(2).then((firstUser) => {...})
+		db.table("user").get({username: 'testBB', password: '1234'}, (firstItem) => { console.log(firstItem); });
+		db.table("user").get({username: 'testBB', password: '1234'}).then(firstItem => { console.log(firstItem); });
+
+--2）where()方法：
+	db.friends.toCollection().toArray(function(data) { ... //省略 }); //查询所有数据
+	db.table("friends").where('age').equals(21).each(function(data) {
+		console.log(data); //输出json格式数据
+	});
+	db.table("friends").where('age').between(24, 26).each(function(data) {
+		console.log(data); //输出“age>= 24 && age < 26”的数据！
+	}).catch(function(err) {
+	    console.error(err);
+	});
+	--查询名字是“test”，且年龄为23岁的人
+	db.table("friends").where({name: 'test', age: 23}).each(function(data){ ...//省略 });
+
+--3）排序
+	--根据某个字段倒序
+	db.table(tableName).orderBy(orderField).reverse().toArray(callback);
+	--排序后查询(orderBy不能与where连用，可通过filter过滤需要的记录)：
+	db.table(tableName).orderBy(orderField).filter(function(data) {
+		return data.id == 3;
+	}).toArray(callback);
+
+--4）分页：
+	var pageSize = 5, pageNumber = 1;
+	db.table(tableName).offset(pageSize * (pageNumber - 1)).limit(pageSize).toArray(...);
+	例如：db.table("friends").where({name: 'test'}).offset(10).limit(5).toArray(...); //查询第11~15条记录
+--5）遍历：
+	toArray(function(e){ ... }) 或者 each(function(data)){ ... }
+
+
+*****************************测试实例*****************************
+--1）查询是否存在某数据，有则更新，无则新增
+	db.user.get({username: 'bbb'}, (data) => {
+		if (data) { //更新数据
+			db.user.update(data.id, {password: '123456'});
+		} else { //新增数据
+			db.user.add({username: 'bbb',password: '123456'});
+		}
+	});
+--2）新增数据，并将关联的从表数据一起新增（不知道是否需要事务）
+	--person表通过userId字段关联user表
+	db.table("user").add({username: 'testAA', password: '123'}).then((id)=> {
+		db.table("person").add({name: 'testAAA', birthday: new Date(), age: 23, userId: id});
+		db.table("person").add({name: 'testBBB', birthday: new Date(), age: 33, userId: id});
+	});
+--3）查询数据，并将关联的从表数据一起查询
+	--所有执行完再返回！！！
+	var p1 = surveyDbDao.getTable('survey').where({id: surveyId}).first();
+	var p2 = surveyDbDao.getTable('surveyAnswer').where({surveyId: surveyId}).toArray();
+	var p3 = surveyDbDao.getTable('surveyAnswerList').where({surveyId: surveyId}).toArray();
+	Promise.all([p1, p2, p3]).then(function(results) {
+		console.log(JSON.stringify(results));
+	});
+--4）统计总数
+	surveyDbDao.getTable('survey').where('uploadStatus').notEqual('2').count(function(data) {
+		console.log(data);
+	});
+--5）分页
+	var pageSize = 5, pageNumber = 1;
+	surveyDbDao.getTable('survey').toCollection().offset(pageSize * (pageNumber - 1)).limit(pageSize).toArray(function(data) {
+		pageNumber++;
+		for(var item of data) {
+			... //处理data，填充内容
+		}
+	});
+--6）事务
+	--读取主表数据后，将从表的数据也读取出来
+	var db = new Dexie("testDB");
+	db.version(1).stores({
+		user: "++id, username, password",
+		person: "++id, name, birthday, age, userId"
+	});
+	var objList = [];
+	db.transaction('r', db.user, db.person, ()=> {
+		db.table("user").toCollection().each((data)=> {
+			var item = {};
+			item.user = data;
+			db.table("person").where({userId: data.id}).toArray(function(personList) {
+				item.personList = personList;
+			});
+			objList.push(item);
+		})
+	}).then(()=> {
+		console.log(objList);
+	});
+	--实例2：同步执行方法
+	await db.transaction('rw', db.friends, async () => {
+		let friendId = await db.friends.add({name: "New Friend"});
+		let petId = await db.pets.add({name: "New Pet", kind: "snake"});
+		...
+	});
+
+
+
+版本升级：
+	详情：https://dexie.org/docs/Tutorial/Design#database-versioning
+	详情：https://dexie.org/docs/Version/Version.upgrade()
+升级步骤：
+--1）保持版本1的表存储语句
+	附：只要有用户在运行这个版本，就不要碰它!
+	var db = new Dexie("FriendsDB");
+	db.version(1).stores({friends: "++id, name"});
+--2）添加新一行语句
+	db.version(2).stores({friends: "++id, name, shoeSize"});
+	db.friends.where(‘shoeSize’).between(37, 39); //这样便能使用shoeSize查询条件，该语句在version1版本执行会失败
+--3）升级后更新数据
+	db.version(3).stores({friends: "++id, shoeSize, firstName, lastName"}).upgrade(tx => {
+		// 更新版本2中的数据
+		return tx.friends.toCollection().modify(friend => {
+			friend.firstName = friend.name.split(' ')[0];
+			friend.lastName = friend.name.split(' ')[1];
+			delete friend.name;
+		});
+	});
+注意事项：
+	1.更新版本后，仍需要保留旧版本信息，不能删除掉！
+	2.通过添加新版本来创建/删除/更改索引。如：db.version(2).stores({friends: "++id, name, shoeSize"});
+	3.除非在新版本中将null指定为该表的存储规范，否则不会删除表
+	4.新版本只需要指定已更改的表
+案例：
+	db.version(1).stores({foo1: 'id,x,y,z', foo2: 'id,x,y,z', foo3: 'id,x,y,z'}); //创建foo1、foo2、foo3表
+	db.version(2).stores({foo1: 'id,x,z'}); //删除foo1表的索引y
+	db.version(3).stores({foo2: 'id, x, x2, y, z'}); //添加foo2表的索引x2
+	db.version(4).stores({foo3: null}); //删除foo3表
+实例2：
+	var db = new Dexie('testDB');
+	db.version(1).stores({
+		user: "++id, username, password"
+		person: "++id, name, age, userId, birthday"
+	});
+	--修改person表：删除age索引，修改name属性值。附：user表不动时不用写
+	db.version(2).stores({person: "++id, name, userId, birthday"}).upgrade(trans => {
+		return trans.person.toCollection().modify(data => {
+			data.name = 'testName-' + data.id;
+			delete data.age;
+		});
+	});
+
+
+开放/升级顺序说明:
+	使用代码：db.open();
+	如果数据库不存在，或者存在早期版本，indexedDB的onupgradeneeded事件将由Dexie触发并处理。
+	Dexie检查当前使用的版本。如果没有数据库，Dexie通过解析stores模式语法并相应地添加stores和索引来直接初始化最后一个版本。在这种情况下不运行upgrade()函数。
+	如果安装了以前的版本，Dexie将过滤掉每个版本之间的差异，并按顺序添加/删除存储和索引。任何已注册的升级程序功能也是如此。
+
+
+open()方法描述：
+	通常不需要这种方法!Dexie将自动检测是否需要创建或升级数据库。
+	使用db.open()进行以下检查:
+		-1）数据库不存在，Dexie将自动创建它
+		-2）数据库存在，但在以前的版本，Dexie将升级它
+		-3）在声明的版本上存在数据库，Dexie将为您打开它
+	例如：
+		db.version(2).stores({friends: "++id, firstName, lastName"}).upgrade(trans => { ... }); //更新表-拆分name
+		db.open(); //此时数据库版本更新，及更新friends表，使用upgrade()进行数据处理
+
+
+封装dexie：
+	--在userDbDao.js文件中加入
+	(function(self) {
+		var DB_NAME = "bcSysu";
+		var db = null;
+
+		self.getDB = function() {
+			if (!db) {
+				try {
+					db = new Dexie(DB_NAME);
+					db.version(1).stores({
+						user: '++id, username, password, organizationCn, realName, token'
+					});
+				} catch(e) {
+					alert("打开数据库出现未知错误：首次登陆的用户需要联网登陆 ");
+					db = null;
+				}
+			}
+			return db;
+		}
+
+		self.getTable = function(tableName) {
+			self.getDB();
+			return db.table(tableName);
+		}
+		
+	})(window.userDbDao = {});
+使用：
+	--在html页面中引入userDbDao.js文件后，即可使用
+	table.get(primaryKey, callback);
+	userDbDao.getTable('user').get({username: 'admin', password: '123'}, (user) => {
+		...//处理获取的第一个user记录
+	});

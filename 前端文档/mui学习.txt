@@ -1,0 +1,439 @@
+
+***********************H5相关***********************
+弹出和关闭等待对话框：
+	plus.nativeUI.showWaiting( "等待中..." ); //弹出
+	plus.nativeUI.closeWaiting(); //关闭
+
+
+弹出日期对话框：
+	详情：http://www.html5plus.org/doc/zh_cn/nativeui.html
+
+	void plus.nativeUI.pickDate(successCB, errorCB, options);
+	successCB：日期操作成功的回调函数(通过event.date获取用户选择时间)
+	errorCB：日期操作取消或失败的回调函数
+	options：参数配置，包括：title，date，minDate，maxDate，popover
+		详情：http://www.html5plus.org/doc/zh_cn/nativeui.html#plus.nativeUI.PickDateOption
+
+
+
+弹出时间对话框：
+	详情：http://www.html5plus.org/doc/zh_cn/nativeui.html#plus.nativeUI.pickTime
+
+	void plus.nativeUI.pickTime(successCB, errorCB, options);
+
+输入对话框：
+	void plus.nativeUI.prompt(message, promptCB, title, tip, buttons);
+
+自动消失的提示信息：
+	void plus.nativeUI.toast(message, options);
+
+navigator.onLine	--判断是否在线，true-是，false-否
+
+
+在线升级：
+	plus.downloader.createDownload()
+	plus.runtime.install(path);
+
+退出时页面闪烁：
+	解决：低端机会闪的，解决方法就是安卓机器关闭页面之前，先hide一下，然后调用close('none',150)延时关闭即可解决。
+	setTimeout(function() {
+		plus.webview.close('newInfePersonSurvey.html', 'none', 150);
+		plus.webview.close('newInfeLifeStyleSurvey.html', 'none', 150);
+		plus.webview.close('newInfeKnowledgeSurvey.html', 'none', 150);
+	}, 600);
+
+
+
+
+
+***********************mui相关***********************
+点击openWindow()方法时页面数据还在：
+	location.reload();
+
+注意事项：
+1.dom结构：
+-1）固定栏靠前
+	固定栏：即带有.mui-bar属性的节点，都是基于fixed定位的元素；
+	常见组件：顶部导航栏(.mui-bar-nav)、底部工具条(.mui-bar-footer)、底部选项卡(.mui-bar-tab)
+	注：这些元素（包括底部选项卡）都需要放在.mui-content元素之前！
+-2）一切内容都要包裹在mui-content之中
+	除了固定栏之外，其它内容都要包裹在.mui-content中，否则就有可能被固定栏遮罩。
+	原因：固定栏基于Fixed定位，不受流式布局限制，普通内容依然会从top:0的位置开始布局，这样就会被固定栏遮罩
+-3）始终为button按钮添加type属性
+	若button按钮没有type属性，浏览器默认按照type=submit逻辑处理。
+2.窗口管理：
+-1）页面初始化：必须执行mui.init方法
+	mui在页面初始化时，初始化了很多参数配置。比如：按键监听、手势监听等，因此mui页面都必须调用一次mui.init()方法。
+-2）页面跳转：抛弃href跳转
+	原因：当浏览器加载一个新页面时，若页面dom尚未渲染完毕，页面会先显示空白，然后等dom渲染完毕，再显示具体内容，这是WEB浏览器技术无法逾越的体验障碍；
+	为解决这个问题，建议使用mui.openWindow方法打开一个新的webview，mui会自动监听新页面的loaded事件，若加载完毕，再自动显示新页面；
+
+	无等待窗体页面跳转切换： http://ask.dcloud.net.cn/article/106	--看不懂！！！
+	提示HTML5的性能体验系列之一 避免切页白屏 --未看！！
+-3）页面关闭：勿重复监听backbutton
+	mui框架将窗口关闭功能封装在nui.back方法中，若需要自定义返回逻辑则需要重写mui.back()方法。
+	具体执行逻辑是：若当前webview为预加载页面则hide当前webview，否则close当前webview。
+	在mui框架中，有三种操作会触发页面关闭（执行mui.back方法）：
+		-1）点击包含.mui-action-back类的控件！！
+		-2）在页面上向右快速滑动，默认未启用。例如：mui.init({ swipeBack:true // 启用右滑关闭功能 });
+		-3）Android手机按下back按键。 例如：mui.init({ keyEventBind: { backbutton:false //关闭back按键监听 } });
+		除了上面操作外，直接调用mui.back()方法也可以执行窗口关闭逻辑。例如：mui.back = function() {}; //重写back方法
+3.手势操作：
+-1）点击事件：不要click属性
+	手机浏览器的click点击存在300毫秒延迟，切勿使用click及onclick操作。
+	mui为了解决这个问题，封装了tap事件。例：element.addEventListener('tap', function() { ...//点击响应事件 });
+
+
+选择器：
+	var btn = document.getElementById('btnId');
+	var sliders = document.querySelector('.mui-slider');
+	var btn = mui("#btn")[0];
+
+
+窗口管理：
+1.页面初始化(两类)
+-1）界面初始化
+	mui.init({...}) //配置的功能: 创建子页面、关闭页面、手势事件配置、预加载、下拉刷新、上拉刷新
+-2）H5plus初始化
+	mui.plusReady(function(){ ... //省略}); //所有涉及到H5+的东西，必须等plusready事件发生后才能正常使用，建议都写在mui.plusReady方法中。
+	例如：
+		mui.plusReady(function() {
+			console.log("当前页面URL：" + plus.webview.currentWebview().getURL());
+		});
+	错误一：Uncaught ReferenceError: plus is not defined
+		解决：将H5+的东西写在mui.plusReady()方法中
+
+
+2.创建子页面
+-1）背景
+	app开发过程中，经常出现共同的导航栏或选项卡，每次打开页面都需要重新渲染，而且容易出现卡头卡尾的现象。并且此时使用局部滚动，在android手机上会出现滚动不流畅的问题；
+	mui解决：
+		方案一：在plus环境下，使用原生titleNView以及原生tabbar来替换页面的导航栏或者选项卡。
+		方案二：使用双webview模式，此种情况适用于需要上下拉刷新的列表页面。具体做法：将目标页面分解为主页面和内容页面，内容页面显示具体需要滚动的内容，然后在主页面中调用mui.init方法初始化内容页面。
+
+-2）方案二实例：
+	首页 = index.html + list.html
+	index.html显示固定导航，list.html显示列表内容。
+	好处：列表项的滚动是在list.html所在的webview中，既保证了滚动条不会穿透顶部导航，也保证了列表流畅滚动，解决了区域滚动卡顿的问题。
+	index.html页面中声明：
+	mui.init({
+		swipeBack: false,
+		subpages: [{
+			url:'list.html', //list.html作为index.html的子页面
+			id:'list.html',
+			styles: {
+				top:'45px',//mui标题栏默认高度为45px
+			}
+		}]
+	});
+	多个子页面时使用切换: plus.webview.show('test1.html');
+
+3.打开新页面
+	具体例子: http://www.bcty365.com/content-146-4786-1.html
+	具体例子: http://dev.dcloud.net.cn/mui/window/#openwindow
+实现原理: 在1页面先预加载2页面，然后通过编写自定义事件(mui.fire)传值，通过mui.openWindow打开页面，最后在2页面监听该事件
+	mui.preload({url:url, id:id, styles:{}, extras:{}}) --预加载，可立即返回对应的webview的引用
+	mui.fire(target, event, data) --自定义事件：target-需传值的webview，event-事件名称，data-需传递的json格式数据
+	mui.openWindow({url:url, id:id, ...}) --打开新页面
+实例一：
+--openWindow传值
+-1）list.html页面
+	mui.openWindow({
+		url: 'detail.html',
+		id: 'detail.html',
+		extras: {
+			writeWay: document.querySelector('input[name="writeWay"]:checked').value
+		}
+	});
+-2）detail.html页面
+	mui.plusReady(function(){
+		var writeWay = plus.webview.currentWebview().writeWay;
+	});
+实例二：
+-1）在index.html页面中
+    1）依次输入mheader、mtab、mbody
+    2）在mbody里编写如下列表：
+        <div class="mui-content">
+            <ul class="mui-table-view" id="lists">
+                <li class="mui-table-view-cell" id="1">新闻1</li>
+                <li class="mui-table-view-cell" id="2">新闻2</li>
+                <li class="mui-table-view-cell" id="3">新闻3</li>
+            </ul>
+        </div>
+    3）编辑js
+    <script type="text/javascript" charset="utf-8">
+        mui.init();
+        mui.plusReady(function(){
+            //1.预加载aa.html页面
+            var prePage = mui.preload({url:'aa.html',id:'aa.html'});
+            mui('#lists').on('tap', 'li', function(){
+                mui.fire(prePage, 'newsInfoEvent', {'title':this.innerHTML,'id':this.getAttribute('id')});
+                mui.openWindow({url:'aa.html', id:'aa.html'});
+            });
+        });
+    </script>
+-2）在aa.html页面中
+    1）依次输入mheader、mbody
+    2）编写js
+    <script type="text/javascript">
+        mui.init();
+        mui.plusReady(function(){
+            window.addEventListener('newsInfoEvent', function(e){
+                mui('#title1')[0].innerHTML = e.detail.title;
+                mui.toast(e.detail.id);
+            });
+        });
+    </script>
+
+
+5.预加载
+	>>预加载技术就是在用户尚未触发页面跳转时，提前创建目标页面，这样当用户跳转时，就可以立即进行页面切换。
+两种实现方式：
+	方式一：使用mui.init中的preloadPages配置(有可能失败)
+		可配置多个预加载页面，使用plus.webview.getWebviewById方式获得对应webview的引用。
+	例如：
+		mui.init({
+			preloadPages: [{
+				url: 'list.html',
+				id: 'list.html'
+			}]
+		});
+		var list = plus.webview.getWebviewByid('list'); //这里可能返回空
+	方式二：使用mui.preload方法预加载
+		仅可配置一个预加载页面，可立即返回对应webview的引用。若需加载多个webview则需多次调用mui.preload方法
+	例如：
+		var detailView = mui.preload({
+	        url: 'detail.html',
+	        id: 'detail',
+	    });
+
+
+事件管理：
+1.addEventListener()事件
+	element.addEventListener('tap', function() { ...//点击响应事件 });
+	addEventListener()方法监听某个特定元素上的事件外，也可以使用.on()方法实现批量元素的事件绑定。
+2.事件绑定:
+	addEventListener(event, handler); --针对单个特定元素的事件
+	on(event, selector, handler); --针对批量元素的事件绑定
+	
+	/* event-事件名称，如'tap'；selector-选择器；handler-事件触发时的回调函数，通过回调中的event参数获得事件详情（function(Event event)）*/
+	格式：element.on(event, selector, handler);
+
+	例如：
+		--点击新闻列表，获取当前列表项的id，并将该id传给新闻详情页面，然后打开新闻详情页面
+		mui('.mui-table-view').on('tap', '.mui-table-view-cell', function() {
+			var id = this.getAttribute("id"); //获取id
+			
+			//传值给详情页，通知加载新数据
+			mui.fire(detail, 'getDetail', {id:id});
+			//打开新闻详情
+			mui.openWindow({
+				id: 'detail',
+				url: 'detail.html'
+			})
+		});
+3.事件取消off():
+	实例：
+		mui("#list").on("tap","li",foo_1); //li绑定事件foo_1
+		mui("#list").on("tap","li",foo_2); //li绑定事件foo_2
+		
+		mui("#list").off("tap","li",foo_1); // 实例一：点击li时，不再执行foo_1函数，但会继续执行foo_2函数
+		mui("#list").off("tap","li"); // 实例二：点击li时，foo_2、foo_2两个函数均不再执行
+
+4.事件触发mui.trigger():
+	/* element-触发事件的dom元素；event-事件名字，如'tap'、'swipeleft'；data-需要传递给事件的业务参数 */
+	格式：mui.trigger(element, event, data);
+
+	例如：自动触发点击事件
+		var btn = document.getElementById("submit");
+		btn.addEventListener('tap', function() {
+			console.log("tap event...")
+		});
+		mui.trigger(btn, 'tap'); //触发submit按钮的点击事件
+
+5.手势事件：
+-1）常见手势事件
+	点击:单击-tap、双击-doubletap
+	长按：...
+	滑动：向左滑动-swipeleft、向右滑动-swiperight、向上滑动-swipeup、向下滑动-swipedown
+	拖动：...
+-2）使用
+	使用手势事件需要在mui.init方法的gestureConfig参数配置。
+	--附：dragstart、drag、dragend共用drag开关，swipeleft、swiperight、swipeup、swipedown共用swipe开关
+	mui.init({
+		gestureConfig:{
+			tap: true, //默认为true
+			doubletap: true, //默认为false
+			longtap: true, //默认为false
+			swipe: true, //默认为true
+			drag: true, //默认为true
+			hold:false,//默认为false，不监听
+			release:false//默认为false，不监听
+		}
+	});
+-3）测试
+	单个元素上的事件监听
+	elem.addEventListner('swipeleft', function() {
+		console.log("您正在向左滑动...");
+	});
+
+6.自定义事件
+>>详细: http://dev.dcloud.net.cn/mui/event/#customevent
+-1）触发自定义事件
+	mui.fire(target, event, data); --target:webview对象，event:事件名称(如'tap')，data:需要传播的json数据
+	window.addEventListener(event, function(event){ ... }); --监听自定义事件，event对应fire中的event
+-2）实例
+--如从新闻列表页进入详情页，需要把新闻id传递过去。
+--列表页代码如下：
+	// 1.初始化预加载详情页
+	mui.init({
+		preloadPages: [{
+			id: 'detail.html',
+			url: 'detail.html'
+		}]
+	});
+	var detailPage = null;
+	//添加列表项的点击事件
+	mui('.mui-content').on('tap', 'a', function(e) {
+		// 获得详情页面
+		if(!detailPage){
+			detailPage = plus.webview.getWebviewById('detail.html');
+		}
+
+		var id = this.getAttribute('id');
+		// 触发详情页面的newsId事件
+		mui.fire(detailPage,'newsId',{ id:id });
+		// 打开详情页面          
+		mui.openWindow({ id:'detail.html' });
+	});
+
+--详情页代码如下：
+	// 1.添加newId自定义事件监听
+	window.addEventListener('newsId',function(event){
+		// 获得事件参数
+		var id = event.detail.id;
+		...//省略
+	});
+
+utils：
+1.init()方法：
+	该方法配置的功能有：创建子页面、关闭页面、手势事件配置、预加载、下拉刷新、上拉加载、设置系统状态栏背景颜色。
+	详情：http://dev.dcloud.net.cn/mui/util/#init
+2.mui()方法：
+	var obj1 = mui("#title"); //obj1是mui对象
+	var obj2 = obj1[0]; //obj2是dom对象
+	mui("p.title") --选取所有包含.title的<p>元素
+3.each()方法：
+	each既是类方法，也是对象方法，两种方法使用场景不同。你可以使用mui.each()去遍历数组或json对象，也可以使用mui(selector).each()去遍历dom结构。
+	格式：
+		mui.each(obj, handler);
+		mui(selector).each(handler);
+	实例：input的非空校验
+		var check = true;
+		mui(".mui-input-group input").each(function() {
+			if (!this.value || trim(this.value) == "") {
+				check = false;
+				return false;
+			}
+		});
+		if (check) { ...//省略 }
+
+
+
+选项卡：
+--底部导航切换界面(创建主页面)
+1.输入mtab
+	弹出选项卡，并做适当修改
+2.初始化:
+	mui.init({
+		swipeBack: false,
+		subpages: [{
+			url: 'test1.html',
+			id: 'test1.html',
+			styles: {
+				top: '0px',
+				bottom: '51px'
+			}
+		}, {
+			url: 'test2.html',
+			id: 'test2.html',
+			styles: {
+				top: '0px',
+				bottom: '51px'
+			}
+		},{
+			url: 'test3.html',
+			id: 'test3.html',
+			styles: {
+				top: '0px',
+				bottom: '51px'
+			}
+		},{
+			url: 'test4.html',
+			id: 'test4.html',
+			styles: {
+				top: '0px',
+				bottom: '51px'
+			}
+		}]
+	});
+	// 选项卡切换
+	mui.plusReady(function() {
+		plus.webview.show('test1.html');
+		var activieTab = 'test1.html';
+		mui('.mui-bar-tab').on('tap', 'a', function(e) {
+			var targetTab = this.getAttribute('id');
+			if(targetTab == activieTab) {
+				return;
+			}
+			plus.webview.show(targetTab);
+			activieTab = targetTab;
+		});
+	});
+
+	mui.back = function() {}; //重写back方法
+3.选显卡切换
+	plus.webview.show('test1.html');
+
+
+加载图标load显示：
+	plus.nativeUI.showWaiting(); //显示一个等待对话框
+	plus.nativeUI.closeWaiting(); //关闭一个等待对话框
+
+消息框：
+	警告框: mui.alert('警告框');
+	确认框：mui.confirm('确认？', ['是','否'], function(e){... //省略});
+	对话框: mui.prompt();
+	日期选择框: 
+提示错误：
+	mui.alert(data.error, "提示", null, null, 'div');
+	mui.confirm(msg, '提示', null, (e) => {}, 'div');
+
+本地存储：
+    plus.storage.setItem(key, value);   设置
+    plus.storage.getItem(key);          查询
+    plus.storage.removeItem(key);       删除
+    plus.storage.clear();               全部清除
+
+    localStorage.setItem(key, value);   html5自带，设置
+    localStorage.getItem(key);          html5自带，查询
+    localStorage.removeItem(key);       html5自带，删除
+
+webview文档：
+官方文档：http://www.html5plus.org/doc/zh_cn/webview.html#plus.webview.WebviewObject.opener
+1.创建新的Webview窗口
+	--用于加载新的html页面，创建完成后通过调用show方法显示出来
+	WebviewObject plus.webview.create(url, id, styles, extras);
+2.显示webview窗口
+	void plus.webview.show(id_wvobj, aniShow, duration, showedCB, extras);
+3.隐藏Webview窗口
+	void plus.webview.hide(id_wbobj, aniHide, duration, extras);
+4.获取当前webview窗口
+	WebviewObject plus.webview.currentWebview();
+5.查找Webview窗口
+	WebviewObject plus.webview.getWebviewById(id);
+	例如：var list = plus.webview.getWebviewById('list'); //获得list.html列表界面的webview
+6.创建并打开Webview窗口
+	WebviewObject plus.webview.open(url, id, styles, aniShow, duration, showedCB);
+
+尽量不要使用jquery，同时也不要使用onclick事件

@@ -1,0 +1,150 @@
+引入jquery：
+	<script src="http://cdn.bootcss.com/jquery/1.11.1/jquery.min.js"></script>
+
+1.获取内容
+	text() :设置或返回所选元素的文本内容
+		--或content = document.getElementById("content").innerText;
+	html() :设置或返回所选元素的内容(包括html标记)
+		--或content = document.getElementById("或content").innerHTML;
+	val()  :设置或返回表单字段的值
+	例如：<div id="abc"><a>a标签内容</a></div>
+		$("#abc").html(); //输出：<a>内容</a>
+		$("#abc").text(); //输出：a标签内容
+
+2.获取属性值：
+	attr() :设置或返回html自定义的属性，可设置多个属性
+	prop() :设置或返回html本身的固有属性
+	只有true和false两个值的属性，如checked，selected或disabled，使用prop()方法。
+	如:<a href="user/{id}" class="btn" action="delete" /> prop("href", "AA"); attr("action", "BB");
+3.js控制div显示和隐藏：
+	$("#typediv1").show(); //显示
+	$("#typediv1").hide(); //隐藏
+	$("p").toggle();	--来回切换hide()和show()方法
+	document.getElementById("typediv1").style.display="none";//隐藏
+	document.getElementById("typediv1").style.display="";//显示
+
+4.操作节点元素：
+1）插入html元素
+	里面添加使用：append和prepend
+	外面添加使用：after和before
+2）删除html元素
+	remove() :删除被选元素（及其子元素）
+	empty()  :从被选元素中删除子元素
+
+5.操作css样式:
+	addClass() 		:向被选元素添加一个或多个类。如：$("#div1").addClass("important blue");
+	removeClass() 	:从被选元素删除一个或多个类 
+	toggleClass() 	:对被选元素进行添加/删除类的切换操作
+	css() 			:设置或返回样式属性
+
+
+trigger()触发事件：
+	--触发被选元素的指定事件类型。
+例如：数据加载完成后，默认模拟点击某个元素节点（选中某个元素节点）并触发事件
+例一:
+	$('#unitTable dd').on('click', function() {
+	　　var id = $(this).attr('data-id');
+	    ... //处理其他业务
+	});
+	$('#unitTable').find('dd').eq('0').trigger('click');  //触发点击
+例二：
+	$("#empSelect").change(function(){....})
+	$("#empSelect").trigger("change");
+例三：
+	--触发select选中指定option:
+	var $option = $tr.find(".division-td").find("select:eq(0)");
+	$option.val(""); //步骤1：先赋指定值
+	$option.trigger('change'); //步骤2：触发
+
+
+closest()方法：从自身(集合)开始一直向上遍历,直到找到“一个”符合条件的元素
+格式：$(selector).closest(expr, context)：expr-用以过滤元素的表达式； context-可选。作为待查找的 DOM 元素集或者文档。
+例如：
+	$('li.item-a').closest('ul').css('background-color', 'red'); //改变<ul>的颜色，向上遍历DOM树时会第一个遇到该元素
+	$("select[name='constructionOwner']").closest("div");
+	例: var $span = ("#username").closest("span");
+
+
+
+jQuery扩展：
+--为jQuery扩展新的方法！！！
+格式:(function($) { ...//省略 })(jQuery);
+	相当于：var fn = function($) { ... } fn(jQuery);
+1）新建jQuery.custom.extend.js文件：
+	--底下为匿名函数，参数$的值为jQuery，用于扩展jQuery方法函数
+	--其实际上是执行()(arg)匿名方法，只不过是传递了jQuery对象。形参为$，实参为jQuery
+	--注：在该方法体内可以调用jQuery库中的函数，若不传入则无法调用jQuery库
+	(function($) {
+		//1.添加jQuery全局方法
+		$.extend({
+			min: function(a, b) {
+				return a > b ? b : a;
+			},
+			max: function(a, b) {
+				return a > b ? a : b;
+			}
+		});
+
+		//2.添加jQuery对象方法
+		$.fn.extend({
+			setFontColor: function(fontColor) {
+				$(this).css('color', fontColor);
+			}
+		})
+	})(jQuery);
+2）使用：
+	--先引入jQuery.min.js和jQuery.custom.extend.js文件
+	$(function() {
+		alert($.min(2, 3)); //使用
+		alert(jQuery.max(2, 3));
+
+		$('#apDiv').setFontColor('red'); //使用
+	})
+
+
+$.extend()方法：
+1.jQuery开发插件的两个方法：
+	jQuery.extend(object)		--为类添加新的方法，相当于静态方法
+	jQuery.fn.extend(object)	--给jQuery对象添加方法，相当于成员方法
+	jQuery.fn表示jquery内置函数，可以使用jquery对象直接操作。
+
+2.jQuery.extend([deep], boject1, object2)：深浅拷贝对象
+	--将object2对象拷贝到object1对象中
+	-deep：可选，默认为false，true为深拷贝对象，false为浅拷贝对象
+	$.extend(true,object1, object2);可以深拷贝对象，拷贝之后，改变其中一个对象的属性值，对另外一个没有影响
+	例如：
+		var target = {name1: "name1", name2: "name2"};
+		var object = {name2: "name22", name3: "name33"};
+		jQuery.extend(target, object);
+		console.log(target); //输出{name1: "name1", name2: "name22", name3: "name33"};
+
+
+匿名函数：
+1.(function(){ ...//省略})();
+	--立即执行函数；相当于先声明一个函数，声明完成后立即调用。
+例如：
+	(function(str) { alert(str); })("output"); //立即输出output
+	相当于:
+		function outputFun(str) {alert(str)}
+		outputFun("output");
+
+
+jQuery的on()方法：
+	--jQuery官方推荐的一个函数，替换live、bind和delegate方法，使用on方法更加方便简单。
+语法：$(selector).on(events,[childSelector],[data],fn)
+	events 	--必需，一个或多个用空格分隔的事件类型或命名空间
+	childSelector --可选。用以选定的子元素
+	data --可选。
+	fn --该事件被触发时执行的函数。 false值也可以做一个函数的简写，返回false。
+实例：
+	$("p").on("click", function(){ ... });
+	$("#div1").on("click", "p", function(){ ... });
+	$("p").one("click",function(){ ... }); //如果你的事件只需要一次的操作，可以使用one()这个方法
+	$("input").trigger("select"); //trigger()绑定
+	$("p").on("mouseover mouseout",function(){ //多个事件绑定同一个函数
+		$("p").toggleClass("intro");
+	});
+
+
+
+

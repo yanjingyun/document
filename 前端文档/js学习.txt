@@ -1,0 +1,741 @@
+
+js工具：
+art-template.js --js模板引擎：用來渲染页面动态数据
+
+
+location.reload(false); //从浏览器的缓存加载
+location.reload(true); //从服务器加载
+
+CSS选取第几个标签元素:nth-child、first-child、last-child
+
+上移/下移/删除功能：
+	1、特殊：第一行没有上移功能，最后一行没有下移功能。
+	$(".upOper").click(function() { //上移
+		let thisTr = $(this).parent().parent();
+		let prevTr = thisTr.prev();
+		if (prevTr.length) {
+			prevTr.insertAfter(thisTr);
+		}
+	});
+	$(".downOper").click(function() { //下移
+		let thisTr = $(this).parent().parent();
+		let nextTr = thisTr.next();
+		if (nextTr) {
+			nextTr.insertBefore(thisTr);
+		}
+	});
+	$(".delOper").click(function() {
+		$(this).parent().parent().remove();
+	});
+
+	2、删除第一行时，第二行就不能点击了，那么不能点击的按钮怎么设置变灰？？
+	#questionTable tr:first-child .upOper {
+		background-color: red;
+	}
+	#questionTable tr:last-child .downOper {
+		background-color: red;
+	}
+
+
+Object.assign(targetObj, sourceObj):
+	--用于将所有可枚举属性的值从一个或多个源对象复制到目标对象，它将返回目标对象。
+	--用途：在完成页面数据初始化（initData）后，再将请求后台加载（loadData）的数据set到对应的属性里。
+	如：
+		const targetObj = {a: 1, b: 2};
+		const sourceObj = {b: 22, c: 3};
+		const tObj = Object.assign(targetObj, sourceObj);
+		console.log(targetObj == tObj); //true
+		console.log(targetObj); //{a: 1, b: 22, c: 3}
+		console.log(sourceObj); //{b: 22, c: 3}
+
+
+
+input标签：
+	autofocus --自动聚焦(js上使用element.focus()方法)
+
+datalist标签：
+	为input标签提供热点输入。
+	// 使用：
+	<input type="text" name="cc" list="ccList">
+	<datalist id="ccList">
+		<option value="test1"></option>
+		<option value="test2"></option>
+		<option value="test3"></option>
+		<option value="test4"></option>
+		<option value="aaaa"></option>
+	</datalist>
+
+
+横向状态条：
+	<meter name="base" value="6" min="0" max="10"></meter>
+
+操作类样式：
+	element.classList.add('aa');
+	element.classList.add('aa', 'bb'); //添加多个
+	element.classList.remove('aa');
+	element.classList.remove('aa', 'bb'); //移除多个
+	element.classList.contain('aa'); //包含
+	element.classList.toggle('aa');
+
+sessionStorage(5M大小)和localStorage(20M):
+	setItem(key, value);
+	getItem(key, value);
+	removeItem(key, value);
+	clear();
+
+
+全选/取消全选触发事件：
+	mui(document.body).on('change', '[name="surveyId"]', function() {
+		this.checked ? selectSum++ : selectSum--;
+		document.getElementById('selectSum').textContent = selectSum;
+	});
+	document.getElementById('selectAll').addEventListener('change', function() {
+		var thisChecked = this.checked;
+		mui('#surveyItems [name="surveyId"]').each(function() {
+			if (this.checked ^ thisChecked) {
+				this.checked = thisChecked;
+				mui.trigger(this, 'change');
+			}
+		});
+	});
+
+
+正则表达校验：
+	--1.html元素
+	<input type="text" name="aaa" validReg="^\d{6}$">
+	--2.js校验
+	var inputNode = document.querySelector('[name="aaa"]');
+	var validReg = inputNode.getAttribute('validReg');
+	if (validReg) {
+		if (!(new RegExp(validReg, 'g')).test(inputNode.value)) {
+			alert("不通过");
+		}
+	}
+	--写法：(直接写时需要注意转义)
+	var regStr = '^\\d{6}$';
+	var reg = new RegExp(regStr); //写法一（推荐）
+	//var reg = eval('/' + regStr + '/'); //写法二（不推荐，性能差）
+	console.log(reg.test('11223')); //false
+	console.log(reg.test('112233')); //true
+	console.log(reg.test('11223344')); //false
+
+
+
+
+js变量：
+	var name = "test";
+	var lastname="test", age=30, job='boss';
+	var x,y,z=1; //不能这样赋值(x,y为undefined，z为1)
+	var name; console.log(name); //输出undefined
+
+null和undefined比较：
+	undefined表示变量声明了但未赋值，null表示该变量的值设置为null
+	var person; //值为undefined，类型为undefined
+	var person = null; //值为null，但类型为对象
+	当使用完一个比较大的对象时，需要对其进行释放内存时，设置为null。
+	typeof返回的是字符串，有六种可能："number"、"string"、"boolean"、"object"、"function"、"undefined"
+
+||用法：
+	var aa; //aa为undefined类型
+	var test = aa || {name: 'name1'}; //test为{name: 'name1'}
+	var bb = null; //bb为null
+	var test = bb || {name: 'name1'}; //test为{name: 'name1'}
+
+
+变量作用域：
+-1）局部变量：
+	--在函数内部声明的变量（使用var）是局部变量，所以只能在函数内部访问它。局部变量在函数运行结束后删除。
+	例如：
+		// 此处不能调用carName变量
+		function fun() {
+			var carName = 'carName';
+			// 函数内可调用carName变量
+		}
+-2）全局变量：
+	--在函数外声明的变量是全局变量，网页上的所有脚本和函数都能访问它。全局变量在页面关闭后删除。
+	在html中，全局变量是window对象，所有数据变量都属于window对象。
+	注：若变量在函数内没有声明（没有使用var关键字），该变量未全局变量
+	实例1：
+		var carName = 'carName';
+		// 此处可调用carName变量
+		function fun() {
+			// 函数内可调用carName变量
+		}
+	实例2：
+		function fun() {
+			carName = 'carName';
+			// 此处可调用carName变量
+		}
+		fun(); console.log(carName); //此处调用carName，前提是必须先调用fun函数
+-3）向未声明的js变量分配值：
+	--若把值赋给未声明的变量，该变量将被自动作为window的一个属性
+	carName = 'volvo'; //将声明window的一个属性carName
+
+js数据类型：
+	基本类型：字符串(String)、数字(Number)、布尔(Boolean)、对空(Null)、未定义(undefined)、Symbol(ES6引入)
+	引用类型：对象(object)、数组(array)、函数(function)
+	prototype关键字：允许向对象添加属性
+	isNaN(x) --判断x是否为数字，false-表示能转整数，true-表示不是数字
+		isNaN('123') //false
+		isNaN('-0.23') //false
+		isNaN('hello') //true
+	数据类型转换：
+		布尔转数字：Number(false);//返回0 Number(true); //返回1
+		布尔转字符串：String(false); //返回"false" String(true); //返回"true"	
+
+函数声明(function)：
+1）方式一
+	function aMethod(x) {
+		return x.aa + "##" + x.bb;
+	}
+	window.globalFun = aMethod;
+	globalFun({aa: '123', bb: '456'});
+2）方式二
+	window.globalFun = {
+		min: function(a, b) {
+			return a > b ? b : a;
+		},
+		max: function(a, b) {
+			return a > b : a : b;
+		}
+	}
+	globalFun.min(2, 3); //使用
+	globalFun.max(2, 3);
+
+
+Map和Set:
+1.Map分析
+	var m = new Map();
+	m.set('admin', '24');
+	m.get('admin'); //返回'24'
+	m.has('admin'); //判断是否存在key='admin'
+	m.delete('admin'); //删除key='admin'
+	m.get('admin'); // undefined
+2.Set分析
+	var s1 = new Set(); // 空Set
+	var s2 = new Set([1, 2, 3]); // 含1, 2, 3
+3.遍历
+	具有iterable类型的集合可以通过新的for ... of循环来遍历。
+	for (var x of s) { // 遍历Array、Set、Map
+	    alert(x);
+	}
+
+js对象：
+	var person = {
+		name: 'test',
+		birthday: '1995-03-20',
+		gender: '男',
+		getPerson : function() {
+			return '姓名：' + this.name + '性别' + this.gender;
+		}
+	};
+	person.name 或 person["name"] //访问对象属性
+	person.getPerson() //访问对象方法
+	person.email = 'test@qq.com'； //添加对象属性
+	person.setName = function(name) { this.name = name} //添加对象方法
+
+js对象特殊使用：
+	--通过json数据初始化input节点的值
+	1）编辑inputNodeService.js文件：
+		(function(self) {
+			self.initPageData = function(items){
+				for (var item of items) {
+					if (item.type == 'radio') {
+						document.querySelector('[name='+item.name+'][value='+item.value+']').checked = true;
+					} else if (item.type == 'checkbox') {
+						var values = item.value;
+						for (var i of values) {
+							document.querySelector('[name='+item.name+'][value='+i+']').checked = true;
+						}
+					} else { //type="text"或者type="hidden"
+						document.querySelector('[name='+item.name+']').value = item.value;
+					}
+					
+				}
+			}
+		})(window.inputNodeService = {});
+	2）使用：
+		--前提：引入inputNodeService.js文件
+		var items = [{name: 'textName', value: 'text1', type: 'text'},
+			{name: 'textName', value: '2', type: 'radio'},
+			{name: 'textName', value: ['2', '3', '4'], type: 'checkbox'}]
+		inputNodeService.initPageData(items);
+
+document.querySelector('input[name="writeWay"]:checked').value; //获取radio标签的值
+document.querySelector('[name='+item.name+']').value //获取input标签的值
+
+
+正则表达式：
+	https://www.runoob.com/js/js-regexp.html --未完成！！！
+
+
+localStorage存储对象(object)：
+	--附：localStorage只能存储String类型，若要存储Object类型时需要转成String类型
+	var obj = {surveyType: '1', personName: 'personName'};
+	obj.healthNo = 'healthNo';
+	localStorage.setItem('NEW_INFE_SURVEY', JSON.stringify(obj)); //存入
+	obj = JSON.parse(localStorage.getItem('NEW_INFE_SURVEY')); //取出
+	console.log(obj);
+
+
+
+
+
+scrollIntoView()方法：
+	相关教程：https://blog.csdn.net/weixin_42895400/article/details/81539931
+	ps：根据其它元素的布局，元素可能无法完全滚动到顶部或底部
+	tips：页面可滚动时才有用！
+	语法：
+		element.scrollIntoView(); //等同于element.scrollIntoView(true);
+		element.scrollIntoView(alignToTop);
+			true-默认，滚动到顶部，对应scrollIntoViewOptions: {block: "start", inline: "nearest"}
+			false-滚动到底部，对应scrollIntoViewOptions: {block: "end", inline: "nearest"}
+		element.scrollIntoView(scrollIntoViewOptions); //参数scrollIntoViewOptions: {behavior: xx, block: xx, inline: xx}
+			behavior-定义过度动画。取值：auto(默认)、instant、smooth
+			block-取值：start、center(默认)、end、nearest
+			inline-取值：start、center、end、nearest(默认)
+	使用：
+		document.querySelector('#myDivId').scrollIntoView(true) //滚动到顶部
+		document.querySelector('#myDivId').scrollIntoView(false) //滚动到底部
+		document.querySelector('#myDivId').scrollIntoView({}) //滚动到中部
+
+
+
+节点操作：
+1.创建节点：
+	var pNode = document.createElement("p"); //创建节点
+	var textNode = document.createTextNode("创建文本节点..."); //创建文本节点
+2.添加节点
+	parentNode.appendChild(newNode); //末尾追加新节点，parentNode-父节点，newNode-新节点
+	parentNode.appendChild(childNode, newNode); //在childNode节点前添加新节点
+3.删除节点
+	parentNode.removeChild(childNode); //删除子节点
+	childNode.parentNode.removeChild(childNode); //删除子节点（不需要知道父节点）
+	parentNode.replaceChild(childNode, newNode); //替换旧节点
+4.复制节点
+	var newNode = node.cloneNode(true|false); //true-复制当前节点及子节点，false-仅复制当前节点
+
+子节点/父节点/兄弟节点：
+1.获取子节点
+	--附：childNodes和firstChild会把换行和空格当成是节点信息（慎用！！）
+	document.getElementById("test").childNodes; //获取子节点集合
+	document.getElementById("test").firstChild; //获取第一个子节点(慎用)
+	document.getElementById("test").firstElementChild; //获取第一个子节点(常用)
+	document.getElementById("test").lastChild; //获取最后一个子节点(慎用)
+	document.getElementById("test").lastElementChild; //获取最后一个子节点(常用)
+2.获取父节点
+	document.getElementById("test").parentNode; //获取父节点
+3.获取兄弟节点
+	--附：previousSibling和nextSibling会把换行和空格当成是节点信息（慎用！！）
+	document.getElementById("test").previousElementSibling; //获取上一个兄弟节点
+	document.getElementById("test").previousSibling; //获取上一个兄弟节点(慎用)
+	document.getElementById("test").nextElementSibling; //获取下一个兄弟节点
+	document.getElementById("test").nextSibling; //获取下一个兄弟节点(慎用)
+
+查找节点获取:
+	document.forms; //选取页面中的所有表单元素
+	--重点：getElementBy和querySelector的单个使用和配合使用！！！
+	document.getElementById(id); //通过id属性获取单个元素
+	document.getElementsByName(name); //通过name属性获取多个元素
+	document.getElementsByClassName(className); //通过class样式获取多个元素
+	document.getElementsByTagName(tagName); //通过标签获取多个元素
+	querySelector(selector); //获取指定“css选择器”的第一个元素
+	querySelectorAll(selector); //获取指定“css选择器”的多个元素
+实例：
+	<div id="div1" class="div1">
+		<span>span...</span>
+		<h1>h1...</h1>
+		<div>
+			<h2>h2...</h2>
+		</div>
+	</div>
+	var div1Node = document.querySelector(".div1"); //获取div元素
+	var spanNode = document.querySelector(".div1").querySelector("span"); //获取div元素的单个span子节点
+	var spanNodes = document.querySelector(".div1").getElementsByTagName("span"); //获取div元素的多个span子节点
+	document.querySelector("#div1").lastElementChild.querySelector("h2").textContent; //输出：h2...
+
+属性选择器：
+	[title]或[name="username"]
+	[name^="conditions"]	--开头是coditions
+	[name$="type"]			--结尾是type
+
+添加样式：
+	elemen.style.display = 'none';
+	element.style.cssText += 'height: 100px !important'; //添加样式
+	element.className += ' class3'; //注意前面空格
+	--添加/移除样式
+	element.classList.add("active");
+	element.classList.remove("active");
+	$("#mydiv").addClass('zz-full-right'); //jQuery写法
+
+
+页面调试(debug)：
+	F8	恢复运行
+	F10	步过，遇到自定义函数也当成一个语句执行，而不会进入函数内部
+	F11	步入，遇到自定义函数就跟入到函数内部
+	Shift + F11	步出，跳出当前自定义函数
+
+
+
+js的window对象：
+	所有JavaScript全局对象、函数、以及变量均自动成为window对象的成员。
+	全局变量是window对象的属性，全局函数是window对象的方法。
+
+
+
+判断是否存在元素时：
+var selectObj = $("#div1").find("select");
+if (!selectObj.length) { //注意写法
+	alert("有元素");
+}
+
+var username = "";
+if (!username) { //注意写法
+	alert("username不为空")
+}
+
+
+
+js日期：
+创建日期：
+	new Date("2018-02-12");	--格式：“yyyy-mm-dd”、“yyyy/mm/dd”两种
+	new Date('2018-02-06 00:00:00') --格式：'yyyy-MM-dd hh:mm:ss'
+输出日期：
+	new Date().toLocaleDateString();	--输出格式：如2018/11/3
+获取今天的0时0分0秒（常用于开始日期的获取）
+	new Date(new Date().toLocaleDateString());
+获取今天的23点59分59秒
+	new Date(new Date(new Date().toLocaleDateString()).getTime() + 24 * 60 * 60 * 1000 -1);
+获取前一天日期：
+	new Date(new Date().setDate(new Date().getDate()-1)); //方法一
+	var currentDate = new Date("2018-11-13"); //方法二
+	var preDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()-1);
+获取一个月前的日期：
+	new Date(new Date().setMonth(new Date().getMonth()-1)); //方法一
+	var currentDate = new Date("2019-01-13"); //方法二
+	var preMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() -1, currentDate.getDate());
+获取一个月的最后一天：
+	var date = new Date("2018", "12", 0); //0代表最后一天
+	alert(date1.getDate());
+
+jsp中日期转换：
+	<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+	<fmt:formatDate value="${exam.dtmcreatetime}" pattern="yyyy-MM-dd HH:mm:ss"/>
+
+js比较日期大小：
+	var d1 = new Date($("#beginDate").val());    
+	var d2 = new Date($("#endDate").val()); 
+	if(d1 >= d2) {
+		alert("开始时间不能大于结束时间！");
+		return;
+	}
+
+日期格式化：
+	--1.日期转字符串
+	function format(dateObj, formatType) {
+		// formatType格式为 yyyy-mm-dd HH:MM:ss
+		var fillZero = function(num) {
+			return (num < 10) ? ('0' + num) : num;
+		}
+		formatType = formatType.replace('yyyy', dateObj.getFullYear());
+		formatType = formatType.replace('mm', fillZero(dateObj.getMonth() +1));
+		formatType = formatType.replace('dd', fillZero(dateObj.getDay()));
+		formatType = formatType.replace('HH', fillZero(dateObj.getHours()));
+		formatType = formatType.replace('MM', fillZero(dateObj.getMinutes()));
+		formatType = formatType.replace('ss', fillZero(dateObj.getSeconds()));
+		return formatType;
+	}
+	console.log(format(new Date('2018-02-30'), 'yyyy/mm/dd HH:MM'));
+
+	--2.字符串转日期
+	function parse(dateStr) {
+		var a = dateStr.split(/[^0-9]/);
+		return new Date(a[0], a[1] -1, a[2], a[3], a[4], a[5]);
+	}
+	console.log(parse('2018/2/10 19:20:30'));
+
+日期合法性校验：
+	//date格式：合法日期(如2018-02-28、2018/02/03)；不合法日期(如2018-02-31) ！！！
+	function checkDate(date) {
+		return (new Date(date).getDate()==date.substring(date.length-2)); //注（"03" == 3）为true
+	}
+
+
+
+问题：Cannot set property 'innerHTML' of null?
+解决：window.onload = function() { ...//表示页面加载完再执行js }
+
+
+js上使用EL表达式：(两种方式)
+方式一：
+	<c:if test="${currentUser.userTypeConstructionOwner}">
+		$("input[name='entrustStatus']").attr("disabled", "disabled");
+	</c:if>
+方式二：
+	if("${currentUser.userTypeConstructionOwner}" == "false") {
+		$("input[name='entrustStatus']").attr("disabled", true);
+	}
+
+
+JSON转换：
+	JSON.parse(str); --从一个字符串中解析出json对象
+	JSON.stringify(obj); --从一个对象解析出字符串
+
+
+有A、B、C三个任务，要求：A和B异步执行，二者都完成后执行C：
+	方法一：给定一个计数器为2，A，B任务完成后，把计数器减去1，如果为0，则去指定C
+	方法二：使用promise！！
+
+
+
+使用ajax提交整个form表单的值：
+$.ajax({
+	url: ajaxUrl,
+	data: $('#inputForm').serialize(), //form表单
+	type: "POST",
+	async: false,	//true-异步，false-同步
+	success: function(data) {
+		$("#content").parent().html(data);
+	}
+});
+
+
+三种弹框：
+	警示框：alert()	确认框：confirm()	提示框：prompt()
+
+button不可点击：
+	html控制： <button id="button_id"  disabled>保存</button>  
+	jquery控制： $("#button_id").attr('disabled',true);  
+
+
+checkbox事件：
+	--注：不能使用tip点击事件！！！
+	--1.checkbox勾选时，它所在同一行的所有input节点才可以编辑，否则是不可编辑状态
+	mui(document.body).on('change', '[name="hbvKinds"]', function() {
+		// 排除自身后的所有input节点
+		var inputNodes = this.parentNode.querySelectorAll('input:not([name=hbvKinds])');
+		for (var inputNode of inputNodes) {
+			inputNode.value = '';
+			inputNode.disabled = !this.checked;
+		}
+	});
+
+复选框回显：
+方式一：
+	$("input:checkbox[value='"+array[i]+"']").attr('checked', true);
+方式二：
+	<c:set var="dataTypes" value=",${dataType}," />
+	<c:forEach items="${templates}" var="template" varStatus="status">
+		<label class="data-type-label">
+			<c:set var="v_code" value=",${template.id}," />
+			<input type="checkbox" name="dataType" value="${template.id}" 
+				<c:if test="${fn:contains(dataTypes,v_code)}">checked</c:if>>${template.templateName}
+		</label>
+	</c:forEach>
+判断是否存在复选框勾选：
+	if ($('input[name="fruit"]:checked').length > 0) { ...//存在勾选 }
+js传复选框(数组)到controller层：
+1.js部分：
+	var templateIdSel = [];
+	$('[name="templateId"]:checked').each(function(){ //checkbox标签元素
+		templateIdSel.push($(this).val());
+	});
+2.后台部分
+	public List<DataTemplate> getTemplateIdSel(String bcType, String[] templateIdSel) {
+		...
+	}
+
+
+替换数组下标:正则表达式
+>>描述:每一个tr对应一个数组元素，tr里面有很多input、select标签，初始的name属性都相同(如:conditions[0].operationCode)，现在需要改变其下标
+var $trs = $table.find("tr:gt(0)");
+$trs.each(function (index) {
+	var trIndex = index;
+	$(this).find("[name]").each(function (index) {
+		$(this).attr("name", $(this).attr("name").replace(/\[\d*\]\./, "[" + trIndex + "]."));
+	});
+});
+
+点击页面外面元素触发事件：
+	$(document).on('click', function (event) {
+        // 当点击的元素不是dcaAdviceVaccineId时，将提示框隐藏
+        if (!$(event.target).is($("#dcaAdviceVaccineId"))) {
+            $('#vaccineOpts').css('display', 'none');
+        }
+    })
+
+
+
+***********************************************************************************
+js使用技巧：
+
+js Array数组对象：
+	API详情：https://www.runoob.com/jsref/jsref-obj-array.html
+	every()
+	filter()	--检测数值元素，并返回符合条件所有元素的数组
+	map()	--通过指定函数处理数组的每个元素，并返回处理后的数组
+	sort()/reverse() --排序，反转
+	some()
+	reduce()
+	str.padStart(len, subtr)/padEnd(len, subtr) --补位函数。如"7".padStart(2, '0')结果为07
+
+
+# 截断字符串
+	--大于num后使用“...”代替
+	const truncate = (str, num) => str.length > num ? str.slice(0, num > 3 ? num - 3 : num) + '...' : str;
+	truncate("1234567", 7); //"1234567"
+	truncate("12345678", 7); //"1234..."
+
+
+# JS对象转url查询字符串
+	const objectToQueryString = (obj) => Object.keys(obj).map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`).join('&');
+	objectToQueryString({name: 'Jhon', age: 18, address: 'beijing'}); //name=Jhon&age=18&address=beijing
+
+
+# 数组交集
+	const similarity = (arr, values) => arr.filter(v => values.includes(v));
+	similarity([1, 2, 3], [1, 2, 4]); // [1,2]
+
+# 数字转化为千分位格式
+	const toDecimalMark = num => num.toLocaleString('en-US');
+	toDecimalMark(12305030388.9087) //"12,305,030,388.909"
+
+
+# 驼峰字符串格式化
+	const formatStr = (str, separator = '_') =>str.replace(/([a-z\d])([A-Z])/g, '$1' + separator + '$2').replace(/([A-Z]+)([A-Z][a-z\d]+)/g, '$1' + separator + '$2').toLowerCase();
+	console.log(formatStr("aaBbCcDd12Ee")); //aa_bb_cc_dd12_ee
+
+
+# 数组去重
+	const deDupe = (arr) => [... new Set(arr)];
+	console.log(deDupe([1, 1, 2, 2, 3, 4, 4])); //[1, 2, 3, 4]
+
+# 数组里的对象去重
+	const uniqueArrayObj = (arr, fn) => arr.reduce((acc, v) => {if (!acc.some(x => fn(v, x))) acc.push(v); return acc;}, []);
+	--测试
+	var arr = [{id: 1, name: 'aa'}, {id: 2, name: 'bb'}, {id: 1, name: 'bb'}];
+	console.log(uniqueArrayObj(arr, (a, b) => a.id == b.id)); //[{id: 1, name: 'aa'}, {id: 2, name: 'bb'}]
+
+
+# 过滤数组元素
+	const reducedFilter = (data, keys, fn) =>data.filter(fn).map(el =>keys.reduce((acc, key) => {acc[key] =el[key];return acc;}, {}));
+	const data = [
+		{id: 1, name: 'name1', age: 24},
+		{id: 2, name: 'name2', age: 30}
+	];
+	let a = reducedFilter(data, ['id', 'name'], item => item.age > 24); //[{id: 2, name: "name2"}]
+
+# 常用密码组合正则
+	--长度8~20位字符，支持大小写字母、数字、符号三种字符中任意两种字符的组合
+	const passwordReg = /(?!^(\d+|[a-zA-Z]+|[~!@#$%^&*?]+)$)^[\w~!@#$%^&*?]{8,20}$/;
+
+# 判断dom元素是否具有某个className
+	const  hasClass = (el, className) => new RegExp(`(^|\\s)${className}(\\s|$)`).test(el.className);
+	console.log(hasClass(document.getElementById('myDiv'), 'class-name')); //测试
+
+
+// obj = {}; //返回false
+// obj = {a: xxx}; //返回true
+function isObjectNotEmpty(obj) {
+	if (Object.keys(obj).length === 0) {
+	    return false // 如果为空,返回false
+	}
+	return true; // 如果不为空，则会执行到这一步，返回true
+}
+
+
+if (data) //data为false/0/""/null/undefined/NaN时，都会自动转换为false！
+
+1.&&使用
+	if (test1()) {test2()}  ==>可使用替代： test1() && test2();
+
+2.缺省值
+	例如: a = a || 'defaultValue';
+	console.log(5 || 2); //5
+	console.log(0 || 2); //2 注：传参是0会使用默认值
+	console.log('' || 'test'); //test
+	console.log(null || 'test'); //test
+	console.log(undefined || 'test'); //test
+	ES6版本: 
+		function test(x = 2) { ... }
+		test(); //2
+		test(0); //0
+		test(3); //3
+2.类型转换
+-1）使用!!转boolean类型
+	!!0			//false
+	!!1 		//true
+	!!null		//false
+	!!undefined //false
+	!!{}		//true
+-2）使用+转number
+	typeof +'12.34'; //number
+	+new Date(); 	//得到time
+
+-3）其它
+	['1', '2'].map(Number) //[1, 2] --字符串转数字
+	[1, 2].map(String) //["1", "2"] --数字转字符串
+	
+
+
+3.JSON.stringify()函数
+	参数1 --JSON对象
+	参数2 --用来对属性值进行处理
+	参数3 --用来输出的json字符串的缩进长度
+	例如：
+		var jsonObj = {name: 'testAA', age: 23};
+		var jsonStr = JSON.stringify(jsonObj, (key, value) => key === 'name' ? 'testAAA' : value, 2);
+		console.log(jsonStr);
+
+4.遍历对象
+	var obj = {name: 'testAA, age: 23};
+	for (var [key, value] of Object.entries(obj)) {
+		console.log(key + ' ' + value);
+	}
+
+5.立即执行函数
+	--目的：让我们的代码中的变量不污染外部的变量
+	// 使用括号函数括起来调用
+	(function(window, $) {
+		...
+	}) (window, jQuery);
+	// 更优雅写法。在前面写+,-,*,~等
+	! function(window, $) {
+		...
+	} (window, jQuery);
+
+6.获取随机字符串
+	--去除“0.”两个字符：截取下标2开始后的字符串
+	--36进制可以制造字符种类更多些的随机字符串
+	Math.random().toString(16).substr(2) //13位=> e979f03f318cf
+	Math.random().toString(36).substring(2) //11位=> ic6b4eldn1
+
+	let x = Math.random() * (max - min) + min; //获取随机数
+
+	const code = _ => Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
+	code(); //"168009" -随机生成六位数字验证码
+
+	const uuid = _ => ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+	uuid(); //"7846c6fd-a591-459b-abec-4a1bbdc43391" --uuid生成
+
+
+7.合并对象
+	--通过“...”延展操作符合并对象
+	var aa = {a: 'testAA', b: 'testBB'};
+	var bb = {b: 'testBBB', c: 'testCC'};
+	var cc = {...aa, ...bb}; //{a: "testAA", b: "testBBB", c: "testCC"}
+实例2：
+	--模拟请求返回后数据渲染
+	var test = {a: null, b: null, c: null, d: null}; //初始化变量
+	var aa = {a: 'testAA', b: 'testBB', c: 'testCC'}; // 请求返回后数据
+	test = {...test, ...aa};
+	console.log(test);
+实例3：
+	--返回原始对象地址（浅复制）
+	Object.asign(targetObj, sourceObj);
+
+
+8.===比==快
+	==和!=操作符会在需要的情况下自动转换数据类型
+	===和!==不会，同时会比较数值和数据类型。
+***********************************************************************************

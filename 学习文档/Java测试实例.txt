@@ -1,6 +1,3 @@
-
-
-
 实例：
 	String str1 = "hello";
 	String str2 = "java";

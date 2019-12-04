@@ -1,0 +1,202 @@
+详情：
+	https://blog.csdn.net/fengyuzhengfan/article/details/82714294
+
+ES6特性：
+1.let和const
+	js的作用域有三种：全局作用域、方法作用域、块作用域（如for循环的{}）
+	var的作用域只有全局跟方法，当声明在块作用域里变量在外面也能调用哦！
+	let声明变量，const声明常量，它们的作用域是{}，即仅在{}内生效。const的变量一旦被赋值就不能再修改。
+
+2.箭头函数(=>)
+	好处：箭头函数与包围它的代码共享同一个this,能帮你很好的解决this的指向问题。
+	以前通过 var self = this; 引用外部this
+
+3.函数参数默认值
+	function fun(name, age) { //以前
+		var name = name || 'test';
+		var age = age || 24;
+	}
+	fun('', 0); //这样调用会使得name=test，age=24。
+	function fun(name = 'test', age = 24) { ... } //现在
+
+4.模板字符串
+	--用`（反引号：window键盘tab键上面的键）标识，用${}将变量（可以是对象、数组、或函数）括起来。支持换行，支持嵌套另一模板字符串
+	let name = 'testAA', age = 23;
+	let str = 'your name is '+name+' and age is '+age; //以前
+	let str = `your name is ${name} and age is ${age}`; //现在
+
+	let trStr = `<tr>
+			<td>${obj.index}</td>
+			<td>${obj.name}</td>
+		</tr>`;
+
+	--测试使用函数
+	function fun(name) { return 'test fun('+name+')'; }
+	let name = 'testAA';
+	let str = `测试函数：${fun(name)}`; //测试函数：test fun(testAA)
+
+5.解构赋值
+	--快速取得数组或对象中的元素或属性，无需使用arr[i]或obj[key]等传统方式进行赋值。可与扩展操作符连用！
+	--1）解构数组
+	let arr = [1, 2, 3, 4];
+	let [a, ...rest] = arr; //a=1 rest=[2, 3, 4]
+	--2）解构对象
+	let student = {a: 'aa', b: 'bb', c: 'cc'};
+	let {a, c} = student; //a='aa' c='cc'
+	let {b, ...rest} = student; //b='bb' rest={a: 'aa', c: 'cc'}
+
+
+6.扩展操作符(...)
+	把数组/对象展开成一系列逗号隔开的参数序列，与rest运算符相反。
+	应用场景：
+		function fun(x, y, z) { return x+y+z; }  console.log(fun(...[1, 2, 3])); //函数调用。输出6
+		let arr = [1, 2, ...arr1, ...arr2]; //合并数组
+		arr1.push(...arr2); //将一个数组添加到另一个数组尾部
+
+		let obj1 = {name: 'aa', x: 2}, obj2 = {name: 'bb', y: 3};
+		let obj = {...obj1, ...obj2}; //合并对象{name: "bb", x: 2, y: 3}
+		等价于let obj = Object.assign({}, obj1, obj2);
+
+7.对象属性缩写
+	const name='Ming',age='18',city='Shanghai';
+	const student = {name:name, age:age, city:city} //以前
+	const student = {name, age, city} //现在
+
+8.Promise
+	--1.嵌套两个setTimeout回调函数，存在回调地狱
+	setTimeout(function() {
+		console.log('hello'); //1秒后输出“hello”
+		setTimeout(function() {
+			console.log('Hi'); //2秒后输出“Hi”
+		}, 1000);
+	}, 1000);
+	--2.使用Promise
+	var waitSecond = new Promise((resolve, reject) => {
+		setTimeout(resolve, 1000);
+	});
+	waitSecond.then(function() {
+		console.log('hello'); //1秒后输出“hello”
+		return waitSecond;
+	}).then(function() {
+		console.log('Hi'); //2秒后输出“Hi”
+	});
+	--实例2：微信小程序使用promise封装request
+	--1）封装wx.request方法(utils.js)
+	const requestPromise = myUrl => {
+		// 返回一个Promise实例对象
+		return new Promise((resolve, reject) => {
+			wx.request({
+				url: myUrl,
+				success: res => resolve(res);
+			})
+		})
+	}
+	// 把这个函数放在了utils.js中，这样在需要时可以直接引入
+	module.exports = requestPromise
+	--2）使用
+	const utilApi = require('../../utils/utils.js')
+	Page({
+		...
+		onLoad: function() {
+			utilApi.requestPromise('https://www.bilibili.com/index/ding.json').then(res => {
+				console.log(res.data);
+				this.setData({
+					myData: res.data
+				});
+				this.loadMyData();
+			});
+		}
+	})
+
+
+9.类(class)
+	class Animal {
+		// 构造函数，实例化时会被调用，如果不指定，那么会有一个不带参数的默认构造函数
+		constructor(name, color) {
+			this.name = name;
+			this.color = color;
+		}
+		//toString是原型对象上的属性
+		toString() {
+			console.log("name:", name, " color:", color); //name: 123  color: 456
+		}
+	}
+	var animal = new Animal('dog', 'white'); //实例化
+	animal.toString(); //输出“name: dog  color: white”
+	console.log(animal.hasOwnProperty('name')); //true
+	console.log(animal.hasOwnProperty('toString')); //false
+	console.log(animal.__proto__.hasOwnProperty('toString')); //true
+
+	class Cat extends Animal { ... } //继承类
+
+10.模块化(Module)
+	模块化的功能主要由export和import组成。
+	每个模块都有自己单独的作用域，模块之间的相互调用关系是通过export来规定模块对外暴露的接口，通过import来引用其它模块提供的接口。
+	1）导出(export)
+		export var provinceDate = ['1', '2', '3']; //导出变量
+		export const sqrt = Math.sqrt; //导出常量
+
+		var name = 'test1'; var age = 24; 
+		export {name, age}; //同时导出多个变量
+		export function fun(name) { return name; } //导出函数
+	2）导入(import)
+		import provinceDate from './province-data/province.js';
+
+
+
+ES7特性：
+1.Array.prototype.includes()
+	--判断数组是否包含一个指定的值，true-包含，false-不包含
+	arr.includes(x) 等价于 arr.indexOf(x) >= 0
+2.指数操作符(**)
+	2**10 等价于 Math.pow(2, 10)
+
+
+
+ES8特性：
+1.async/await
+	--获取异步函数的返回值。异步函数本身会返回一个Promise，所以我们可以通过then来获取异步函数的返回值
+	--实例2：
+	function charCount(data) {
+		return new Promise((resolve, reject) => {
+			setTimeout(() => {
+				resolve(data.length);
+			}, 1000);
+		});
+	}
+	async function charCountAdd(data1, data2) {
+		const length1 = await charCount(data1);
+		const length2 = await charCount(data2);
+		return length1 + length2;
+	}
+
+	async function test() {
+		let length = await charCountAdd('Hello','Hi'); //方法一
+		console.log(length);
+
+		charCountAdd('Hello','world').then(console.log); //方法二
+	}
+	
+	test(); //测试
+
+2.Object.values()
+	--返回Object自身属性的所有值的数组，不包括继承的值。
+	let obj = {a: 1, b: 2, c: 3};
+	let val = Object.keys(obj).map(key => obj[key]); //[1, 2, 3]
+	let val = Object.values(obj); //[1, 2, 3]
+
+3.Object.entries()
+	--返回一个给定对象自身可枚举属性的键值对的数组，遍历所有属性的key和value
+	const obj = {a: 1, b: 2, c: 3};
+	Object.keys(obj).forEach(key => { //以前
+		console.log('key:' + key + 'value:' + obj[key]); //key:a value:1
+	});
+	for(let [key, value] of Object.entries(obj)) { //现在
+		console.log(`key:${key} value:${value}`);
+	}
+
+4.String paddStart和paddEnd补位函数
+	str.padStart(length, substr)/padEnd(length, substr) 补位函数
+	如："7".padStart(2, '0'); //输出07
+	(new Date().getMonth() + 1).toString().padStart(2, '0'); //日期格式化
+

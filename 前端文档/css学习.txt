@@ -1,0 +1,174 @@
+
+css中的波浪号“~”、逗号“,”、加号“+”、大于号“>”理解：
+	p~ul //选择前面有p元素的每个ul元素。两种元素必须拥有相同的父元素
+	A>B  //css3特有，表示选择A元素的所有子B元素。与“A B”区别：A B选择所有后代元素，而A>B只选择一代
+	A+B  //选择相邻元素，选择A元素后面紧跟的B元素。两种元素必须拥有相同的父元素
+
+
+
+display: flex或inline-flex;
+flex-direction 	--主轴方向。取值：row|row-reverse|column|column-reverse
+flex-wrap		--若一条轴线排不下，如何换行。取值：nowrap（不换行，默认）、wrap（换行）、wrap-reverse
+flex-flow		--flex-direction和flex-wrap的简写形式，默认值：row nowrap
+justify-content	--主轴上的对齐方式。取值：flex-start | flex-end | center | space-between | space-around
+
+
+
+textarea设置paddin属性：
+	<view class="zz-textarea">
+		<textarea maxlength="200" placeholder="请记录您在备孕过程中的感想~" />
+		<view class="textarea-tip">还可输入22个字</view>
+	</view>
+	.zz-textarea textarea {
+		width:100%;
+		padding: 10px 0px 10px 10px;
+		border:1upx solid #ebebeb;
+		box-sizing:border-box;
+		-moz-box-sizing: border-box;
+		-webkit-box-sizing: border-box;
+	}
+	.zz-textarea .textarea-tip {
+		font-size: 24upx;
+		color: #c5c5c5;
+		text-align: right;
+	}
+
+
+
+flex布局使用：
+	--样式
+	.mydiv {
+		display:flex;
+	}
+	.mydiv > div {
+		flex: 1; //等份划分
+	}
+	--html部分
+	<div class="mydiv">
+		<div>1</div>
+		<div>2</div>
+		<div>3</div>
+	</div>
+
+
+左右分栏：
+.zz-item {
+	font-size: 12pt;
+	height: 33pt;
+	color: rgb(102, 102, 102);
+	display: flex;
+	justify-content: space-between;  
+}
+.zz-item > div:first-child {
+	padding-left: 20px;
+	width:206px;
+}
+.zz-item > div:last-child {
+	padding-right: 20px;
+}
+
+
+
+border属性、outline属性
+	格式： outline: outline-color outline-style outline-width
+	如：outline:#00ff00 solid thin;
+	outline	--轮廓，是绘制于元素周围的一条线，位于边框边缘的外围，可起到突出元素的作用。
+	附：轮廓线不会占据空间，也不一定是矩形。
+
+
+css选择器：
+div>p --选择父元素为 <div> 元素的所有 <p> 元素
+div+p --选择紧接在 <div> 元素之后的所有 <p> 元素
+[target=_blank] --选择 target="_blank" 的所有元素
+[title~=flower] --选择 title 属性包含单词 "flower" 的所有元素
+a[src^="https"] --选择其 src 属性值以 "https" 开头的每个 <a> 元素
+a[src$=".pdf"] 	--选择其 src 属性以 ".pdf" 结尾的所有 <a> 元素
+a[src*="abc"] 	--选择其 src 属性中包含 "abc" 子串的每个 <a> 元素
+
+p:first-child 	--选择属于父元素的第一个子元素的每个 <p> 元素
+p:last-child 	--选择属于其父元素最后一个子元素每个 <p> 元素
+
+>	--直接子选择器。
++	--相邻选择器。选择紧跟该元素后的第一个元素
+~	--匹配选择器。匹配所有该元素之后的同级元素
+
+
+内敛元素换行产生的空隙：
+	#livingDivisionBtnDiv {
+		display:table;
+		word-spacing:-1em;
+	}
+
+文本修饰
+	a {text-decoration: none} //a标签去掉下划线
+文本转变：
+	text-transform: 
+		none-无 
+		capitalize-每个单词以大写开头 
+		uppercase-全部大写 
+		lowercase-全部小写
+
+盒子影子：
+	div { box-shadow: 0 1px 1px #ccc; }
+边框圆角：
+	div { border-radius: 25px; }
+
+
+
+第一个子元素和最后一个子元素
+nav a:first-child{
+	color: red !important;
+}
+nav a:last-child{
+	color: red !important;
+}
+
+
+两个div叠在一起：
+	<div class="div1"></div>
+	<div class="div2"></div>
+	样式： .div2 {margin-top: -20px;}
+
+强制css样式:
+	.zz-content {
+		padding-top: 65px !important;
+	}
+
+
+内容居中：
+	text-align: center;
+内容上下/垂直居中：
+	--ie10以下别用、手机端随便用
+	.div1 {
+		display: flex;
+		align-items: center; //内容垂直居中
+		justify-content:center; //内容水平居中
+	}
+	--若内容需要右对齐时，不能使用上面的方法，可以使用line-height调节：
+		height: 33px;
+		line-height: 33px;
+
+
+div居中实例：
+-1.页面
+	<div class="div1">
+		<div class="div2">
+			div2内容
+		</div>
+	</div>
+-2.css
+	.div1 {
+		height: 500px;
+		background-color: blue;
+		position: relative;
+	}
+	.div2 {
+		position: absolute;
+		width: 300px;
+		height: 200px;
+		top: 50%;
+		left: 50%;
+		margin-left:-150px;
+		margin-top: -100px;
+		background-color: red;
+	}

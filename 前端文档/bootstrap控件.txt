@@ -1,0 +1,81 @@
+
+引入bootstrap：
+	<link rel="stylesheet" href="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="http://cdn.static.runoob.com/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+模态框(modal) 
+	举例: http://www.runoob.com/try/try.php?filename=bootstrap3-plugin-modal
+tabbable bootstrap 嵌套:
+	https://blog.csdn.net/qq_33988065/article/details/51690860
+
+
+有若干个异步任务，需要先做任务1，如果成功后再做任务2，任何任务失败则不再继续并执行错误处理函数。
+实例：job1.then(job2).then(job3).catch(handleError); //job1、job2和job3都是Promise对象
+
+
+bootstrap-select --带搜索功能的select标签
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
+例如：
+	<select class="selectpicker" data-live-search="true">
+		<option>aaa</option>
+		<option>bbb</option>
+		<option>ccc</option>
+	</select>
+
+
+bootstrap-multiselect 介绍:
+1.引入文件
+	bootstrap的js及css文件
+	bootstrap-multiselect的js及css文件
+2.基础属性
+	1)multiple  --是否多选，单选框radio 复选框checkboxes
+		设置: <select id="example-single" multiple="multiple">
+		解决单选框默认有值方式: 1、<select id="example1" size="2">  2、$('#example1').val('').multiselect()
+		默认选中(可设置多个选中值): <option value="3" selected>Option 3</option>
+
+	2)enableClickableOptGroups --设置为true时，optgroup能点击，从而选中同一组的多个选项
+		enableClickableOptGroups: true
+	3)enableCollapsibleOptGroups --设置为true时，optgroup可折叠
+		enableCollapsibleOptGroups: true
+	4)disableIfEmpty --设置为true时，无option不可点击
+		disableIfEmpty: true,
+		disabledText: 'Disabled ...'
+	5)dropRight --option在右边显示
+		buttonWidth: '400px',
+		dropRight: true
+	6)dropUp --下拉框在上面显示
+		maxHeight: 400,
+		dropUp: true
+	7)maxHeight --设置下拉框高度
+		maxHeight: 200
+
+3.options配置
+	1)onChange --更改选项时触发事件
+		onChange: function(option, checked, select) {
+			alert($(option).val());
+		}
+	2)onDropdownShow --在点击下拉框时触发的事件。(感觉能在点击时生成option)
+		onDropdownShow: function(event) {...}
+	3)onDropdownHide --在关闭下拉框时触发的事件
+		onDropdownHide: function(event) { ...}
+	4)buttonClass --设置样式
+		buttonClass: 'btn btn-link'
+	5)buttonWidth --设置button的宽度
+		buttonWidth: '400px'
+	6)enableFiltering --是否启动过滤器，用来动态过滤所有选项.
+		--可与includeSelectAllOption混用，或与optgroup结合
+		enableFiltering: true
+	7)numberDisplayed --多少option能被显示
+		numberDisplayed: 2
+	8)delimiterText --分隔符设置。默认为“,”
+		 delimiterText: ';'
+	9)optionLabel --重新设置option的显示标签
+		optionLabel: function(element) {
+			return $(element).html() + '(' + $(element).val() + ')';
+		}
+	10)optionClass --定义option样式
+	11)selectedClass --定义已选中的option样式
+		selectedClass: 'multiselect-selected'
+	12)includeSelectAllOption --是否启动选择全部
+		includeSelectAllOption: true
