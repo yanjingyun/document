@@ -1,0 +1,294 @@
+
+
+
+********************************************jsp模板********************************************
+常见的三个编译指令page、include、taglib
+
+EL表达式：
+	常见运算符：==(eq)、!=(ne)、<(lt)、>(gt)、<=(le)、>=(ge)、&&(and)、||(or)、!(not)
+	判断是否为空：${empty currentUser}
+	三目运算：${name == null ? '暂无数据' : name}
+	Jstl非空判断：<c:if test="${!empty list}">不为空</c:if>
+
+jsp页面中param参数
+	${param.XXX} //用来获取请求参数(url参数、request参数、session参数等)
+	例如：查询页面有个name=username的input标签，点击查询后返回到该页面，并能够将该input标签的值回显，则value="${param.username}"
+
+通过变量显示属性的值：
+	--前言：可能字段(fieldName)通过数据库配置出来，因此无法知道页面需要那些属性。
+	--1）servlet层
+	request.setAttribute("currentUser", new User());
+	request.setAttribute("fieldName", "username");
+	--2）jsp页面
+	传统：${currentUser.username}
+	现在：${currentUser[fieldName]}
+
+jsp调用Java静态属性
+	--1）Java类
+	public class Currents {
+		public static final String MAN = '2';
+	}
+	--2）jsp页面
+	<c:set var="manCode" value="<$=Currents.MAN>" />
+
+
+jsp自定义标签:
+	--1）新建自定义标签
+	--在WEB-INF/tags/zz目录下创建zzSelect.tag文件
+	<%@ tag language="java" pageEncoding="UTF-8"%>
+	<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+	<%@ attribute name="name" type="java.lang.String" required="true" %>
+	<%@ attribute name="checked" type="java.lang.String" %>
+	<select name="${name }">
+		<option>请选择...</option>
+		<option>请选择1...</option>
+		<option <c:if test="${checked}">checked</c:if>>请选择2..</option>
+	</select>
+	--2）测试
+	--在jsp页面引入该标签即可使用
+	// 注:tagdir表示文件夹路径
+	<%@ taglib prefix="zz" tagdir="/WEB-INF/tags/zz" %> //1.引入
+	<zz:zzSelect name="testSel" /> //2.使用
+
+
+Servlet的@PostConstruct和@PreDestroy注解
+	用于在方法上注解，每一个类仅能有一个，无参数，无返回值，非静态，只会执行一次；
+	
+	执行顺序->执行两次testServlet(http://localhost:8080/Test/testServlet)：构造方法->@PostConstruct注解的方法->init()方法->doGet/doPost方法(执行两次)->destroy()方法->@PreDestroy注解的方法
+
+	应用场景：在初始化Servlet时加载一些缓存数据等，数据用于本地保存。
+
+Hibernate中的@PrePersist、@PostPersist、@PreUpdate、@PreRemove等注解：
+	可以用于更新业务实体的创建时间、创建账号、最后修改时间、最后修改账号等属性。
+	entity基类：id、@PrePersist、@PreUpdate
+	业务对象基本属性类：创建时间、创建账号、最后修改时间、最后修改账号、乐观锁版本
+
+
+得到webapp路径：
+	pageContext ${pageContext.request.contextPath} //获取WEB应用名
+
+	// 得到webapp路径
+	String path = getServletContext().getRealPath("/") + "images/";
+	String filename = request.getParameter("filename");
+	File file = new File(path + filename);
+
+	// 获取真实路径，对应${项目目录}/uploads
+	String savepath = this.getServletContext().getRealPath("/WEB-INF/uploads");
+
+
+web.xml设置error-page属性：
+	<error-page>
+		<error-code>404</error-code>
+		<location>/WEB-INF/views/error/404.jsp</location>
+	</error-page>
+
+
+
+
+ 
+
+********************************************thymeleaf模板********************************************
+
+内置对象：
+	ctx	：上下文对象
+	vars ：上下文变量
+	locale ：上下文的语言环境
+	request ：（web环境）的HttpServletRequest对象
+	response ：（web环境）的HttpServletResponse对象
+	session ：（web环境）的HttpSession对象
+	servletContext ：（web环境）的ServletContext对象
+
+内置方法：
+	strings ：字符串方法，常用的Java方法它都有。比如：equals，equalsIgnoreCase，length，trim，substring，replace等；
+	numbers ：数值方法，常用的方法有：formatDecimal等；
+	bools	：布尔方法，常用方法有isTrue，isFalse等；
+	arrays	：数组方法，常用方法有toArray，length，isEmpty，contains，containsAll等；
+	lists/sets：集合方法，常用的方法有：toList，size，isEmpty，contains，containsAll，sort等；
+	maps	：对象方法，常用的方法有：size，isEmpty，containsKey，containsValue等
+	dates	：日期方法，常用的方法有：format，year，month，hour，createNow等。
+
+标准表达式语法(5种)：
+	${...}	--变量表达式
+	*{...}	--选择表达式
+	#{...}	--消息 (i18n) 表达式
+	@{...}	--链接 (URL) 表达式
+	~{...}	--片段表达式，主要用来页面布局的，支持两种语法：
+		~{templateName::fragmentName}
+		~{templateName::#id}
+		附：
+			templateName	--模板名，thymeleaf会根据模板名解析完整路径“/resources/templates/templateName.html”
+			fragmentName	--片段名，thymeleaf通过th:fragment声明定义块，即“th:fragment="fragmentName"”
+			id				--id选择器
+			代码块表达式需要配合th属性（th:insert,th:replace,th:include）一起使用：
+				th:insert	--将代码块片段整个插入到使用了th:insert的html标签中；
+				th:replace	--将代码块片段这个替换使用了th:replace的html标签中；
+				th:include 	--将代码块片段包含的内容插入到使用了th:include的html标签中。
+
+th:block	块，本身不属于元素。跟小程序开发的block元素差不多。
+th:fragment模板布局
+	模板中，通常会包含一些公共部分，如页面、页脚、公共菜单等，thymeleaf通过使用th:fragment属性来定义被包含的模板片段。
+
+
+接收Java参数:
+--1.js接收Java参数(使用“[[]]”)
+	http://localhost:9992/yfxx/question/form?id=45a95c8dbdb74bd8b672d76ab707b5ee
+	<script type="text/javascript" th:inline="javascript">
+		console.log([[${param.id}]]); //接收url中的id
+	</script>
+--2.html接收Java参数(两种写法)
+	<span th:text="${user.name}"></span>
+	<span> <img src='test.jpg' /> [[${user.name}]] </span>
+
+
+js的thymeleaf风格地址写法调整：
+	--前端，注意url写法
+	$.ajax({
+		url: [[@{|/yfxx/paper/exists-course-paper/${param.id}|}]],
+		success: function(result){
+			if (result) {
+				... //省略
+			}
+		}
+	});
+	--后端
+	@RequestMapping("/exists-course-paper/{id}")
+	@ResponseBody
+	public String existsCoursePaper(@PathVariable("id") String id) {
+		if (!StringUtils.isBlank(id) && paperService.existsCoursePaper(id)) {
+			return "存在课程使用了该试卷，不能删除";
+		}
+		return "";
+	}
+
+checkbox通过ajax传数据(接收数组参数)：
+方式一：
+	--1.前端
+	$('#deleteAllId').click(function() {
+		let deleteIds = [];
+		$('.selectAllClass:checked').each(function() {
+			deleteIds.push($(this).val());
+		});
+		if (!deleteIds.length) {
+			alert("最少勾选一个");
+			return;
+		}
+		$.ajax({
+			url: [[@{/yfxx/question/deleteAll}]],
+			data: {
+				ids: deleteIds
+			},
+			type: "post",
+			success: function(data) {
+				alert(data);
+				location.reload(true);
+			}
+		});
+	})
+	--2.后端
+	@RequestMapping("/deleteAll")
+	@ResponseBody
+	public String deleteAll(@RequestParam("ids[]") String[] ids) {
+		questionService.deleteAll(ids);
+		return Controllers.DELETED_SUCCESSFULLY;
+	}
+
+方式二：
+	var personIds = [];
+	$('[name="addHighQualityFlag"]:checked').each(function() {
+		personIds.push($(this).val());
+	});
+	$.ajax({
+		url: "${ctx}/person/addHypertensiveHighQuality",
+		data:{
+			personIds: personIds
+		},
+		traditional:true, // 是否使用传统的方式浅层序列化
+		type: "post",
+		async:false,
+		success: function(data) {
+			alert(data);
+		}
+	});
+	后台接收： addHypertensiveHighQuality(String[] personIds) { ... //省略 }
+
+
+
+a标签写法：
+	--考虑有上下文配置
+	<a th:href="@{|/manage/handbook/view/${person.id}|}">查看</a>
+
+thymeleaf局部变量新写法(thymeleaf-extras-with-dialect)：
+	thymeleaf生态：https://www.thymeleaf.org/ecosystem.html
+	详情：https://github.com/Antibrumm/thymeleaf-extras-with-dialect#300-snapshot
+	--以前使用th:with存储局部变量，若有多个使用“,”隔开，这种写法若存在很多局部变量时不好用。
+	th:with="a=${a},b=${b}" ==> 统一风格： with:a="${a}" with:b="${b}"
+	案例：
+		--1）引入jar包
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.mfrey.thymeleaf.extras.with</groupId>
+			<artifactId>thymeleaf-with-dialect</artifactId>
+			<version>3.0.1</version>
+		</dependency>
+		-2）使用
+		<html xmlns:th="http://www.thymeleaf.org" xmlns:with="http://www.thymeleaf.org/extras/with">
+		<body>
+			<!-- 以前写法 -->
+			<div th:with="hello='hello',helloWorld=${hello + ' World'}">
+				<div th:text="${hello}">hello值</div>
+				<div th:text="${helloWorld}">helloWorld值</div>
+			</div>
+			<!-- 现在写法 -->
+			<div with:hello="'hello'" with:helloWorld="${hello} + ' World'">
+				<div th:text="${hello}">hello值</div>
+				<div th:text="${helloWorld}">helloWorld值</div>
+			</div>
+		</body>
+
+
+
+thymeleaf引入公共静态资源：
+-1）公共资源文件(templates/fragment/resources.html)
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+	<title >标题...</title>
+	<script th:inline="javascript">
+		var currentDate=[[${#dates.format(new java.util.Date().getTime(), 'yyyy-MM-dd')}]];
+		var currentTime=[[${#dates.format(new java.util.Date().getTime(), 'yyyy-MM-dd HH:mm:ss')}]];
+	</script>
+
+	<link th:href="@{/resources/third/bootstrap/bootstrap.min.css}" type="text/css" rel="stylesheet" />
+	<link th:href="@{/resources/third/bootstrap/bootstrap.datetimepicker.min.css}" type="text/css" rel="stylesheet" />
+
+	<script type="text/javascript" th:src="@{/resources/third/jquery-3.1.1.js}"></script>
+	<script type="text/javascript" th:src="@{/resources/third/jquery.validate.min.js}"></script>
+</html>
+-2）引入
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<th:block th:replace="fragment/resources" />
+</head>
+<body> ... </body>
+</html>
+
+
+
+调用Java静态方法/静态变量：
+	--1）Java方法
+	public class CodeName {
+
+		public static final String PRE_TEST_CODE = "测试调用静态变量"; 
+		
+		public static String getName(String type, String code) {
+			System.out.println("type=" + type + ", code=" + code);
+			return type+":"+code;
+		}
+	}
+	--2）thymeleaf调用
+	<th:block th:text="${T(com.yjy.core.utils.CodeName).PRE_TEST_CODE}" />
+	<th:block th:text="${T(com.yjy.core.utils.CodeName).getName('GENDER', '0')}" />
+	let personType = [[${ T(com.yjy.Utils.dates).PERSON_TYPE }]] //js引用静态属性

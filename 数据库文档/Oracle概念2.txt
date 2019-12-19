@@ -1,0 +1,335 @@
+*****************************************************************************************
+
+超键、候选键、主键、外键区别：
+
+数据抽象：物理抽象、概念抽象、视图级抽象,内模式、模式、外模式 ？？？？？
+
+事务管理:
+	是一系列的数据库操作作为一个逻辑工作单元，是数据库应用的一个基本逻辑单元。
+	一个逻辑单元包括四个属性(ACID)：原子性、一致性、隔离性和持久性。
+	-1)原子性：即不可切割。对于其数据修改，要么全部执行，要么全部不执行。
+	-2)一致性：事务的执行使得数据库从一种正确状态转换成另一种正确状态。
+	-3)隔离性：由并发事务所作的修改必须与任何其它并发事务所做的修改隔离。在事务正确提交之前，不允许把该事务对数据的任何改变提供给任何其他事务。
+	-4)持久性：事务正确提交后，其结果将永久保存在数据库中。
+事务在并发过程中存在的问题：
+	-1)脏读：指在一个事务处理过程中读取了另一个未提交事务的数据。 操作流程：改(T1 改两条数据)->读(T2 在改完第一条数据后读取)
+	-2)不可重复读：指在数据库查询中，一个事务范围内多次查询却返回了不同的数据值。例如事务T1在读取某一数据，而事务T2立马修改了这个数据并且提交事务给数据库，事务T1再次读取该数据就得到了不同的结果，发送了不可重复读。 操作流程：读(T1)->改(T2 提交)->读(T1 前后结果不一样) 即多次查询结果不一致
+	-3)虚读（幻读）：事务非独立执行时发生的一种现象。 操作流程：改(T1)->插(T2 与修改前的数据一致)->读(T1 觉得数据还未修改一样)
+
+
+数据库中的连接池：
+	服务器启动时会建立一定数量的连接，并一直维持这些池连接客户端程序需要连接时，池驱动程序会返回一个未使用的池连接并将其标记为忙。
+
+
+数据库表拆分:
+	当数据库表中数据非常大，DB已经成为系统瓶颈时，可以考虑将表进行拆分。
+	分类：水平拆分、垂直拆分
+	--1）水平拆分：
+		一般水平拆分是根据表中的某一字段（通常是主键ID）进行取模，将一张表的数据拆分到多个表中。这样每张表的表结构相同但数据不同。
+		除ID取模分表外，还可以通过时间分表（如每月生成一张表），还可以按照范围分表（如一张表最多存储100w数据，超出部分就进行分表）。
+		ID取模分表后，我们的查询、修改、删除也是取模。如新增时先生成ID，再根据ID取模得到该存放到哪张表。
+	--2）垂直拆分：
+		当一张表的字段过多时可以考虑垂直拆分。通常是将一张表的字段拆分为主表及扩展表，使用频率高的字段放在主表，其余的字段放在扩展表。
+
+数据完整性：
+1.实体完整性：规定表的每一行在表中是唯一的实体(id不一样)
+2.参照完整性：指两个表的主键和外键的数据应一致(从表的外键值全部都应来自于主表的id)
+3.域完整性：表中的列满足某种特定的数据类型约束(主要体现在check语句、default语句上)
+4.用户定义完整性：针对某种特定的关系数据库的约束条件
+
+维护数据库的完整性和一致性，你喜欢用触发器还是自写业务逻辑？为什么？
+	我是这样做的，尽可能使用约束，如check,主键，外键，非空字段等来约束，这样做效率最高，也最方便。其次是使用触发器，这种方法可以保证，无论什么业务系统访问数据库都可以保证数据的完整新和一致性。最后考虑的是自写业务逻辑，但这样做麻烦，编程复杂，效率低下。
+	疑问：有时候需要从其他公司的数据库推送过来的数据，而这部分数据的某些字段允许为空，但我们的数据库的这些字段不为空？
+
+
+三个范式：
+1）第一范式(1NF)：有主键，每个属性不可再分，同一列中不能又多种值
+	若某一列有多种值，可以将该列单独拆分成一个实体，原实体与新实体间是一对多的关系。
+2）第二范式(2NF)：满足1NF，数据表的每条记录必须是唯一的（主键约束），且非主键列完全依赖主键列。
+	依赖性：如在一张学生信息表（id为主键），不应该出现course_name(课程名称，依赖于course_id)这样的字段。因为需要改课程表时，还得回来修改学生信息表的课程名称
+
+	例如：学生表Student(学号，姓名，性别，课程，课程学分)，存在关系：(课程)->(课程学分)
+	若存在非主属性依赖于其它非主属性，则将该组属性单独新建一实体，并且旧实体与新实体间是一对多的关系。
+3）第三范式(3NF)：满足2NF，非主键列不可传递依赖主键。
+	数据表中不应该存在多余的字段，即每个字段都不能由其它字段推理得到。
+	例如：学生信息表里不能同时存在province_id(省份ID)、city_id(城市ID)这两个字段，因为province_id可以由city_id推理得到。
+	例如：学生表Student(学号，姓名，性别，系id，系名称)，存在关系：(学号)->(姓名，性别，系id，系名称)，但存在决定关系：(学号)->(所在学院)->(系名称)，因此存在非关键字段“系名称”对关键字段“学号”存在传递函数依赖，因此不是3NF
+	它也会存在数据冗余、更新异常、插入异常等问题。
+
+字段冗余：
+1.概念
+	如在订单表存在订单信息，商品id，商品名称等字段，这里的商品名称是冗余的。
+2.考虑
+	--1）性能方面：
+	以时间换空间，对一些字段做冗余到关联表中，以避免大表之间的join。
+	弊端：更新时需要同步更新多张表。如更改username字段时，需要更新所有username字段的表。
+	--2）业务方面：
+	快照场景。交易场景大部分是数据快照。
+	用户下单时间时的用户名、地址、商品名称、商品描述等，若采用关联，商品在下单后发生了更新时再去做关联查询就会导致和用户操作时的数据不一致，从而产生纠纷。
+	比如，order表有id、goodsId，goods表有id、price。用户今天下单，价格位100.过几天卖家涨价了，价格涨为200.用户申请退款，系统给他退款200，这显然不合理，所以这里的price需要冗余，order表中的price表示“下订单时的商品价格”。
+
+
+*****************************************************************************************
+精通Oracle
+	详情：https://www.jianshu.com/nb/4871765 --未整理（重要）
+
+表空间：
+	表空间里ORACLE中的一个逻辑概念，它用于存放数据库文件，而数据库文件是存放在磁盘的数据文件，是物理概念。
+	一个房间可以存储很多箱子，箱子里面可以存储物品！表空间可以看成房间，箱子可以看成数据文件，物品可以看成表。用户指定表空间也就是希望把属于这个用户的表放在那个房间（表空间）里面。
+
+创建表空间、用户、表、授权过程：
+	connect system/0529;
+	--创建表空间
+	--格式：create tablespace 表空间名 datafile '数据文件名' size 表空间大小;
+	create tablespace oe_tablespace datafile 'E:\stu\oe.dbf' size 200M;
+	--创建用户
+	--格式：create user 用户名 identified by 密码 [default tablespace 表空间名];
+	create user testuser identified by 1230 default tablespace oe_tablespace;
+	--将表空间分配给用户
+	alter user testuser default tablespace oe_tablespace;
+	--授权给新建用户
+	grant create session,create table,unlimited oe_tablespace to testuser;
+	grant connect,resource,dba to testuser; --把connect、resource权限授予testuser用户
+	--用户登录，登录之后创建表即可
+	conn testuser/1230;
+
+
+plsql语法：
+declare
+	变量1 	变量类型1;
+	变量2 	变量类型2;
+begin
+	代码块...
+
+	EXCEPTION
+		when 异常名1 then 处理异常1...
+		when 异常名2 then 处理异常2...
+end;
+
+异常：
+	myEx exception; --声明
+	raise myEx; --抛出
+	when myEx then 处理自定义异常...
+	when others then 处理其它异常...
+	--例如：
+	when others then
+		ROLLBACK; --回退
+		p_bg_log('P_PHYSICAL_EXAMINATION_FETCH', ...); --存日志
+
+
+变量：
+1.分4大类：
+	-1）number。如（i number(2) := 100;）
+	-2）varchar2。如（msg varchar2(12) := '结果是：';）
+	-3）与列名类型相同。如（pname emp.ename%type;）
+	-4）与整个表的列类型相同。如（emp_record emp%rowtype;）
+2.测试：
+	--输出7369号员工姓名和工资(表名.字段%type)
+	declare
+		pname	emp.ename%type;
+		psal	emp.sal%type;
+	begin
+		select ename into pname, sal into psal from emp where emp_id = 7369;
+		dbms_output.put_line('7369号员工的姓名是' || pename || ',薪水是' || psal);
+	end;
+	--输出7788号员工姓名和工资(表名%rowtype)
+	declare
+		emp_record	emp%rowtype;
+	begin
+		select * into emp_record from emp where empno = 7788;
+		dbms_output.put_line('7788号员工的姓名是' || emp_record.ename || ',薪水是' || emp_record.sal);
+	end;
+
+判断体(if)：
+1.语法：
+	if 条件1 then SQL语句...
+	elsif 条件2 then	 SQL语句...
+	else SQL语句...
+	end if;
+
+while循环体：
+for循环体：
+
+
+Oracle 游标(cursor)：
+	--可使用“变量名 表名%ROWTYPE”替换
+	是对查询出来的结果集作为一个单元来有效的处理。游标可以定在该单元中的特定行，从结果集的当前行检索一行或多行。可以对结果集当前行做修改。一般不使用游标，但是需要逐条处理数据的时候，游标显得十分重要。
+	语法：cursor 游标名[(参数名 数据类型, ...)] is select语句;
+	分类：隐式游标(DML操作)、显式游标
+	使用：
+		--1.声明游标：参数可选，如果定义了参数，则必须在打开游标时传递相应的实际参数。
+		cursor cursorName[(param1 type, param2 type...)] is select_clause;
+		--2.打开游标：打开游标时，select语句的查询结果就被传送到游标工作区
+		open cursorName into 变量1[,变量2...];
+		--3.提取游标
+		fetch cursorName into 变量名1[, 变量2...];
+		--4.关闭游标
+		close cursorName;
+
+
+Oracle 视图(view)：
+	是一种虚拟的表，具有和物理表相同的功能。可以对视图进行增，改，查，操作，试图通常是有一个表或者多个表的行或列的子集。对视图的修改不影响基本表。它使得我们获取数据更容易，相比多表查询。
+	语法：create view viewName as (select...)
+
+
+Oracle 触发器(trigger)：
+	触发器是一中特殊的存储过程，主要是通过事件来触发而被执行的。它可以强化约束，来维护数据的完整性和一致性，可以跟踪数据库内的操作从而不允许未经许可的更新和变化。可以联级运算。如，某表上的触发器上包含对另一个表的数据操作，而该操作又会导致该表触发器被触发。
+	当满足触发器条件，则系统自动执行触发器的触发体。
+	触发时间：有before,after.
+	触发事件：有insert,update,delete三种。	
+	分类：DML触发器、DDL触发器和登陆触发器
+	--语法：
+	create [or replace] trigger 触发器名 before/after insert/update/delete
+		on tableName [for each row]
+	begin
+		sql语句...
+	end;
+
+
+Oracle 函数(function)：
+基本语法：
+	create [or replace] function functionName [(paramlist)] //函数名称，参数可省略
+		return dataType //返回类型
+	{is | as}
+		[local_declarations] //局部变量声明.例如：id char2(32); empName varchar2(30);
+	begin
+		executable_statements; //可执行语句
+		raise 异常名; //抛出异常
+	[exception
+		when 异常名 then ...] //异常捕获
+	end functionName;
+使用：
+	--测试1：得到年份
+	create or replace function FUN_GET_EXPLAN_YEAR(emp_type in varchar2)
+		return number 
+	is
+		explanYear number;
+	begin
+		select to_number(t.c1) into explanYear from biz_bm_dbase t where t.type = emp_type;
+		return explanYear;
+	end FUN_GET_EXPLAN_YEAR;
+
+	--测试2：通过函数查询数据返回游标（函数不能直接返回数据集合）
+	--详情：https://blog.csdn.net/nohero1/article/details/44174701
+	create or replace function test111(itemNumber in varchar2)
+		return SYS_REFCURSOR
+	is
+		return_cursor SYS_REFCURSOR; 
+	begin
+		OPEN return_cursor FOR SELECT 'a' FROM dual WHERE '1' = itemNumber; 
+		RETURN return_cursor;
+	end test111;
+	--测试（点击后能看到对应数据）：
+		select test111(1) from dual;
+
+
+Oracle 存储过程(procedure)：
+1.基本语法：
+	create [or replace] procedure procedureName [(paramlist)] //存储过程名称，参数可省略。paramlist格式：param1 in type, param2 out type
+	{is | as}
+		[local_declarations] //局部变量声明.例如：id char2(32); empName varchar2(30);
+	begin
+		executable_statements; //可执行语句
+		raise exceptionName; //抛出异常
+	[exception
+		when exceptionName then ...] //异常捕获
+	end procedureName;
+2.使用：
+	exec p_rep_echarts_050801('44', '201908'); --执行存储过程
+	drop procedure procedureName;	--删除存储过程
+
+3.基本概念：
+	存储过程就是编译好了的一些sql语句。
+	存储过程是一个预编译的SQL语句，优点是允许模块化的设计，就是说只需创建一次，以后在该程序中就可以调用多次。如果某次操作需要执行多次SQL，使用存储过程比单纯SQL语句执行要快。可以用一个命令对象来调用存储过程。
+
+4.优点：
+	-1）SQL语句已经预编绎过了，因此运行的速度比较快。
+	-2）可保证数据的安全性和完整性。可设定只有某此用户才具有对指定存储过程的使用权，保证数据的安全性。通过存储过程可以使相关的动作在一起发生，从而可以维护数据库的完整性。
+	-3）存储过程运行在服务器上，减少对客户机的压力。
+	-4）可以接受参数、输出参数、返回单个或多个结果集以及返回值。可以向程序返回错误原因
+	-5）可以包含程序流、逻辑以及对数据库的查询。同时可以实体封装和隐藏了数据逻辑。
+5.测试：
+	--实例1
+	create or replace procedure P_RER(p_date_scope in varchar2, p_data in char)
+	is
+		v_begin_date varchar2(6) := substr(p_date_scope, 1, 6);
+		v_sysdate    date := sysdate;
+		v_insert_sql varchar(500) := 'insert into tableName (data, begin_date, v_sysdate) t values (:1, :2, :3)';
+	begin
+		execute immediate v_survey_sql using p_data, v_begin_date, v_sysdate;
+		commit;
+	end P_RER;
+
+	--实例2：uuid
+	create or replace procedure test_procedure
+	is
+		c_row	 biz_project_temp%rowtype;
+		v_guid    VARCHAR2(100);
+	begin
+		FOR c_row IN (select rowid from biz_project_temp) LOOP
+			select sys_guid() into v_guid from dual;
+			insert into ...
+		END LOOP;
+	end test_procedure;
+
+
+参数列表中的in、out、in out说明：
+	附：in，out，in out是形参的模式。
+	in --默认，在程序运行中已有值，不能被修改。只能将实参传递给形参，进入函数内部，但只能读不能写，函数返回时实参的值不改变；
+	out --只能在过程内部赋值，表示该参数可以将某个值传递回调。形参初始值总是null，但函数内部可以被读写，函数返回时形参的值赋给实参；可用于存储过程调用存储过程，传入参数会跟着改变的场景。
+	in out --高参数可以向该过程中传递值，也可以将某个值传出去。调用时实参的值总是传递给形参，结束时，形参的值传递给实参。
+
+	演示in效果：
+	--例如：根据id查找该雇员姓名(默认编号为79)
+	create or replace procedure findEmp(empId in number)
+	as
+		empName varchar2(30);
+	begin
+		select ename into empName from emp where id = empId;
+		dbms_output.put_line('雇员姓名是'||empName);
+	exception
+		when no_data_found then
+			dbms_output.put_line('该编号雇员未找到');
+	end findEmp;
+	调用：excute findEmp(79);
+
+	演示out效果：
+	--例如：存储过程调用另一存储过程，参数值会跟着改变
+	create or replace procedure test(empId varchar2, str2 out number);
+	is 
+		identity number;
+	begin
+		select sal into identity from emp where empno = empId;
+		if identity < 2000 then
+			str2 := 1000;
+		else
+			str2 := 500;
+		end if;
+	end test;
+	调用：
+	declare
+		str2 number;
+	begin
+		test('79', str2);
+		dbms_output.put_line(str2);
+	end;
+
+	演示in out效果：
+	--例如：两个数据交换
+	create or replace procedure swap(p1 in out number, p2 in out number)
+	is
+		p_temp number;
+	begin
+		p_temp := p1;
+		p1 := p2;
+		p2 := p_temp;
+	end;
+	调用：
+	declare
+		num1 number := 100;
+		num2 number := 200;
+	begin
+		swap(num1, num2);
+		dbms_output.put_line('num1='||num1);
+		dbms_output.put_line('num2='||num2);
+	end;

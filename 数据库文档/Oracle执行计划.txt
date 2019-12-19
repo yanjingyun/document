@@ -1,0 +1,133 @@
+执行计划：
+	详情：
+		https://blog.csdn.net/jadethao/article/details/84266904
+		https://blog.csdn.net/weixin_30639719/article/details/94846924
+		https://blog.csdn.net/lifetragedy/article/details/51013069 --PLSQL优化(未整理)
+	执行顺序：
+		层次最深的最先执行，层次相同上面的先执行。
+		首先从缩进最大的行读取，它最先被执行。
+	
+	Text面板参数说明：
+		Operation	--当前操作的内容，包括表连接方式、表访问方式等
+		Rows		--当前操作的cardinality，Oracle估算当前操作的返回结果集
+		Cost		--Oracle计算出来的数值，用于描述sql执行的代价
+		Time		--Oracle估算当前操作的时间
+		Bytes		--估算出来的要处理的字节
+		
+Oracle优化器：
+	两种优化器：基于规则的优化方式(Rule-Base Optimization,简写RBO)、基于代价的优化方式(Cost-Based Optimization,简写CBO)
+	在Oracle8及以后的版本，Oracle官方推荐用CBO的方式。
+	优化器的优化模式：
+		1）rule
+			走基于规则的方式
+		2）Choose
+			Oracle10前位默认值。当表或索引有统计信息走CBO方式，表或索引无统计信息，表又不是特别小，且相应列有索引时，就走索引，走RBO方式。
+		3）First rows
+			与Choose方式类似，不同的是当表有统计信息时，它将以最快的方式返回查询的最先的几行，从总体上减少响应时间
+		4）All rows
+			从Oracle10开始设置为默认值。就是我们所说的cost方式，当表有统计信息时，它将以最快的方式返回表的所有行，从总体上提高查询吞吐量。没有统计信息则走RBO方式。
+
+
+表访问方式：
+--1）全表扫描(FULL TABLE SCAN)
+	简写FTS。对表中所有记录进行扫描。使用多块读操作，一次IO能读取多块数据块。表字段不涉及索引时往往采用这种方式。
+	很大的表不建议使用全表扫描，除非结果数据超出全表数据总量的10%。
+--2）物理id扫描(ROWID)
+	--由于rowid记录行存储的位置。rowid扫描是最快的访问数据方式
+	table access by index rowid --通过rowid的表存取，一次IO只能读取一个数据块。通过rowid读取表字段，rowid可能是索引键值上的rowid
+	测试参考：https://blog.csdn.net/xiaohai798/article/details/39559021
+	Oracle索引中保存的是我们字段的值和该值对应的rowid，我们根据索引进行查找，索引范围扫描后，就会返回该block的rowid，然后根据rowid直接去block上找我们需要的数据，因此出现了：table access by index rowid。
+	
+--3）索引扫描(INDEX SCAN)
+	在索引宏，除了存储每个索引的值外，索引还存储具有此值行所对应的rowid值。
+	索引扫描分两步：1、扫描索引得到rowid；2、通过rowid读取具体数据。每一步都是单独的一次IO，所以若数据在条件过滤后的总量大于原表总行数的5%~10%时，则使用索引扫描效率下降很多。而如果结果数据能够全部在索引中找到，则可以避免第二步操作，从而加快检索速度。
+	--索引扫描分类(4种)：
+	1、索引唯一扫描(INDEX UNIQUE SCAN)
+		存在uniqu或primary key情况下，返回单个rowid数据内容
+		--测试SQL> select empno, ename from emp where empno=10;
+	2、索引范围扫描(INDEX RANGE SCAN)
+		有以下3种张情况会出现索引范围扫描：
+			a.在唯一索引上使用range操作符(>,<,<>,>=,<=,between)
+			--测试SQL> select empno, ename from emp where empno > 7865 order by empno;
+			b.在组合索引上，只是用部分列进行查询，导致查询出多行
+			c.对非唯一索引上的列进行查询
+	3、索引全扫描(INDEX FULL SCAN)
+		查询结果全部从索引中直接得到。
+		--例如：
+		create index index_emp_ix on emp (empno, ename);
+		select empno,ename from emp order by empno,ename;
+	4、索引快速扫描(INDEX FAST FULL SCAN)
+		--不带orderBy时常发生
+		与index full scan类似，但这种方式不对结果进行排序。
+		在这种存区方法中，可以使用多块读功能，也可以使用并行读入，以便获得最大吞吐量与缩短执行时间。
+		--测试SQL> select 1 from ph_physical_examination ph where ph.person_id = p.id
+
+
+表之间的连接方式：
+	1）排序-合并连接(SORT MERGE JOIN)
+		--简写SMJ。该种排序限制较大，出现比较少。
+		对于非等值连接，这种连接方式的效率还是比较高的。若在关联的列上都有索引，效果更好。
+		对于2个较大的row source做连接，该连接方法比NL连接要好一点。
+		但若sort merge返回的row source过大，则又会导致使用过多的rowid在表中查询数据时，数据库性能下降，因为过多的I/O。
+		内部连接过程：
+			a.首先生成表1需要的数据，然后对这些数据按照连接操作关联列进行排序；
+			b.随后生成表2需要的数据，然后对这些数据按照与表1对应的连接操作关联列进行排序；
+			c.最后两边已排序的行被放在一起执行合并操作，即将2个表按照连接条件连接起来。
+	2）嵌套循环(NESTED LOOPS)
+		--简写NL。该连接过程就是一个2层嵌套循环，所以外层循环的次数越少越好。
+		嵌套循环有其它连接方法没有的一个优点：可以先返回已经连接的行，而不必等待所有的连接操作处理完才返回数据，这可以实现快速的响应时间。
+		以下两种方式的嵌套循环效率比较好：
+			1、外部表(driving row source)比较小，并且在内部表(inner row source)上有唯一索引
+			2、有高选择性非唯一索引
+	3）哈希连接(HASH JOIN)
+		--简写HJ。oracle7后来引入，使用了比较先进的连接理论。一般来说，其效率应该好于其它2种连接，但这种连接只能用于CBO优化器中，而且需要设置合适的hash_area_size参数，才能取得较好的性能。
+		在2个较大的row source之间连接时会取得相对较好的效率，在一个row source较小时则能取得更好的效率。
+		只能用于等值连接中。
+
+
+
+运算符：
+	1）sort		--排序，很耗资源
+		这三个会产生排序运算：1、orderBy 2、groupBy 3、sort merge join
+	2）filter	--过滤。如min等函数容易产生过滤运算。
+	3）view		--视图，大都由内联视图产生
+	4）partition view	--分区视图
+
+
+谓词条件信息(Predicate Information)
+	--如：access("T1"."ID"="T2"."ID")
+	access 	--表示这个谓词条件的值将会影响数据的访问路径（按照表或索引）
+	filter	--表示谓词条件的值只起到过滤作用，并不会影响到数据的访问路径。
+
+	实例：
+	select * from ehr_person p where p.management_organization like '440605011%' and :name='赵一'
+	--执行计划如下：
+	 Plan Hash Value  : 3396613699 
+
+	-----------------------------------------------------------------------------------------------------------
+	| Id  | Operation                      | Name                           | Rows | Bytes  | Cost | Time     |
+	-----------------------------------------------------------------------------------------------------------
+	|   0 | SELECT STATEMENT               |                                |  541 | 267254 |  433 | 00:00:06 |
+	| * 1 |   FILTER                       |                                |      |        |      |          |
+	|   2 |    TABLE ACCESS BY INDEX ROWID | EHR_PERSON                     |  541 | 267254 |  433 | 00:00:06 |
+	| * 3 |     INDEX RANGE SCAN           | IDX_PERSON_MANAGE_ORGANIZATION |  541 |        |    5 | 00:00:01 |
+	-----------------------------------------------------------------------------------------------------------
+
+	Predicate Information (identified by operation id):
+	------------------------------------------
+	* 1 - filter(:NAME='赵一')
+	* 3 - access("P"."MANAGEMENT_ORGANIZATION" LIKE '440605011%')
+	* 3 - filter("P"."MANAGEMENT_ORGANIZATION" LIKE '440605011%')
+	--说明：
+		-1）先执行id=3语句，即查询索引IDX_PERSON_MANAGE_ORGANIZATION；
+		-2）在执行id=2语句，通过id=3语句得到的rowid回到ehr_person表中查询数据；
+		-3）最后执行id=1语句，过滤name='赵一'的数据
+		附：语句3起到access和filter作用，语句1仅起到filter作用。
+
+
+实例1：
+	SQL> select /*+dynamic_sampling(t 0) */ t.* from t where id=1; 
+	描述：提示/*+dynamic_sampling(t 0) */目的是让CBO无法通过动态采集获取表中的实际数据情况，此时CBO只能根据T表中非常有限的信息（比如表中exrends数量，数据块的数量）来猜测表中的数据。从结果中可以看到CBO猜出表中id=1的有195条，这个数值对于表的总数来说，是一个非常小的值，所以CBO选择了索引而不是全表扫描。
+实例2：
+	参考：https://blog.csdn.net/zhenwodefengcaii/article/details/72224718
+	select * from t1, t2 where t1.id = t2.id;

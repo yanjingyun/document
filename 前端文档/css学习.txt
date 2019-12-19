@@ -1,4 +1,13 @@
 
+css中新增图标样式：
+.icon-print{
+	width:16px;
+	height:16px; 
+	background: url(../images/icon-print.png) no-repeat;
+	/* background-position: 0px 0px; */
+}
+
+
 css中的波浪号“~”、逗号“,”、加号“+”、大于号“>”理解：
 	p~ul //选择前面有p元素的每个ul元素。两种元素必须拥有相同的父元素
 	A>B  //css3特有，表示选择A元素的所有子B元素。与“A B”区别：A B选择所有后代元素，而A>B只选择一代

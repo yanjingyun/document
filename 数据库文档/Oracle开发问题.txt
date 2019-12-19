@@ -1,0 +1,145 @@
+
+Oracle锁表：
+	select * from v$session t1, v$locked_object t2 where t1.sid = t2.SESSION_ID; --1、查看那个用户那个进程照成死锁
+	alter system kill session '1546,59959'; --杀掉进程 sid和serial#
+
+
+取消正在执行的sql语句：shift+esc
+
+查询当前用户的定时任务表：
+	select * from user_jobs;
+
+查询所有表结构、表描述：
+	select * from user_tab_comments a where a.comments like '%住院分娩%'	
+
+查询某列/某字段所在表：
+	select * from user_col_comments a where a.COMMENTS like '%轮次%'; --字段描述
+	select t.* from user_tab_columns t where t.COLUMN_NAME = 'PERSON_NAME';	 --字段名
+
+查询某个时间点数据(不小心删库用到)：
+	select * from tableName as of timestamp sysdate - 1/24/60*10; --查询十分钟之前的数据
+
+数据库对接：
+	思路：跟对方建立dblink连接，将对方数据表的数据直接拉去到我们的中间表，处理后在进入我们的业务表中。
+	拉去中间表：
+		将对方数据表存在一state状态字段，0-未读取，1-待读取，2-已读取。先将对方表数据的state从0变成1，然后将这些1的数据全部读取到我们的中间表中，最后将对方表数据的state从1变成2.
+	中间表处理后进入业务表：
+		需要考虑业务代码上新增/更新业务表会产生的关联。
+
+Oracle dblink使用(dabase link):
+	--用于访问其它Oracle的表、视图
+	创建dblink步骤：
+	--1）当前用户需具备创建dblink权限
+	select * from user_sys_privs t where t.privilege like upper('%link%');
+	--若又返回行，则说明具备创建database link权限，否则需要使用sys登录后为test_user赋予权限
+	grant create public database link to test_user; --为test_user用户创建dblink权限
+	--2）创建dblink
+	create database link db_dblink connect to db217user identified by "123" using '192.168.0.217:1521/orcl';
+	--3）测试
+		步骤一：在217中使用db217user用户创建一张表t_user表，并插入数据
+		步骤二：在218中查询：select * from t_user@db_dblink;
+
+
+Java怎么直接调用oracle函数获取结果？
+	select fun_get_min_visit_date(:personId) from dual
+
+
+不用in的情况下查询多条数据：
+	select a.* from ehr_person a where '2c796fdc9fba45d287fc9547fdeec1a8,6aaac473f66a41c39d2375ac045b5841' like '%'||a.id||'%'
+区分in和exists：
+	exists以外层表为驱动表先被访问，in先执行子查询。in适合外表大而内表小的情况，exist适合外表小而内表大的情况。
+	针对not in和not exists，推荐使用not exitst
+
+
+编码转中文，存在多记录条件情况：
+	--描述：编码表的编码类型为FAMILY_DISEASE中有"1,2,3,4"这4条编码记录，传入"2,3"时返回对应的中文名称
+select to_char(wm_concat(to_char(a.name)))
+  from bm_base a
+ where a.type = 'FAMILY_DISEASE'
+   and ','|| 传入的编码值 ||',' like '%,' || a.code || ',%'
+
+
+oracle 根据条件显示某个字段值：
+case 
+ when (c.contact_date < g.into_date or g.into_date is null) then '预入组联系'
+ when (c.contact_date >= g.into_date and (c.contact_date < g.parturition_date or g.parturition_date is null)) then '孕期联系'
+ when (c.contact_date >= g.parturition_date) then '儿保期联系'
+ else '无联系'
+end as CONTACT_PERIOD
+
+
+问题：
+	按服务机构统计符合规范的儿童。儿童要在6月龄、12月龄、18月龄、24月龄、30月龄、3岁这些时期需要进行随访，在统计时间内的所有月龄都要有随访记录。如：统计时间是32月龄，则6、12、18月龄都要有一条相应的随访记录。
+	select p.management_organization, count(1) as numbers
+	  from ehr_person p
+	 where p.death_time is null
+	   and p.management_organization like p_organization || '%'
+	   --6月28天＜统计结束日期-出生日期＜4岁
+	   and p.birthday < add_months(v_end_last_date, -6) - 28
+	   and p.birthday > add_months(v_end_last_date, -48)
+	   and
+	   (select count(*) from REP_CONFIG_CHILDREN c
+	      where c.code in ('03', '05', '06', '07', '08', '09')
+	        and p.birthday <= add_months(v_end_last_date, -c.months) - c.dates)
+	   =
+	   (select count(c.code) from REP_CONFIG_CHILDREN c
+	      where c.code in ('03', '05', '06', '07', '08', '09')
+	        and p.birthday <= add_months(v_end_last_date, -c.months) - c.dates
+	        and exists (select 1 from PH_TCM_CHILDREN_HEALTH ph where c.code = '0'||ph.follow_up_type and ph.person_id = p.id))
+	     group by p.management_organization;
+
+
+问题：每行记录的多列转为一列，并将其编码转化为中文显示，使用“、”隔开。
+	解决：先用decode方法将每列的编码转化为中文，在将所有列用“||'、'”拼接起来，最用使用trim方法将最后的“、”去掉。
+
+问题：查询多表记录的某个字段，并将该字段值合并，使用“、”隔开，并根据某个字段进行排序。如显示某人的所有体检日期，并按体检日期倒叙
+	解决：使用oracle提供的listagg函数
+
+问题：综合查询中，“服务机构=所选机构”和“包含服务机构为空的对象”怎么连用？
+	解决：(1=2 or 条件1 or 条件2)
+
+
+在存储过程中预执行sql：
+	// 1、声明
+	v_sql   varchar2(2000) := 'update ph_visit_diabetic t set t.dorsalis_pedis_pulse = :1 where t.id = :2';
+	// 2、调用
+	execute immediate v_sql using pulseVal, ph.id;
+
+
+oracle在where子句中添加自定义函数判断
+	描述：主要用于超复杂查询
+	--1、简单实例：创建一函数，返回1表示符合规范，返回0表示不符合规范
+	create or replace function AA_FUN_FLAG return char is
+	  Result char := '1';
+	begin
+	  return(Result);
+	end AA_FUN_FLAG;
+	--2、使用
+	select '111' from dual where AA_FUN_FLAG() = '1'
+
+
+函数索引：
+	--实例：查询证件号码后6位
+	直接使用like右匹配时会全局索引，性能极差：t.identity_number like '%123456'
+	使用函数截取证件号码再进行比较时性能较好一点：substr(t.identity_number, 11, 6) = 'xxxxxx'; #可对该函数substr(t.identity_number, 11, 6)创建索引
+	考虑：新增一个字段保存该证件号码的后6位，然后对这个新增字段新建索引
+
+
+为啥Java项目连接Oracle数据库，部署后使用一段时间系统变的很卡很慢，重启Oracle数据库之后就好了，这跟Oracle内部有什么关系吗？
+	oracle会记录很多日志，日志把空间满了，可能会挂
+	我碰到这种问题，一般是删日志，主要是其他的原因不知道，偏偏删了之后就好了，归档日志一般都搞的好几十G
+	重启Oracle服务日志就全清了？http://blog.itpub.net/29618264/viewspace-2140729/?tdsourcetag=s_pcqq_aiomsg
+	好多时候连接不上就是归档日志满了，数据库挂了。后来就不用oracle了，改用mysql了
+
+
+
+
+
+
+
+
+
+
+
+
+

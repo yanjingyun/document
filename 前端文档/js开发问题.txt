@@ -1,0 +1,151 @@
+js知识库：！！
+	https://github.com/30-seconds/30-seconds-of-code
+	https://blog.csdn.net/helloxiaoliang/article/details/78909415 --js代码实战
+
+js比较：
+	"100" > "22"	--false
+	"100" > 22		--true
+	注：两个输入框是否已输入、类型是否一致。即两个输入框的比较，要先将值转换成数值类型再比较。
+
+[object Text]类型转字符串：
+	--如：获取checkbox对应的中文
+	$('[name="showElderSelfCareEvaluation"]:checked')[0].nextSibling.data.trim()
+
+js取出最后一位：
+	"aa、bb、cc、".slice(0,-1); //输出：aa、bb、cc
+
+输入框提示语(仅提醒功能，能进行保存操作)：
+	function buildWarntipDiv(thisInput) { //创建提示语节点
+		let thisName = thisInput.prop("name");
+		let thisTd = thisInput.closest('td');
+		let warntipNode = thisTd.find("[of="+thisName+"]");
+		if (warntipNode.length == 0) {
+			thisTd.append('<div of="'+thisName+'" class="warntip"></div>');
+			warntipNode = thisTd.find("[of="+thisName+"]");
+		}
+		return warntipNode;
+	}
+	function showOrHideWarntipDiv(warntipNode, msg) { //显示或隐藏提示语
+		if (msg) {
+			warntipNode.show();
+			warntipNode.text(msg);
+		} else {
+			warntipNode.hide();
+		}
+	}
+
+	//测试：心律选齐或不齐时（心律绝对不齐不做限定），若心率≠脉率 ，输入心率后则提示“请复核数据”
+	$('[name="heartRateType"]').change(function() {
+		let thisValue = $(this).val();
+		let msg = '';
+		if ((thisValue == '1' || thisValue == '2') && $('[name="heartRate"]').val() != $('[name="pulseRate"]').val()) {
+			msg = "请复核数据";
+		}
+		showOrHideWarntipDiv(buildWarntipDiv($(this)), msg);
+	});
+
+复选框问题：共6个选项，前3个只能三选一，后面可同时多选
+	$('[name="lipsAppearanceCheckResult"]').change(function() {
+		let thisVal = $(this).val();
+		if (thisVal == '1' || thisVal == '2' || thisVal == '3') {
+			let thisChecked = $(this).prop("checked");
+			$('[name="lipsAppearanceCheckResult"][value="1"]').prop("checked", false);
+			$('[name="lipsAppearanceCheckResult"][value="2"]').prop("checked", false);
+			$('[name="lipsAppearanceCheckResult"][value="3"]').prop("checked", false);
+			$(this).prop("checked", thisChecked);
+		}
+	});
+
+
+a标签异步请求：
+	$(".deleteBtn").click(function(){
+		if(confirm("确定删除这个试卷吗？")) {
+			$.ajax({
+				url: $(this).prop("href"),
+				success: function(data){
+					alert(data);
+					window.location.reload();
+					self.opener.location.reload();
+				}
+			});
+		}
+		return false;
+	});
+	<a class="deleteBtn" th:href="@{${#request.contextPath}+'/yfxx/paper/delete/'+${paper.id}}">
+		<i class="z-icon-query-delete" title="删除"></i>
+	</a>
+
+var inputNodes = this.parentNode.parentNode.querySelectorAll('input:not([type="checkbox"])');
+
+打印功能：
+	工具：jQuery.print.min.js
+	使用：$("#需要打印的元素").print();
+	--自动换行tr：
+	.print-table tr td, .print-table tr th{
+        text-align:center;
+        word-wrap:break-word;
+        word-break:break-all;
+        white-space:normal;
+        max-width:160px;
+        border: 1px solid;
+	}
+
+
+动态加载的元素的点击事件：
+	使用on方法，其语法为：$(selector).on(event,childSelector,data,function)
+	$(document).on('click', '[textBtn]' function(event) {
+		....
+	});
+
+
+checkbox中的互斥选项：
+	--描述：若点击“复选框1”时，其它复选框取消勾选；若点击其它复选框时，“复选框1”取消勾选
+	$('[data-exclusive-code]').each(function() {
+		var exclusiveCode = $(this).attr("data-exclusive-code");
+		var $exclusiveInput = $(this).find("input[value='" + exclusiveCode + "']");
+		var $otherInput = $(this).find("input:not([value='" + exclusiveCode + "'])");
+
+		$exclusiveInput.change(function() {
+			if ($(this).prop("checked")) {
+				// 若该元素存在某种点击事件则不能使用该语句
+				$otherInput.filter(":checked").prop("checked", false);
+			}
+		});
+		$otherInput.change(function() {
+			if ($(this).prop("checked")) {
+				$exclusiveInput.prop("checked", false);
+			}
+		});
+	})
+
+
+熟练使用jquery的filter()和not()函数...
+
+
+替换tr每一行里的input中[0]下标：
+	function changInputIndex(tableId) {
+		var $trs = $("#" + tableId).find("tr:gt(0)");
+		$trs.each(function(index) {
+			var $newTr = $(this);
+			$newTr.find("[name]").each(function() {
+				$(this).attr("name", $(this).attr("name").replace(/\[\d*\]\./, "[" + index + "]."));
+			});
+			$newTr.find("td:eq(0)").html(index+1);
+		});
+	}
+
+input的text="number"时，只能输入数字，但是存在当旧数据值有英文时不能显示出来的问题。
+
+
+输入框绑定的可选值(datalist标签)
+	<input type="text" list="names" name="username" />
+	<datalist id="names">
+	    <option value="testAA1">
+	    <option value="testAA2">
+	    <option value="testAA3">
+	</datalist>
+
+
+svg图片：
+	<image src="/static/pregnantWomanSchool/paper-result.svg" style="height:155px;">
+	<img alt="" src="../../resources/images/add.svg" style="height: 25px;">

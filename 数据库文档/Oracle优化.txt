@@ -1,0 +1,113 @@
+详情：https://www.jianshu.com/p/0124c0cb052c	//数据库SQL性能优化（一）
+
+oracle对于多个大表关联查询优化：
+	https://blog.csdn.net/wulex/article/details/79418479
+sql优化、索引的建立和运用以及多表连接建索引的拙劣见解：
+	https://www.iteye.com/blog/new-restart-1345024
+
+SQL优化：
+	具体链接：http://blog.csdn.net/u011463470/article/details/51016928
+	执行顺序：select--from--where--group by--having--order by
+	1.在经常需要进行检索的字段上创建索引
+		比如要按照姓名进行检索，则应该在姓名字段上创建索引。
+		创建索引给检索带来的性能是巨大的，因此在发现检索速度过慢的时候应该首先想到的就是创建索引。
+	2.使用预编译查询
+		动态执行SQL，尽量使用参数化SQL，不仅防止漏洞攻击，数据库还会对这些参数化SQL进行预编译，这样再次执行该SQL时直接使用预编译的结果。
+	3.执行顺序
+		from子句：从右到左，即写在最右边的表最先被处理。一般尽量把数据量小的表放在最右边。多对多表的选择交叉表放最右边
+		where子句：从右到左，但条件的顺序对SQL性能没有影响。一般把能使结果最少的条件放在最右边。
+	4.使用表的别名
+	5.用exists替代in，用not exists替代not in，因为not in对子查询中的表执行一个全表遍历
+	如：把a表中存在但在b表中不存在的数据插入的b表中
+		insert into b select * from a where not exists (select * from b where id=a.id)
+	6.用union all替换union
+	7.避免在索引列上使用(is null 或 is not null)，不能用null做索引，任何包含null值的列都将不会被包含在索引中。 
+
+Oracle SQL优化：
+优化概述：
+	-1）首先建立适当索引。索引字段不可加函数，保证索引起效。复合索引需要注意sql顺序，不要跨列。
+	-2）最大数据量的表放在最前，最小的表放在最后面。sql是从最后面开始反向解析的。
+	-3）其次是要把最有效缩小范围的条件放到sql末尾去。尤其是主键或者索引字段的条件。
+
+优化方向：
+	大表尽量避免jion查询。避免联表查询，单表查询效率更容易优化。详情：http://www.05935.com/198/1161281/
+	查询字段：
+		1、查询字段可能来自表本身，也可能来自其它表。当字段来自其它表，且不作为查询条件时，可以直接在select子句查询，以减少对表的连接，若查询该字段频繁可考虑做成冗余字段。
+		2、查询字段可能是多个字段合并而成，也可能是其它表多条记录排序后合并。
+	查询条件：
+		1、查询条件很大程度上取决于索引。
+		2、若传入的条件不走索引时我们应该换一种思路去实现，如证件号码后六位匹配，使用like右匹配不走索引，但可以创建substr函数的索引，从而达到快速查询到结果。
+from子句的表顺序：
+	Oracle解析器按照从右到左的顺序解析。FROM子句中写在最后的表将被最先处理。
+	建议：记录条数最少的表放在最后！！！
+	描述：当ORACLE处理多个表时，会运用排序及合并的方式连接它们。首先，扫描第一个表（FROM子句中最后的那个表）并对记录进行排序，然后扫描第二个表（FROM子句中倒数第二张表），最后将所有从第二个表中检索出的记录与第一个表中合适记录进行合并。
+	--例如：表tab1有16,384条记录，表tab2有1条记录
+	select count(*) from tab1,tab2; --tab2放最后（高效），执行时间0.96秒
+	select count(*) from tab2,tab1; --tab1放最后（低效），执行时间26.09秒
+where子句的连接顺序：
+	Oracle采用自下而上的顺序解析。
+	建议：表连接条件写在where句首；可以过滤最大数量记录的条件写在where末尾！！
+	--例如：
+	select * from emp e where sal>5000 and job='manager' and 25<(select count(*) from emp where mgr=e.empno);--低效，执行时间156.3秒
+	select * from emp e where 25<(select count(*) from emp where mgr=e.empno) and sal>5000 and job='manager';--高效，执行时间10.6秒
+
+
+PL/SQL按F5查询sql执行顺序。
+
+识别“低效执行”的SQL语句
+SELECT EXECUTIONS, --所有子游标的执行这条语句次数
+       DISK_READS, --所有子游标运行这条语句导致的读磁盘次数
+       BUFFER_GETS, --所有子游标运行这条语句导致的读内存次数
+       ROUND((BUFFER_GETS - DISK_READS) / BUFFER_GETS, 2) HIT_RADIO, --命中率
+       ROUND(DISK_READS / EXECUTIONS, 2) READS_PER_RUN, --每次执行读写磁盘数
+       SQL_TEXT	--执行的SQL语句
+  FROM V$SQLAREA
+ WHERE EXECUTIONS > 0
+   AND BUFFER_GETS > 0
+   AND (BUFFER_GETS - DISK_READS) / BUFFER_GETS < 0.8
+ ORDER BY 4 DESC;
+
+
+实战：
+--生成千万条数据
+create table t_user as
+select rownum as id,
+	(sysdate + rownum/24/3600) as create_time,
+	trunc(dbms_random.value(0, 100)) as age,
+ 	dbms_random.string('x', 20) username
+from dual
+	connect by level <= 10; --生成10条数据
+	--connect by level <= 10000000;
+
+
+--优化原则：
+1.优先索引字段(索引使用参见底下)
+
+2.减少对表的查询
+	--查询
+	select * from t1 where a = (select a from t2 where version = 604) and b = (select b from t2 where version  = 604); --低效
+	select * from t1 where (a, b) = (select a, b from t2 where version = 604); --高效
+	--update多个列
+	update t1 set a = (select max(a) from t2), b = (select max(b) from t2) where t1.name = '002'; --低效
+	update t1 set (a, b) = (select max(a), max(b) from t2) where t1.name = '002'; --高效
+
+3.用exists代替in
+	select * from emp where dept_id in (select id from dept where name = 'A'); --低效
+	select * from emp a where exists (select 1 from dept b where b.id = a.dept_id and name = 'A'); --高效
+
+4.用not exists代替not in
+	在子查询中，not in子句将执行一个内部的排序和合并。无论哪种情况下，not in都是最低效的（因为它对子查询中的表执行全表遍历）。
+	可以使用外连接(outer join)或not exists代替。
+	--例如：
+	select * from emp where dept_id not in (select id from dept where dept_cat='A') --低效
+	select * from emp a, dept b where a.dept_id = b.id(+) and b.id is null and b.dept_cat(+) = 'A'; --高效(表关联，直接两表关联的速度是最快的！)
+	select * from emp a where not exists (select 1 from dept b where b.id = a.dept_id and dept_cat = 'A') --高效(not exists)
+
+
+尽量多使用commit
+	在程序中尽量多使用commit，这样程序的性能得到提高，需求也会因为commit所释放的资源而减少。
+	commit所释放的资源：
+		a)回滚段上用于恢复数据的信息
+		b)被程序语句获得的锁
+		c)redo log buffer中的空间
+		d)Oracle为管理上述3种资源中的内部花费
