@@ -1,0 +1,42 @@
+@Query写自定义查询报错：
+	报错信息：javax.persistence.TransactionRequiredException: Executing an update/delete query
+	解决：
+		@Transactional //dao层不加注解，且service层也不加时，可能会报错
+		@Modifying
+		@Query("delete from PaperQuestion t where t.paperId = :paperId")
+		void deleteByPaperId(@Param("paperId") String paperId);
+
+
+JPA与hibernate关系：
+	jpa提供了orm映射元数据，它仅是一种规范，也就是说jpaj仅定义了一些接口。接口实现可由hibernate实现。
+
+
+主键生成(UUID策略)：
+	--1、例如：
+	@Id
+	@GenericGenerator(name = "idGenerator", strategy = "uuid")
+	@GeneratedValue(generator = "idGenerator")
+	private String id;
+	--2、说明：
+	@GenericGenerator是hibernate提供的主键生成策略注解，@GeneratedValue（JPA注解）使用generator="idGenerator"引用上面name="idGenerator"主键生成策略。
+	--3、jpa几种主键生成策略
+	table ：使用特定的数据库表格来保存主键
+	sequence ：根据底层数据库的序列来生成主键，条件是数据库支持序列。这个值要generator一起使用，generator指定生成主键使用的生成器（可能oracle中自己编写的序列）
+	identity ：主键由数据库自动生成（主要支持自动增长的数据库，如mysql）
+	auto ：主键由程序控制，也是GenerationType的默认值
+
+
+jpa实现表自关联：
+	--适用于菜单这种层级加载数据
+	@Entity(name = "CHART_HRPA_CONFIG")
+	public class ChartConfig {
+		private String id;
+
+		@OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+		@JoinColumn(name = "parentGuid")
+		@Fetch(FetchMode.SUBSELECT)
+		@Where(clause = "enable='1'")
+		@OrderBy(value = "id")
+		// 输出语句：where ( t.enable='1') and t.parent_guid=? order by t.guid
+		private List<ChartConfig> children;
+	}

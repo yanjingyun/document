@@ -1,4 +1,10 @@
 
+Linux相关工具：
+	SecureCRT
+	Xshell
+	WinSCP
+
+
 windows10下安装VMware虚拟机并搭建CentOS系统环境：
 	https://www.cnblogs.com/xingxia/p/vmware_windows.html
 使用VMware在本地搭建多个CentOS虚拟机：
@@ -77,9 +83,14 @@ find查找文件
 	> top 	--查看资源占用率
 	> free 	--查看总内存、使用、空闲情况
 	> pwd	--查看当前目录
-	> ps -ef | grep java --查看Java进程
-	> kill -9 [pid] #进程号 --杀掉进程，“-9”强迫进程立即停止
 	> tar -zxvf nginx.tar.gz	--解压包
+
+问：怎么查看进程和杀死进程？
+	> ps -ef | grep java --查看Java进程
+	> kill -9 [pid] #进程号 --杀死进程，“-9”强迫进程立即停止
+
+问：打印一个文件夹的所有文件？
+	ll ls
 
 
 安装JDK：
@@ -133,15 +144,38 @@ redis集群：
 	mkdir -p /redis_cluster/6001 /redis_cluster/6002 /redis_cluster/6003 //创建三个文件夹
 
 
-tcp连接需要三次握手：
-三次握手连接过程：
-	1.建立连接时，客户端发送SYN(SYN=j)包到服务器，并进入SYN_SEND状态，等待服务器响应、确认
-	2.服务器收到SYN包，必须确认客户端的SYN(ACK=j+1)，同时自己也发送一个SYN包，即SYN+ACK包此时服务器进入SYN_RECV状态
-	3.客户端收到服务器的SYN+ACK包，向服务器发送确认包ACK(ack=k+1)，此包发送完毕客户端和服务器端进入ESTABLISHED状态，完成三次握手
-	目的：前两次握手为了保证服务端能收到客户端的信息并能做出正确的响应，后两次握手为了保证客户端能够收到服务端的信息并能做出正确的响应
+查看Linux版本: > cat /etc/centos-release
+查看CPU个数：
+	查看逻辑cpu个数： cat /pro/cpuinfo | grep "processor" | wc -l
+	查看物理cpu个数： cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l
+	查看每个物理cpu的核数： cat /proc/cpuinfo | grep "cpu cores"
+	若所有物理cpu的cores个数加起来小于逻辑cpu个数，则该cpu使用了超线程技术。
+	查看每个物理cpu中逻辑cpu的个数：cat /proc/cpuinfo | grep "siblings"
+查看内存使用情况：> free -m
+	Mem：内存的使用情况总览表
+	total：机器总物理内存，单位为M
+	used：用掉的内存
+	free：空闲的内存
 
-tcp和udp的优缺点：
+jvm调优-jstack找出最耗cpu的线程并定位代码
+	> ps -ef | grep projectName 	#1.先找出项目对应进程ID(pid)
+	> top H -p pid 	#2.找出该进程最消费cpu的线程
+	> printf "%x\n" 2012 #得到线程Id为2012其对应的十六进制7dc
+	> jstack 32464 | grep 7dc	#一般会进到jdk的bin目录下，root权限执行
+	> 第四步：查代码
 
-Https的SSL握手过程
-	https://blog.csdn.net/shengqianfeng/article/details/102572691	--未整理
 
+查看耗cpu的线程：
+	top -查看最耗费cpu的进程
+	top H -p pid #查看具体的线程信息
+	jstack [进程] | grep -A 10 [线程的16进制]
+
+
+Java死锁排查：
+	详情：https://www.cnblogs.com/aflyun/p/9194104.html
+	1.运行死锁程序
+	2.命令窗口使用jps+jstack
+	> jps -l #获取pid，即Java进程ID
+	> jstack -l pid #查看线程，能发现死锁
+	> JConsole #打开图形化监控工具
+	> jvisualvm #打开图形化监控工具

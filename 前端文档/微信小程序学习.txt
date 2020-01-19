@@ -172,7 +172,7 @@ http://192.168.0.199/wj/zz-weijianwei.git	--粤省事小程序git地址
 			openid就是微信用户身份id，可以用这个id来区分不同的微信用户。
 			secret_key则是微信服务器给开发者服务器的身份凭证，开发者可以用session_key请求微信服务器其它接口获取一些其它信息，因此session_key不应传给前端。
 	-4）生成3rd_session，并存入redis缓存
-		3rd_session用于开发者服务器h和小程序之间做登录态校验。
+		3rd_session用于开发者服务器和小程序之间做登录态校验。
 		存入redis缓存：3rd_session为key，session_key+openid为value
 		描述：微信服务器返回的session_key是开发者服务器和微信服务器的会话密钥。同样，开发者服务器和开发者的小程序也应该有会话密钥，我们称为SessionId，将SessionId传给小程序，小程序携带SessionId请求开发者服务器，开发者服务器就可以通过SessionId查询当前用户身份，这样就不需要每次重新获取code。
 	-5）3rd_session返回给小程序(开发者服务器->小程序)

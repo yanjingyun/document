@@ -1,0 +1,203 @@
+
+deleteAll(@RequestParam("ids[]")  String[] ids) //接收数组参数
+
+Spring中的设计模式
+	工厂模式	BeanFactory
+	适配模式	HandlerAdapter(适配器)
+	动态代理	AOP
+
+
+SpringIOC概念、实现方式和底层原理、好处是什么？SpringIOC容器的整个工作流程、工厂模式和SpringIOC区别？
+	参见《Spring学习.docx》
+
+
+
+AOP的8个术语？AOP实现原理？JDK动态代理和Cglib动态代理的区别？AOP应用场景？
+	参见《Spring学习.docx》
+
+问：SpringAOP和AspectJ AOP区别？
+	Spring AOP属于运行时增强，而AspectJ是编译时增强。
+	Spring AOP基于代理（Proxying），而AspectJ基于字节码操作（Bytecode Manipulation）。
+	AspectJ相比于Spring AOP功能更加强大，但是Spring AOP相对来说更简单。如果切面比较少，那么两者性能差异不大。但是，当切面太多的话，最好选择AspectJ，它比SpringAOP快很多。
+
+
+事务的4个特性ACID、7种传播行为、事务并发出现的3个问题、4种隔离级别？
+	参见《Spring学习.docx》
+
+SpringMVC？
+	参见《Spring学习.docx》
+
+
+拦截器(Interceptor)和过滤器(filter)区别？
+	层级关系(由外到里)：Tomcat容器->过滤器(filter)->Servlet容器->拦截器(Interceptor)->Controller
+	-1）Filter是Servlet容器支持，仅用于web环境；Interceptor是Spring容器支持，能使用Spring里的任何资源（如service对象、事务等）。
+	-2）Filter只在Servlet前后起作用；而拦截器能够深入到某个方法前后、异常抛出前后等，因此拦截器的使用具有更大的弹性。
+过滤器(filter)
+	在请求进入Tomcat容器后、未进入Servlet之前进行预处理；在servlet处理完后，返回给前端之前进行后处理。
+	因此过滤器的doFilter(ServletRequest request, ServletResponse response, FilterChain chain)的入参是ServletRequest，而不是HttpServletRequest。因为filter是在HttpServlet之前。
+
+
+问：Spring bean的作用域？
+	singleton(单例模式)：默认，在Spring的Ioc容器中只存在一个对象实例，所有该对象的引用都共享这个实例。
+	prototype：每次对该bean对象的请求都会创建一个新的实例。
+	request：针对web应用，每次http请求都会产生新的bean实例。
+	session：针对web应用，在一个http session中，一个bean定义对应一个bean实例。
+	global session：针对web应用，在一个全局的http session中，一个bean定义对应一个bean实例。典型情况下，仅在使用portlet context的时候有效。
+
+问：Spring如何启动Bean？
+	-1）首先通过Resource加载配置文件，并启动IOC容器
+	-2）IOC容器通过反射机制实例化Bean并建立bean之间的依赖关系。（Bean就是Spring IOC容器初始化，装配及管理的对象）
+	-3）然后通过getBean方法获取bean对象，就可以调用它的方法
+
+问：Spring如何管理Bean？
+	Spring通过Spring容器来管理bean，一般由BeanFactory或者ApplicationContext充当管理角色。
+
+问：BeanFactory和ApplicationContext的区别？
+	BeanFactory采用工厂设计模式，负责读取bean配置文档，管理bean的加载，实例化，维护bean之间的依赖关系，负责bean的生命周期。
+	ApplicationContext除了提供上述BeanFactory所提供的功能之外，还提供了更完整的框架功能：国际化支持、aop、事务等。
+	BeanFactory在解析配置文件时并不会立即初始化对象，只有在使用对象getBean()才会对该对象初始化；
+
+问：bean的生命周期？
+	--以BeanFactory来维护一个Bean的生命周期为例
+	-1）Bean的建立，由BeanFactory读取Bean定义文件，并生成各个实例
+	-2）Setter注入，执行Bean的属性依赖注入
+	-3）BeanNameAware的setBeanName()，如果实现该接口，则执行其setBeanName方法
+	-4）BeanFactoryAware的setBeanFactory()，如果实现该接口，则执行其setBeanFactory方法
+	-5）BeanPostProcessor的processBeforeInitialization()，如果有关联的processor，则在Bean初始化之前都会执行这个实例的processBeforeInitialization方法
+	-6）InitializingBean的afterPropertiesSet()，如果实现了该接口，则执行其afterPropertiesSet方法
+	-7）Bean定义文件中定义init-method
+	-8）BeanPostProcessors的processAfterInitialization()，如果有关联的processor，则在Bean初始化之前都会执行这个实例的processAfterInitialization方法
+	-9）DisposableBean的destroy()，在容器关闭时，如果Bean类实现了该接口，则执行它的destroy方法
+	-10）Bean定义文件中定义destroy-method，在容器关闭时，可以在Bean定义文件中使用“destory-method”定义的方法
+
+问：应用上下文？
+	--手动获取Spring的bean(略)
+	通过这些应用上下文的引用，你可以调用应用上下文的getBean()方法从Spring容器中获取Bean。
+	几种应用上下文实现：
+	-1）ClassPathXmlApplicationContext
+		从类路径下的xml配置文件中加载上下文定义，把应用上下文定义当作类资源。
+		例:ApplicationContext context=new ClassPathXmlApplication("foo.xml");
+	-2）FileSystemXmlApplicationContext
+		读取文件路径下的XML配置文件并加载上下文定义
+		例:ApplicationContext context=new FileSystemXmlApplicationContext("D:foo.xml");
+	-3）XmlWebApplicationContext
+		读取web应用下的XML配置文件并装载上下文定义
+
+
+问：servlet启动顺序？
+	服务器加载servlet -> servlet构造函数 -> PostConstruct -> init方法 -> Service方法 -> destroy方法 -> PreDestroy -> 服务器卸载Servlet完毕
+
+问：Bean的初始化和销毁方法？
+	Spring的初始化和销毁方法每个都有3种实现：1、注解方式 2、接口方式 3、xml配置。
+	--1）初始化（注解实现）：
+	@PostConstruct
+	public void preInit() {
+		System.out.println("初始化");
+	}
+	--2）销毁（注解实现）：
+	@PreDestroy
+	public void preDestroy() {
+		System.out.println("销毁方法");
+	}
+
+问：@Resource和@Autowired区别？
+	-1）@Resource按照ByName注入
+	-2）@Autowired按照ByType注入；若想按照ByName装配，可结合@Qualifier使用
+
+
+注解相关问题
+	注解是一种什么样的编程思想？
+	为何能够直接使用@Autowired进行依赖注入？是如何工作的？
+	Spring 是如何通过@AutoWired 自动注入 Bean 属性和 Map，List 集合的？
+	@Required 是如何起到检查xml里面属性有没有被配置的？
+	Spring 框架是如何把标注@Component 的 Bean 注入到容器？
+	@Configuration，@ComponentScan,@Import，@Bean 注解是是如何工作的？
+	使用@PropertySource 引入配置文件，那么配置文件里面的配置是如何被注册到 Spring 环境里面的？
+
+
+HandlerInterceptor接口：
+主要定义了三个方法：
+1.预处理回调方法(preHandler)
+	--预处理回调方法，实现处理器的预处理。
+	public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object object) throws Exception{...}
+	true-表示继续流程，如调用下一个拦截器或处理器、或者接着执行postHandle()和afterCompletion()方法。
+	false-表示流程中断，不会继续调用其它拦截器或处理器，中断执行。
+2.后处理回调方法(postHandle)
+	--后处理回调方法，实现处理器的后处理（DispatcherServlet进行视图返回渲染之前进行调用），此时我们可以通过ModelAndView对模型数据或视图进行处理，ModelAndView也可能为null
+3.整个请求完毕回调方法(afterCompletion)
+	整个请求处理完毕回调方法,该方法也是需要当前对应的Interceptor的preHandle()的返回值为true时才会执行，也就是在DispatcherServlet渲染了对应的视图之后执行。
+	用于进行资源清理。如性能监控中我们可以在此记录结束时间并输出消耗时间，还可以进行一些资源清理，类似于try-catch-finally中的finally，但仅调用处理器执行链中
+
+
+SpringMVC的 RedirectAttributes 属性
+
+
+servlet容器，web容器，spring容器，springmvc容器的区别：
+	https://blog.csdn.net/zhanglf02/article/details/89791797
+编程式Servlet容器配置及SpringMVC的编程式实现：
+	详情：https://www.jianshu.com/p/2342f96f1d7f
+	Java的启动入口是main()方法，web服务启动时，其实是启动web容器的main方法，tomcat容器的启动入口在org.apache.catalina.startup.Bootstrap#main。
+	一个web服务变得可用的过程，不称做“启动”，而叫“部署”，部署到web容器。
+	ServletContext定义了一个方法集合，Servlet使用这些方法与servlet容器交互。一个JVM中的web应用有且仅有一个ServletContext。
+
+
+apache HttpClient 与 RestTemplate 区别？
+
+
+spring源码：
+	spring的依赖注入---循环依赖---属性注入---自动注入
+	spring bean的生命周期
+	spring bean实例化的大概过程
+
+spring中循环依赖怎么解决？
+
+
+问：什么是Spring？
+
+问：使用Spring框架的好处？
+
+问：核心容器（应用上下文）模块？
+
+问：Bean 工厂和 Application contexts 有什么区别？
+
+问：Spring核心类有哪些？各有什么作用？
+	BeanFactory：产生一个新的实例，可以实现单例模式
+	BeanWrapper：提供统一的get和set方法
+	ApplicationContext：提供框架的实现，包括BeanFactory的所有功能
+
+问：如果存在A依赖B，B依赖A，怎么加载到IOC？
+
+问：Spring中自动装配方式？
+
+问：BeanFactory和ApplicationContext？
+
+问：Spring Bean的生命周期，如何被管理的？Spring Bean 的加载过程是怎样的？
+
+问：SpringIOC实现原理？其初始化过程？
+
+问：SpringAOP实现原理？
+
+问：Spring中用到哪些设计模式？
+
+
+问：Spring循环注入的原理？
+
+
+问：Spring的事务管理机制？
+问：Spring的不同事务传播行为有哪些？
+
+问：Spring如何保证Controller并发安全？
+
+问：SpringMVC的工作原理？
+
+问：为什么有了SpringMVC还要在项目中使用Spring？
+
+问：SpringMVC的dispatcherServlet的工作原理？
+
+问：SpringMVC的运行机制？
+	dispatcherServlet -> HandlerMapping -> Handler -> HandlerAdapter -> 执行Handler -> ModelAndView -> 返回mv -> 视图解析器 -> 返回view -> 渲染响应
+
+问：怎么防止依赖注入？
+
+
+说说Spring的生命周期吧

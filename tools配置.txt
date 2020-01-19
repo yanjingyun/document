@@ -1,6 +1,14 @@
 
 
-
+***************************vscode*************
+vscode 格式化vue代码单引号变双引号:
+	https://www.cnblogs.com/niyl/p/11764576.html
+	"vetur.format.defaultFormatterOptions": {
+		"prettier": {
+			"semi": false,
+			"singleQuote": true
+		}
+	}
 
 
 
@@ -25,7 +33,7 @@ explain plan的性能参数说明：
 	-2）Cardinality：表示预期从一个行源返回的记录数
 	-3）Bytes：Oracle估算当前操作的影响的数据量（单位byte）
 
-
+oracle的expdp工具：导出数据
 
 ***************************eclipse*************
 eclipse的Java代码突然报错：

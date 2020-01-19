@@ -1,0 +1,70 @@
+
+卸载旧版MySQL：
+1.删除MySQL服务(用管理员身份打开cmd)：
+	> sc delete MySQL
+2.删除注册表信息
+	HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\EventLog\Application\MySQL
+	HKEY_LOCAL_MACHINE\SYSTEM\ControlSet002\Services\EventLog\Application\MySQL #可能不存在
+	HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\EventLog\Application\MySQL
+3.修改环境变量
+	我的电脑->属性->高级->环境变量
+
+
+安装Mysql：
+1.我的电脑->属性->高级->环境变量
+	path新增一条属性：D:\Program Files\mysql-8.0.15-winx64\bin
+
+2.在mysql目录(bin同级)创建data文件夹
+
+3.在mysql目录(bin同级)创建my.ini文件，内容如下：
+	[client]
+	port=3306
+	default-character-set=utf8
+
+	[mysqld] 
+	# 设置为MYSQL的安装目录 
+	basedir=D:/Program Files/mysql-8.0.15-winx64
+	# 设置为MYSQL的数据目录 
+	datadir=D:/Program Files/mysql-8.0.15-winx64/data
+	port=3306
+	character_set_server=utf8
+	sql_mode=NO_ENGINE_SUBSTITUTION,STRICT_TRANS_TABLES
+
+4.管理远身份打开cmd
+	> d:
+	> cd D:\Program Files\mysql-8.0.15-winx64\bin
+	> mysqld --initialize --console #初始化MySQL，在data目录生成一些数据文件，得到root的临时密码
+		root@localhost: %0kgs2!&trkT
+	> mysqld --install #生成MySQL服务		
+	> net start MySQL 	#启动MySQL服务
+	> mysql -u root -p #使用root的临时密码登录
+	> alter user 'root'@'localhost' identified by 'root' #修改root密码
+
+
+执行 mysqld --initialize 报错：
+	报错信息为：
+	mysqld: [ERROR] Found option without preceding group in config file D:\Program Files (x86)\mysql-8.0.15-winx64\my.ini at line 1.
+	mysqld: [ERROR] Fatal error in defaults handling. Program aborted!	
+	解决：my.ini文件编码改成 ANSI
+
+执行 mysql --install 报错：
+	报错信息： Install/Remove of the Service Denied!
+	解决：使用“管理员身份打开”cmd
+
+
+客户端连接MySQL时报错：
+	报错信息为 Client does not support authentication protocol requested by server
+	解决：呼出cmd
+		> mysql -u root -p
+		> use mysql;
+		> alter user 'root'@'localhost' identified with mysql_native_password by 'root';
+		> flush privileges;
+
+grant all on mysql.user root@'localhoxst' identified by 'root' flush privileges;
+
+
+show index from tableName; --查询表的索引
+show create table tableName; --查询创建该表的SQL
+
+优化案例：
+	单表优化、双表优化、三表优化

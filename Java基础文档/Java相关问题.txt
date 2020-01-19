@@ -1,0 +1,218 @@
+ASCII值：空格->32 0->48 A->65 a->97
+
+1<<4(2^4=16)
+
+记住标识符只有英文，数字，下划线和$，而且数字不能做开头。
+
+类变量在不设置初始值时，会进行默认值赋值，而局部方法中声明的变量则必须进行初始化，它不会进行默认值赋值。
+
+包装类：“==”运算在遇到算术运算时才会自动拆箱，equals()方法不处理数据转型。
+
+黑客能拿到token，怎么防止篡改用户数据？答：过期时间、二次验证、签名。
+
+char[] ch = str.toCharArray();  //将字符串对象中字符转换为一个字符数组
+
+判断是否为空：Assert.notNull(urlPath, "URL path must not be null");
+
+UUID设置： UUID.randomUUID().toString().replaceAll("-", "");
+
+位运算操作：
+	按位反运算符(~)：对数据二进制数据取反，即0变1，1变0。
+	按位与运算符(&)：参与运算的两个值，相应位都为1，才为1。否则为0。
+	按位或运算符(|)：参与运算的两个值，相应位都为0，才为0。否则为1。
+	按位异或(^)：参与运算的两个值，相应位相同为0。否则为1。
+	左移(<<)：将一个数的二进制左移若干位，高位溢出舍弃，低位补0。在没有溢出的情况下，左移一位相当乘2。
+	右移(>>)：将一个数的二进制右移若干位，低位舍弃。右移一位，相当于除2取商。
+	无符号右移(>>>)：和右移的唯一区别是，最高位变为0
+
+模运算%和位与运算&关系:
+--参考HashMap源码中获取数组下标计算
+	int index = hash % length;  //模运算
+	int index = hash & (length - 1); //与运算
+
+final关键字
+	修饰类、方法、变量（成员变量、局部变量），表示类不可继承、方法不可重写、变量不可改变值。
+	好处：它们的对象是只读的，可以在多线程环境下安全的共享，不用额外的同步开销
+	-1）修饰类型
+		修饰基本数据类型（如int）：赋值后无法改变值；
+		修饰引用数据类型（如String）：在赋值后其指向地址无法改变，但对象内容还是可以改变的。
+	-2）变量赋值时间：
+		成员变量（在声明时、或在构造块、或在构造器）中初始化，否则会编译错误；
+		局部变量可以只声明不赋值，然后再进行一次性的赋值。
+
+static关键字
+	修饰属性（称为类变量）、方法（称为类方法）、静态代码块、静态内部类。
+	static的变量在类加载时会被初始化
+	static的方法只能访问静态属性，不可直接调用非静态方法（非静态方法是new出来的对象后通过对象访问）。
+	静态代码块：存在于类中方法外面的静态块，仅仅在类加载时只执行一次，通常用来初始化静态的类属性。
+	访问静态方法：“类名.方法名”或者“对象名.方法名”
+
+transient关键字
+	是“暂时”的意思。HashMap中多次出现(transient volatile int modCount; //修改次数)
+	额外：json不序列化该字段
+
+重载与重写区别：
+	重载：同名不同参，返回值无关
+
+	重写/覆盖：遵循两同两小一大原则
+		方法名相同，参数类型相同
+		子类返回类型小于等于父类方法返回类型
+		子类抛出异常小于等于父类方法抛出异常
+		子类访问权限大于等于父类方法访问权限
+
+
+Java启动顺序：
+	父类静态成员、静态代码块 ->> 子类静态成员、静态代码块 ->> 父类实例成员、构造代码块 ->> 父类构造函数 ->> 子类实例成员、构造代码块 ->> 子类构造函数。
+	注：静态代码块有static修饰。而构造代码块直接在类中定义且无static关键字的代码块，也称为{}构造代码块，其执行次序优先于类构造函数。
+Java代码块执行过程：
+	Java源程序(.java)编译字节码(.class)解释执行特定平台机器码运行操作系统。
+web.xml的加载顺序：
+	context-param（配置节）listenerfilterservlet。同类型之间的实际程序调用顺序是根据对应的mapping顺序进行调用。
+
+
+
+
+字符串与日期/时间戳转换
+字符串 ->> 日期/时间戳：
+	Date date = java.sql.Date.valueof("2018-02-28"); //格式：yyyy-[m]m-[d]d
+	Timestamp timestamp = java.sql.Timestamp.valueOf("2018-02-28 13:30:46"); //格式：aye- [m]m-[d]d hh:mm:ss[.f...]
+
+java.util.Date ->> java.sql.Date：
+	java.util.Date utilDate = new Date();
+	java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
+
+时间戳：
+	Timestamp timestamp = new Timestamp(System.currentTimeMillis()); //获取Timestamp
+	Timestamp currentTime = new Timestamp(new Date().getTime()); //Date转TimeStamp
+
+时间格式化：
+	String format = new SimpleDateFormat("yyyyMMdd HHmmss ").format(System.currentTimeMillis());
+	获取时间戳优化：如果仅仅是需要或者毫秒数，那么完全可以使用System.currentTimeMillis()去代替new Date()，效率上会高一点
+
+
+List类型与数组转换:
+	List<String> strList = Arrays.asList(strArray); //数组转list
+	String[] strArray = strList.toArray(new String[strList.size()]);  //list转数组
+
+数值精确-浮点数计算：
+	浮点数由两个部分组成：指数和尾数；浮点数没有办法用二进制进行精确表示
+	0.06+0.01 //输出0.06999999999999999
+	1.0-0.42 //输出0.5800000000000001
+采用java.math.BigDecimal类进行精确计算。如下：
+	BigDecimal b1 = new BigDecimal(Double.valueOf(value1)); //value1为String类型
+	BigDecimal b2 = new BigDecimal(Double.valueOf(value2));
+	b1.add(b2).doubleValue(); //加
+	b1.subtract(b2).doubleValue(); //减
+	b1.multiply(b2).doubleValue(); //乘
+	b1.divide(b2, scale).doubleValue(); //除
+
+
+Statement 和 PreparedStatement 和 CallalbleStatement描述
+	--Statement描述：
+	Statement每次执行sql语句，数据库都要执行sql语句的编译，最好用于仅执行一次查询并返回结果的情形，这样效率高于PreparedStatement。
+	--PreparedStatement描述：
+	PreparedStatement是预编译的。安全性好，有效防止sql注入的问题。代码的可读性和可维护性好。
+	在执行可变参数的一条sql时，PreparedStatement比Statement效率高。原因：DBMS预编译一条sql当然会比多次编译一条sql的效率要高。
+	对于重复执行的语句，使用PreparedStatement效率会更高，并且这种情况下也比较适合批量操作batch。
+	--CallalbleStatement描述：
+	继承自PreparedStatement。用来调用存储过程，它提供了对输出和和输入/输出参数的支持。
+
+
+instanceof和isAssignableFrom区别：
+-1）instanceof介绍：
+	object instanceof Class //判断当前对象是否是它的本身类或父类/接口。
+	例如：if (obj instanceof class) //判断obj是否是class的一个实例
+-2）isAssignableFrom介绍：
+	class1.isAssignableFrom(class2) //判断class1是否为class2的子类或子接口。
+	例如：
+	class A {};	class B extends A {}; 	A a = new B();
+	B.class.isAssignableFrom(a.getClass()) //true
+
+
+Java上转型对象：
+	如：B extends A ; A a = new B(); //A类对象a是子类B对象b的上转型对象
+	注：对象b的上转型a的实体是由子类B创建的，但是上转对象会失去子类B的一些属性和功能。
+	--特性：
+	-1）上转型对象不能操作子类新添加的成员变量和方法
+	-2）上转型对象可以操作父类原有的属性和方法，但调用的是子类继承和重写过的方法
+	-3）可以将上转型对象强制转换成子类对象
+
+
+对象序列化：
+	参见《Java学习.docx》
+
+
+生成8位不重复的字符串：
+	// 属于commons-lang包的类
+	String randomNumeric = RandomStringUtils.random(8, "abcdefghijklmnopqrstuvwxyz1234567890");
+
+常用工具类(属于commons-lang包的类)：
+-1）处理bean对象(BeanUtils)
+-2）设置属性(PropertyUtils)
+	--需要自定义工具类，这样就不用在调用方法处捕获抛出的异常
+	// org.apache.commons.beanutils.PropertyUtils
+	User user = new User();
+	PropertyUtils.setProperty(user, "name", "1234"); //field的类型要与value的类型一致！！
+	PropertyUtils.setProperty(user, "birthday", Date.valueOf("1992-04-04"));
+
+
+String.format()方法使用：
+	作用：字符串格式化输出
+	String USER_OBJ = "姓名=%s，性别=%s，出生日期=%s";
+	String user = String.format(USER_OBJ, "TestAA", "男", "1994-02-20");
+	System.out.println(user); //测试1
+	System.out.println(String.format("%05d", 2)); //测试2
+	System.out.println(MessageFormat.format("{0} + {1} = {2}", 1, 2, 1+2)); //测试3
+
+
+Java8的流(stream)：
+	--通过某条件过滤集合
+	List<User> users = new ArrayList<>();
+	String username = "testAA1";
+	User thisUser = users.stream().filter(user -> username.equals(user.getName())).findFirst().orElse(null);
+
+
+presto 快速查询数据(大数据分析)
+
+
+Object的hashCode()和equals()介绍
+	equal()相等的两个对象他们的hashCode()肯定相等，也就是用equal()对比是绝对可靠的。hashCode()相等的两个对象他们的equal()不一定相等，也就是hashCode()不是绝对可靠的。
+	
+	--遵循两个原则：
+	-1）若两个对象equals返回值为true，则hashCode()返回相同的int值；
+	-2）若两个对象equals返回值为false，则hashCode()返回不相同的int值
+	
+	--问：为什么要重写hashCode()和equals()方法？
+	在定义类时，希望两对象的某些属性相同时就认为它们是相同的，因此需要重写equals方法。
+	重写需要遵循上面的两个原则，我们重写了equals()方法，也要重写hashCode()方法。
+	很多类都重写了这两个方法,例如String类，包装类。
+	
+	--针对数据大且快速对比
+	先hashCode()，如果hashCode()相同，再用equal()验证，如果hashCode()都不同，则肯定不同，这样对比的效率就很高了。
+
+
+
+Socket通信编程：
+	-1）服务器创建TCP连接对象
+		ServerSocket server = new ServerSocket(端口号);
+	-2）服务器创建通信的Socket对象
+		Socket s = server.accept();
+	-3）客户端创建通信Socket对象
+		Socket socket = new Socket(服务端ip地址, 端口号)；
+Socket套接字：
+	就是源Ip地址，目标IP地址，源端口号和目标端口号的组合
+
+
+
+大文件读写操作
+	//以空间换取时间。将文件部分或全部映射到内存后进行读写，速度将提高很多。
+	MappedByteBuffer buffer = new RandomAccessFile(filePath); 
+	内存映射文件首先将外存上的文件映射到内存中的一块连续区域，被当成一个字节数组进行处理，读写操作直接对内存进行操作，而后再将内存区域重新映射到外存文件，这就节省了中间频繁的对外存进行读写的时间，大大降低了读写时间。
+
+
+
+
+
+
+
+

@@ -1,0 +1,118 @@
+
+NIO是什么？适用于何种场景？
+
+	读数据、处理数据、写数据
+
+nio是一种同步非阻塞的IO模型，也是IO多路复用的基础，是解决高并发与大量连接、IO处理问题的有效方式。
+
+IO模型对比：
+	所有IO都分为两个阶段：等待就绪和操作。例如：读函数分为等待系统可读和真正的读；写函数分为等待网卡可写和真正的写。
+	等待就绪的阻塞是不使用CPU的，是在“空等”；真正的读写操作的阻塞是使用CPU的，而且这个过程非常快，属于memory copy，带宽通常在1GB/s级别以上，基本不耗时。
+	以socket.read()为例子：
+		BIO，若tcp recvBuffer里没有数据，函数会一直阻塞，直到收到数据，返回读到的数据。
+		NIO，若TCP RecvBuffer有数据，就把数据从网卡读到内存，并且返回给用户；反之则直接返回0，永远不会阻塞。
+		AIO，不但等待就绪是非阻塞的，就连数据从网卡到内存的过程也是异步的。
+
+IO和NIO区别？
+	IO是面向流的，NIO是面向缓冲区的。
+	IO是各种流是阻塞的，NIO是非阻塞模的。
+	Java NIO的选择器允许一个单独的线程来监视多个输入通道，你可以注册多个通道使用一个选择器，然后使用一个单独的线程来“选择”通道。
+
+
+BIO、NIO、AIO区别？
+	BIO：
+		描述：同步并阻塞，服务器实现模式为一个连接一个线程，即客户端有连接请求时服务端就需要启动一个线程进行处理。
+		缺点：若启动的连接不做任何事情会造成不必要的线程开销，可使用线程池机制改善。
+		BIO方式适用于连接数目比较小且固定的架构。
+	NIO：
+		描述：同步非阻塞，服务器实现模式为一个请求一个线程，即客户端发送的链接请求都会注册到多路复用器上，多路复用器轮询到连接有IO请求时才启动一个线程进行处理。
+		NIO适用于连接数多且连接比较短（轻架构）的架构。
+	AIO：
+		描述：异步非阻塞，服务器实现模式为一个有效请求一个线程，即客户端的IO请求都是由OS先完成了再通知服务器应用区启动线程去处理。
+		AIO适用于连接数多且连接比较长（重架构）的架构。
+
+
+BIO实现Socket通信：
+--有两处阻塞
+public class QQServer {
+
+	static byte[] bytes = new byte[1024];
+	public static void main(String[] args) {
+		ServerSocket serverSocket = null;
+		try {
+			serverSocket = new ServerSocket();
+			serverSocket.bind(new InetSocketAddress(8080));
+
+			while (true) {
+				// 阻塞 等待连接
+				Socket socket = serverSocket.accept();
+				// 阻塞 read读了多少字节 等待用户输入
+				int read = socket.getInputStream().read(bytes);
+				String content = new String(bytes);
+				System.out.println(content);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				serverSocket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+
+NIO实现Socket通信：
+--处理BIO的两处阻塞
+public class QQServerNio {
+
+	static byte[] bytes = new byte[1024];
+	static List<SocketChannel> list = new ArrayList<>();
+	static ByteBuffer byteBuffer = ByteBuffer.allocate(512);
+	public static void main(String[] args) throws InterruptedException {
+		try {
+			// listener
+			ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+			serverSocketChannel.bind(new InetSocketAddress(8080));
+
+			while (true) {
+				// 阻塞
+				SocketChannel socketChannel = serverSocketChannel.accept();
+				if (socketChannel == null) {
+					Thread.sleep(1000);
+					System.out.println("no connect...");
+					
+					for (SocketChannel client : list) {
+						int k = client.read(byteBuffer);
+						if (k > 0) {
+							byteBuffer.flip();
+							System.out.println(byteBuffer.toString());
+						}
+					}
+				} else {
+					socketChannel.configureBlocking(false);
+					list.add(socketChannel);
+					for (SocketChannel client : list) {
+						int k = client.read(byteBuffer);
+						if (k > 0) {
+							byteBuffer.flip();
+							System.out.println(byteBuffer.toString());
+						}
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+
+
+
+
+
+
+
+

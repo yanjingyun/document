@@ -1,0 +1,129 @@
+问：SpringBoot有什么优点？
+
+问：什么是SpringBoot？
+	SpringBoot是Spring开源组织下的子项目，是Spring组件一站式解决方案，主要简化了使用Spring的难度，简化了繁重的配置，提供了各种启动器，开发者能快速上手。
+
+问：SpringBoot优点？
+	开箱即用，远离繁琐的配置；
+	提供了一系列大型项目通用的非业务性功能，如内嵌服务器、jpa、security、外部化配置等；
+	使用Java配置而非xml配置文件。
+
+
+问：SpringBoot、SpringMVC和Spring有什么区别？
+	Spring最重要的特征是IOC和AOP；
+		IOC(Inversion Of Control)有两种方式：DI(Dependenct Injection依赖注入)和DL(Dependenct Lookup依赖查找)
+	SpringMVC是web模块的项目，提供了一种分离式的方法来开发web应用；
+	Spring和SpringMVC的问题在于需要配置大量的参数，而SpringBoot通过一个自动配置和启动的项目来解决这个问题。
+
+问：spring-boot-starter-parent有什么用？
+	定义Java编译版本为1.8；
+	使用UTF-8格式编码；
+	继承自spring-boot-dependencies，这个里面定义了依赖的版本，也正是因为继承了这个依赖，所以我们在写依赖时不需要写版本号；
+	执行打包操作的配置；
+	自动化的资源过滤；
+	自动化的插件配置；
+
+问：什么是SpringBoot Starter？
+	它首先提供了一个自动化配置类(一般命名为XXXAutoConfiguration)，在该配置类中通过条件注解来决定一个配置是否生效，然后它还会提供一系列的默认配置，也允许开发者根据实际情况自定义相关配置，然后通过类型安全的属性注入将这些配置属性注入进来，新注入的属性会代替掉默认属性。
+	如你想使用jpa访问数据库，只需引入spring-boot-starter-data-jpa依赖项即可。
+	--自定义Starter实例：
+
+问：SpringBoot提供了哪些Starter内容？
+	spring-boot-starter-web 	//Web 和 RESTful 应用程序
+	spring-boot-starter-test	//单元测试和集成测试
+	spring-boot-starter-jdbc	//传统的JDBC
+	spring-boot-starter-data-jpa	//带有 Hibeernate 的 Spring Data JPA
+	spring-boot-starter-security	//使用 SpringSecurity 进行身份验证和授权
+	spring-boot-starter-web-services	//SOAP Web Services
+	spring-boot-starter-hateoas		//为服务添加 HATEOAS 功能
+	spring-boot-starter-data-rest	//使用 Spring Data REST 公布简单的 REST 服务
+
+
+
+问：SpringBoot的核心注解？它由哪几个注解组成？
+	启动类的注解是@SpringBootApplication，它也是SpringBoot的核心注解，主要由下面3个注解组成：
+	1、@SpringBootConfiguration：组合了@Configuration注解，实现配置文件的功能
+	2、@EnableAutoConfiguration：打开自动配置的功能，也可以关闭某个自动配置的选项，如关闭数据源自动配置功能@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+	3、@ComponentScan：Spring组件扫描
+
+问：SpringBoot配置文件格式区别？
+	两种配置文件格式：.properties和.yml
+		app.user.name=testAA	--.properties格式
+		app:user:name:testAA	--.yml格式，但不支持@PropertySource注解导入配置
+问：SpringBoot读取配置文件信息/绑定变量？
+	详情：https://mp.weixin.qq.com/s/aen2PIh0ut-BSHad-Bw7hg
+	通过@Value，@PropertySource，@Environment，@ConfigurationProperties来绑定变量。
+
+问：SpringBoot自动配置原理？
+	@EnableAutoConfiguration, @Configuration, @ConditionalOnClass注解就是自动配置的核心。
+	首先它得是一个配置文件，其次根据类路径下是否有这个类去自动配置。
+
+问：SpringBoot支持哪些日志框架？
+	详情：https://mp.weixin.qq.com/s/OAyzUNIgBPkPVCy23gh-WA
+	SpringBoot支持Java Util Logging，Log4j2,Lockback作为日志框架。默认使用Logback日志框架。
+
+问：SpringBoot定义多套不同环境配置？如何配置特定环境？
+
+问：SpringBoot2.0有什么新特征？
+	配置变更、JDK版本升级、第三方类库升级、响应式Spring编程支持、HTTP/2.0支持、配置属性绑定、更多改进和加强
+
+
+问：spring-boot-maven-plugin功能？
+	能够以Maven的方式为应用提供SpringBoot支持，即为SpringBoot应用提供了执行Maven操作的可能。
+	在添加了该插件之后，当运行“mvn package”进行打包时，会打包成一个可以直接运行的JAR文件，使用"java -jar xx.jar"命令就可以直接运行
+	附：Linux环境下“java -jar xx.jar”运行SpringBoot项目，按下“ctrl+c”或关闭终端窗口程序就会被终止，可通过“java -jar xx.jar &”让程序在后台保持运行不被关闭。
+
+问：SpringBoot自动重装我的应用程序？
+	使用spring-boot-devtools依赖，启动后(Run as)调整controller方法的参数会自动重新加载该类。
+	如Controller类中getUser()在调整成getUser(Integer id)时无需重新启动，新增一个方法时也无需重新启动项目。
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-devtools</artifactId>
+		<scope>runtime</scope>
+	</dependency>
+
+
+问：什么嵌入式服务器？
+	对于servlet堆栈应用程序，spring-boot-starter-web包含spring-boot-starter-tomcat，也可以使用spring-boot-starter-jetty或spring-boot-starter-undertow替代。
+	对于反应栈应用程序，spring-boot-starter-webflux包括反应堆的Netty通过包括spring-boot-starter-reactor-netty，也可用其它替代。
+
+问：SpringBoot项目添加通用JS代码？
+	描述：抽象出head部分的css和js文件封装成公共文件，具体页面仅需引入该公共文件即可。
+	实例：
+		--详情：https://blog.csdn.net/qq_27493017/article/details/85233351
+		--1.公共页面
+		<head th:fragment="commonHead(title)"> ... </head>
+		--2.具体页面
+		<head th:replace="head :: commonHead('验证公共静态资源的引入')"></head>
+
+问：什么是Spring Data？
+	Spring Data是Spring的一个子项目，支持NoSQL和关系数据存储。其主要目标是简化数据库访问。
+	Spring Data具有如下特点：
+		SpringData项目支持NoSQL存储；MongoDB(文档数据库)、Neo4j(图形数据库)、Redis(键值对存储)、HBase(列族数据库)
+		SpringData项目所支持的关系数据存储技术：JDBC、JPA
+
+
+
+问：什么是Spring Data Rest？为什么我们不建议在实际的应用程序中使用Spring Data Rest？
+
+
+问：SpringBoot项目作为Java应用程序运行时，后台会发生什么？
+	！！！
+
+问：SpringBoot使用内存数据库H2？如何配合JPA使用？
+问：内存数据库Memcached、Redis、H2比较？
+	详情：http://www.360doc.com/content/14/0110/21/281812_344213831.shtml
+问：指定的数据库连接信息在哪里？它是如何知道自动连接至 H2 的？
+
+
+问：SpringBoot中的监视器是什么？
+	Actuator是SpringBoot启动框架中的重要功能之一，可帮助你访问生产环境中正在运行的应用程序的当前状态。
+
+
+Starter的工作流程：
+	--自定义Starter：https://blog.csdn.net/wo541075754/article/details/102947915
+	-1）SpringBoot再启动时扫描项目所依赖的jar包，寻找包含spring.factories文件jar包；
+	-2）根据spring.factories配置加载AutoConfiguration类；
+	-3）根据@Conditional注解条件，进行自动配置并将Bean注入Spring容器。
+
+
