@@ -154,6 +154,8 @@ redis实现分布式锁？
 		NX:若key不存在时设置成功
 		XX:若key存在时才设置成功
 	其他问题：
+		redis做分布式锁，若过期时间到了但业务程序还没处理完？
+			使用redisson。redisson有个看门狗的监控线程，若检测到key被劫持时会重置过期时间。
 		redis分布式锁的实现原理？setNX啥的
 		redis分布式锁注意事项？30秒后值动释放
 		zk实现分布式锁比较？
@@ -257,6 +259,54 @@ pipeline与Redis事务(multi)
 	multi/exec可以保证原子性，而pipeline不保证原子性
 
 
+redis应用场景：
+	String应用场景：
+	>计数器
+		incr article:readcount:{文章id}
+		get article:readcount:{文章id}
+	>web集群session共享
+		spring session + redis实现session共享
+	>分布式系统全局序列号：
+		incrby orderId 1000 //redis批量生成序列号提升性能
+	
+	Hash常用操作：
+		hset key field value 	//存储一个哈希表key的键值
+		hsetnx key field value	//存储y一个不存在的哈希表key的键值
+		hmset key field value [field value...] //在一个哈希表key中存储多个键值对
+		hget key field 			//获取哈希表key对应的field键值
+		hmget key field [field]	//批量获取哈希表key对应的field键值
+		hdel key field [field]	//删除哈希表key中的field键值
+		hlen key				//返回哈希表key的field数量
+		hgetall key 			//返回哈希表key中所有的键值
+
+		hincrby key field increment //为哈希表key中field键的值增加increment
+
+	Hash电商购物车：
+		备注：用户Id为key，商品id为field，商品数量为value
+		1.添加商品》hset cart:userId goodsId goodsNum
+		2.添加数量》hincrby cart:userId goodsId num
+		3.商品总数》hlen cart:userId
+		4.删除商品》hdel cart:userId goodsId
+		5.获取购物车所有商品》hgetall cart:userId
+
+	list常用操作：
+		lpush key value [value...]	//将一个或多个值value插入到key列表的表头（左插入）
+		rpush key value [value...]	//将一个或多个值value插入到key列表的表尾（右插入）
+		lpop key 	//移除并返回kkey列表的头元素
+		rpop key 	//移除并返回kkey列表的尾元素
+		lrange key start stop	//返回列表key中指定区间内（start~stop）的元素
+
+		blpop key [key...] timeout	//从key列表表头弹出一个元素，阻塞等待timeout秒
+		brpop key [key...] timeout	//从key列表表尾弹出一个元素，阻塞等待timeout秒
+	list应用场景：
+		Stack(栈) = lpush + lpop
+		Queue(队列) = lpush + rpop
+		Blocking MQ(阻塞队列) = lpush + Brpop
+		微信公共号消息推送：
+			aa关注了bb、cc这两个人。
+			1、当bb发布消息msg1，则》lpush msg:aa msg1;
+			2、当cc发布消息msg2，则》lpush msg:aa msg2;
+			3、aa查看前五条最新消息》lrange msg:aa 0 5;
 
 
 
@@ -278,6 +328,25 @@ pipeline与Redis事务(multi)
 
 
 
+什么是redis？
+redis相比mencached有哪些优势？
+redis支持哪几种数据类型？
+redis主要消耗什么物理资源？
+redis有哪些淘汰策略？
+一个字符串类型的值能存储最大容量是多少？ 512M
+为什么redis把所有数据放到内存中？
+redis支持的Java客户端都有哪些？官方推荐用哪个？
+redis和redisson有什么关系？
+jedis和redisson有什么关系？
+redis哈希槽的概念？
+redis集群的主从复制模型？
+redis集群会有写操作丢失吗？
+Redis集群之间是如何复制的？
+Redis集群最大节点个数是多少？
+Redis集群如何选择数据库？
+怎么测试Redis的连通性？
+Redis中的管道有什么用？
+怎么理解Redis事务？
 
 redis模拟session，除了redis你还考虑过别的吗？
 Redis用过哪些数据数据，以及Redis底层怎么实现？

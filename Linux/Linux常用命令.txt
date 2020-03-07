@@ -157,25 +157,8 @@ redis集群：
 	used：用掉的内存
 	free：空闲的内存
 
-jvm调优-jstack找出最耗cpu的线程并定位代码
-	> ps -ef | grep projectName 	#1.先找出项目对应进程ID(pid)
-	> top H -p pid 	#2.找出该进程最消费cpu的线程
-	> printf "%x\n" 2012 #得到线程Id为2012其对应的十六进制7dc
-	> jstack 32464 | grep 7dc	#一般会进到jdk的bin目录下，root权限执行
-	> 第四步：查代码
 
 
-查看耗cpu的线程：
-	top -查看最耗费cpu的进程
-	top H -p pid #查看具体的线程信息
-	jstack [进程] | grep -A 10 [线程的16进制]
 
 
-Java死锁排查：
-	详情：https://www.cnblogs.com/aflyun/p/9194104.html
-	1.运行死锁程序
-	2.命令窗口使用jps+jstack
-	> jps -l #获取pid，即Java进程ID
-	> jstack -l pid #查看线程，能发现死锁
-	> JConsole #打开图形化监控工具
-	> jvisualvm #打开图形化监控工具
+

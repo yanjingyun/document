@@ -1,0 +1,52 @@
+
+	appId:wxddf44695a847e2ff
+	AppSecret:69287e59a7d19b0f089b3110d4dd4ac8
+
+vue @tap 自定义参数：
+	<icon class="clear-image" type="clear" color="red" size="20" @tap="clearImage" :data-val="i" />
+	clearImage(e) {
+		console.log(e)
+		console.log(e.currentTarget.dataset.val) // 获取data-val值
+	}
+
+弹出提示：
+	uni.showToast({title:"验证通过!", icon:"none"});
+
+
+模态框：	
+	uni.showLoading({title: 'loading'}); // 显示
+	uni.hideLoading(); // 隐藏
+
+
+编码问题：
+	onLoad加载的code数据集合比页面getCodeName回显的慢，导致数据没有回显。
+
+回显值使用{{this.codeCache.getCodeName("BM_BANK_TYPE", inputForm.bankType)}}问题：
+	await this.codeCache.initCodeByTypes(['BM_YES_NO', 'BM_GENDER', 'BM_NATION', 'BM_BANK_TYPE']);这个还没有加载完成，会导致code里面没有对应的BM_YES_NO缓存。
+
+uniApp中小程序跳转其它小程序：
+	https://ask.dcloud.net.cn/question/62626
+	https://uniapp.dcloud.io/collocation/manifest?id=mp-weixin
+	
+	-1）manifest.json文件
+	/* 小程序特有相关 */
+    "mp-weixin" : {
+        "appid" : "wxddf44695a847e2ff",
+		"navigateToMiniProgramAppIdList" : [
+			"wx506f6bb880768a01", // 粤信签
+			"wx769668f9dcf81f5d", // 微警务
+			"wxd65aed3773b30e6d", // 粤信签测试
+			"wx82d43fee89cdc7df" // 粤省事
+		],
+		...
+	}
+	-2）index.vue页面
+	wx.navigateToMiniProgram({ // 跳转粤省事
+		appId: 'wx82d43fee89cdc7df',
+		path: 'birth/pages/birth-certification-apply/start/start',
+		envVersion : 'release',
+		success: (res) => {
+			JSON.stringify(res);
+		}
+	});
+

@@ -1,0 +1,102 @@
+
+-1）multi-image.vue文件
+<template>
+	<view>
+		<view class="container">
+			<view class="item" v-for="(i, index) of mutilImages" :key="index">
+				<image class="uni-uploader__img" :src="i" :data-src="i" @tap="previewImage" />
+				<icon class="clear-image" type="clear" color="red" size="20" @tap="clearImage" :data-val="i" />
+			</view>
+			<view class="item">
+				<view class="uni-uploader__input-box">
+					<view class="uni-uploader__input" @click="chooseHandImage"></view>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+<script>
+	export default {
+		props: {
+			items: Array
+		},
+		data() {
+			return {
+				mutilImages: [],
+				imageList: []
+			}
+		},
+		onReady() {
+			this.mutilImages = this.items;
+		},
+		methods: {
+			chooseHandImage: async function() {
+				console.log('sdfghnm,')
+				uni.chooseImage({
+					sourceType: ['camera', 'album'],
+					sizeType: ['compressed', 'original'],
+					count: 9,
+					success: (res) => {
+						const tempFilePaths = res.tempFilePaths;
+						for (const i of tempFilePaths) {
+							this.mutilImages.push(i);
+							this.change();
+						}
+					}
+				})
+			},
+			previewImage: function(e) {
+				var current = e.target.dataset.src;
+				this.imageList.push(current);
+				uni.previewImage({
+					current: current,
+					urls: this.imageList
+				})
+			},
+			clearImage(e) {
+				var index = this.mutilImages.indexOf(e.currentTarget.dataset.val);
+				if (index > -1) {
+					this.mutilImages.splice(index, 1);
+					this.change();
+				}
+			},
+			change() {
+				this.$nextTick(() => {
+					this.$emit('change', this.mutilImages);
+				})
+			}
+		}
+	}
+</script>
+<style>
+	.container {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		width: 100%;
+		padding: 5px;
+	}
+	.item {
+	    position: relative;
+	    width: 33.33%;
+	    height: auto;
+	}
+	.clear-image {
+		position:absolute;
+		right:0px;
+		top:-5px;
+	}
+</style>
+
+-2）测试
+	<multi-image :items="inputImg.otherImgs" @change="(e) => inputImg.otherImgs = e" />
+
+	// 回显
+	let otherImgIds = this.inputImgIdOrg.otherImgIds;
+	let otherImgs = [];
+	if (otherImgIds.length) {
+		for (const i of otherImgIds) {
+			otherImgs.push(basrImgUrl + i);
+		}
+	}
+	this.inputImg.otherImgs = otherImgs;

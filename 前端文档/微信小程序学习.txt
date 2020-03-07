@@ -142,15 +142,6 @@ http://192.168.0.199/wj/zz-weijianwei.git	--粤省事小程序git地址
 微信官方文档：
 	https://developers.weixin.qq.com/miniprogram/dev/devtools/page.html
 
-
-小程序获取用户信息接口：
-	--1）js获取用户信息：使用button组件，并指定open-type=getUserInfo
-	<button open-type="getUserInfo" @getuserinfo="getUserInfo">微信登录</button>
-	--2）页面展示用户信息：使用open-data展现用户基本信息
-	<open-data type="userNickName" />
-	<open-data type="userAvatarUrl" />
-
-
 小程序登录：
 	--前言：微信登录就是避免用户需要注册账号，和每次都要输入用户名和密码登录系统。
 流程描述：
@@ -270,4 +261,52 @@ http://192.168.0.199/wj/zz-weijianwei.git	--粤省事小程序git地址
 			
 			return redisTemplate;
 		}
-	}			
+	}
+
+
+
+wx.getUserInfo()接口：
+	详情：https://developers.weixin.qq.com/community/develop/doc/0000a26e1aca6012e896a517556c01
+	为优化用户体验，使用wx.getUserInfo接口直接弹出授权框的开发方式将逐步不再支持。从2018年4月30日开始，小程序与小游戏的体验版、开发版调用wx.getUserInfo接口，将无法弹出授权询问框，默认调用失败。正式版暂不受影响。开发者可使用以下方式获取或展示用户信息：
+
+	解决办法：
+		https://www.cnblogs.com/kenshinobiy/p/9122782.html?tdsourcetag=s_pcqq_aiomsg
+
+小程序获取用户信息接口：
+	--1）js获取用户信息：使用button组件，并指定open-type=getUserInfo
+	<button open-type="getUserInfo" @getuserinfo="getUserInfo">微信登录</button>
+	--2）页面展示用户信息：使用open-data展现用户基本信息
+	<open-data type="userNickName" />
+	<open-data type="userAvatarUrl" />
+
+
+微信小程序登录问题--第一次登录失败刷新再次登录成功问题
+	链接：https://blog.csdn.net/it_lin_web/article/details/84956628
+	出现这样问题都是先获取用户信息wx.getUserInfo（）encryptedData与iv，再进行登录wx.login（）获取code，code是用来生成session_key用来解密encryptedData与iv的，所以等你先获取用户encryptedData与iv时再获取code时session_key会与encryptedData解密出来的session_key不同，每次获取code就会产生一个新的session_key，就会失败了，则只能在获取code后获取encryptedData。正确做法是先wx.login（）成功后再wx.getUserInfo()
+
+
+微信小程序appID查看：
+	https://mp.weixin.qq.com/wxamp/devprofile/get_profile?token=545177498&lang=zh_CN
+微信小程序-给测试人员测试
+	详情：https://blog.csdn.net/ZHFDBK/article/details/99551869
+	1、在开发者工具中上传项目
+	2、在微信公众平台上添加“成员管理-体验成员”
+		https://mp.weixin.qq.com/wxamp/wacodepage/getcodepage?token=1839006122&lang=zh_CN
+	3、在微信公众平台上添加“版本管理-开发版本-选为体验版本”会出来二维码，测试人员扫二维码即可体验。
+
+微信小程序-多账号调试
+	--前提：login等api需要添加项目成员，步骤：微信公众平台-成员管理-项目成员
+	步骤：微信开发者工具-工具-多账号调试
+
+
+微信小程序真机调试的时候，报错request:fail url not in domain list
+	详情：https://blog.csdn.net/qq_40421671/article/details/86650126
+	1、开发场景下：详情--勾选不校验
+		不校验合法域名、web-wiew（业务域名）、tlsb版本以及https证书
+	2、真机调试时，选择打开调试。
+
+
+模式微信小程序跳转到微信小程序测试：
+	详情：https://blog.csdn.net/weixin_36934930/article/details/80781941
+	添加编译模式-》进入场景（选择“1037: 从小程序进入”）、AppID、extraData（JSON格式）。
+	在App.vue的onShow(e)方法获取这些extraData参数。

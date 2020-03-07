@@ -201,3 +201,55 @@ spring中循环依赖怎么解决？
 
 
 说说Spring的生命周期吧
+
+IOC容器初始化过程：
+	主要过程是读取xml资源并解析，最终注册bean到BeanFactory中。
+	1、调用ClassPathXmlApplicationContext后，先会将配置文件信息保存到configLocations，供后面解析使用；
+	2、解析：通过parseBeanDefinitionElement将xml的元素解析为BeanDefinition，然后存入BeanDefinitionHolder，再利用BeanDefinitionHolder将BeanDefinition注册，实质就是把BeanDefinition的实例put进BeanFactory中；
+		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele); // 解析
+	2、注册：将beanName为key，beanDefinition为value保存到HashMap中；
+		this.beanDefinitionMap.put(beanName, beanDefinition)
+
+IOC：
+	1）Spring的bean容器也叫BeanFactory，我们常用的ApplicatonContext实际上内部有一个listableBeanFactory存储bean的map。
+	2）bean加载过程：Spring容器加载时先读取配置文件，一般是xml，然后解析xml，找到其中所有bean，依次解析，然后生成每个bean的beanDefinition，存在一个map中，根据beanId映射实际bean的map。
+	3）bean初始化：加载完以后，如果不启用懒加载模式，则默认使用单例加载，在注册完bean以后，可以获取到BeanDefinitoion信息，然后根据该信息首先检查依赖关系，如果存在依赖其他bean则先加载其他bean，然后通过反射的方式创建一个单例bean。
+
+	为什么用反射？
+		因为实现类可以通过配置文件改变，但接口是一致的，使用反射可以避免实现类改变时无法自动进行实例化。
+		当然bean也可以使用原型方式加载，使用原型的话，每次创建bean都会是全新的。
+
+AOP：
+	AOP的切面、切点、增强器一般也是配置在xml文件中，所以bean容器在解析xml时会找到这些内容，并且首先创建增强器bean的实例。
+
+	基于上面创建bean的过程，aop起到什么作用？
+		在获得beandefinition的时候，spring容器会检查该bean是否有aop切面所修饰，是否有能够匹配切点表达式的方法，如果有，在创建bean之前，会将bean重新封装成一个动态代理对象。
+		代理类会为bean增加切面中配置的advisor增强器，然后返回bean的时候实际上返回的是一个动态代理对象。
+		所以我们在调用bean的方法时，会自动织入切面的增强器，当然，动态代理既可以选择jdk增强器，也可以选择cglib增强器
+
+
+Spring事务：
+	spring事务其实是一个特殊的aop方式。在spring配置文件中配置好事务管理器和声明式事务注解后，就可以使用@Transactional进行事务方法的处理。
+
+	事务管理器的bean中会配置基本的信息，然后需要配置事务的增强器，不同方法使用不同的增强器。当然如果使用注解的话就不用这么麻烦了。
+
+	然后和aop的动态代理方式类似，当Spring容器为bean生成代理时，会注入事务的增强器，其中实际上实现了事务中的begin和commit，所以执行方法的过程实际上就是在事务中进行的。
+
+
+
+
+SpringMVC源码总结：
+DispatcherServlet概述
+	SpringMVC使用DispatcherServlet作为唯一入口，在web.xml中进行配置，它继承frameworkservlet，向上继承httpservletbean。
+	httpServletBean为DispatcherServlet加载了来自web.xml配置信息中的信息，保存在ServletContext上下文中，而frameworkServletBean则初始化了Spring Web的bean容器。
+
+	这个容器一般是配置在spring-mvc.xml中的，它独立于spring容器，但是把spring容器作为父容器，所以SpringMVC可以访问spring容器中各种类。
+
+	dispatcherservlet自己做了什么呢，因为springmvc中配置了很多例如静态文件目录，自动扫描bean注解，以及viewresovler和httpconverter等信息，所以它需要初始化这些策略，如果没有配置则会使用默认值。
+
+DispatcherServlet的执行流程：
+	首先web容器会加载指定扫描bean并初始化。
+	
+	当请求进来后，首先会执行service方法，然后到doDispatch方法执行请求转发，事实上，spring web容器已经维护了一个map，通过注解@RequestMapping映射到对应的bean以及方法上。通过这个map可以获取一个一个handlerchain，真正要执行的方法被封装成一个handler，并且调用方法前要执行前置的一些过滤器。
+
+	最终执行handler方法时实际上就是去执行真正的方法。

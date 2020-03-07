@@ -1,0 +1,75 @@
+one-image组件
+-1）one-image.vue文件
+<template>
+	<view class="uni-uploader-body">
+		<view class="uni-uploader__files">
+			<view class="uni-uploader__file" style="position: relative;" v-show="src">
+				<image class="uni-uploader__img" :src="srcShow()" @tap="previewImage" :data-src="src"></image>
+				<icon class="clear-image" type="clear" color="red" size="20" @tap="srcClear"/>
+			</view>
+			<view class="uni-uploader__input-box" v-show="!src">
+				<view class="uni-uploader__input" @tap="srcChoose"></view>
+			</view>
+		</view>
+		<view class="image-name">{{ name }}</view>
+	</view>
+</template>
+<script>
+	export default {
+		props: {
+			name: String,
+			src: String
+		},
+		data() {
+			return {
+				temImgSrc: '',
+				imageList: []
+			}
+		},
+		methods: {
+			srcShow() {
+				return this.temImgSrc ? this.temImgSrc : this.src;
+			},
+			srcChoose: async function() {
+				uni.chooseImage({
+					sourceType: ['camera', 'album'],
+					sizeType: ['compressed', 'original'],
+					count: 1,
+					success: (res) => {
+						this.temImgSrc = '';
+						this.$emit('update:src', res.tempFilePaths[0]);
+					}
+					
+				})
+			},
+			previewImage: function(e) {
+				var current = e.target.dataset.src;
+				this.imageList.push(current);
+				uni.previewImage({
+					current: current,
+					urls: this.imageList
+				})
+			},
+			srcClear() {
+				this.temImgSrc = this.src;
+				this.$emit('update:src', '');
+			}
+		}
+	}
+</script>
+<style>
+	.clear-image {
+		position:absolute;
+		right:-5px;
+		top:-3px;
+	}
+	.image-name {
+		text-align: center;
+	}
+</style>
+
+-2）使用
+	<one-image name="主页" :src.sync="inputImg.bookletFirstImg" />
+
+	// 回显值
+	this.inputImg.bookletFirstImg = basrImgUrl + this.inputImgIdOrg.bookletFirstImgId;
