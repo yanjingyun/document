@@ -1,0 +1,30 @@
+synchronize的底层实现？与reentryLock的区别？
+计数器？AtomicInteger就可以了
+生产者和消费者模式？
+读写锁的实现方式？16位int的前八位和后八位分别作为读锁和写锁的标志位
+Synchronized在静态方法和普通方法的区别？
+volatile和atomic的区别
+atomic底层是如何实现的
+生产者消费者模式，要求手写过代码，还是要知道的
+怎么实现所有线程在等待某个事件的发生才会去执行？
+
+
+怎么认为一个类是线程安全？线程安全的定义是什么？
+如何保证线程安全？如何实现线程同步？如何关闭线程？
+线程和进程的区别？开启线程的三种方式？
+谈谈你对并发编程的理解并举例说明
+谈谈你对多线程同步机制的理解？
+如何保证多线程读写文件的安全？
+多线程有什么要注意的问题？
+synchronized的实现原理以及锁优化？
+synchronized 在静态方法和普通方法的区别？
+synchronized 和volatile 关键字的区别，synchronized与Lock的区别
+同一个类里面两个synchronized方法，两个线程同时访问的问题
+谈谈对Synchronized关键字，类锁，方法锁，重入锁的理解
+ReentrantLock 、synchronized和volatile比较，ReentrantLock的内部实现
+static synchronized 方法的多线程访问和作用
+如何控制某个方法允许并发访问线程的个数？
+在Java中wait和seelp方法的不同；谈谈wait/notify关键字的理解
+Java的信号灯？
+
+

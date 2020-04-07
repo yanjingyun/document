@@ -1,0 +1,368 @@
+****************Java5特性*********************************
+1.泛型(Generics)
+	List<Integer> list = new ArrayList<Integer>();
+2.增强for循环(Enhanced for Loop)
+	int[] array = {1, 2, 3, 4};
+	for (int i : array) { System.out.println(i); }
+3.自动封箱拆箱(Autoboxing/Unboxing)
+	八大基本类型和它们的包装类能够自动的相互转换
+4.枚举(Typesafe Enums)
+	附：枚举是一种实现线程安全的单例模式的好方式
+	enum TestEnum {
+		one, two, three;
+		TestEnum() {...//省略}
+	}
+5.可变参数(Varargs)
+	可变参数本质仍然是用一个数组，只是Java隐藏了这一过程。若方法中存在多个参数，则可变参数必须放在最后一个位置。
+	public void testVarargs(String... args) {
+		System.out.println(args[0]);
+		for (String arg: args) {
+			System.out.println(arg);
+		}
+	}
+6.静态导入(Static Import)
+	//单个导入
+	inport static java.lang.Math.PI;
+	//批量导入
+	import static java.lang.Math.*;
+7.注解(Annotations)
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.METHOD)
+	public @interface MyAnnotations {
+		String value() default "";
+	}
+8.新的线程模型和并发库(java.util.concurrent)
+
+
+
+****************Java6特性*********************************
+1.集合框架增强
+	为了更好的支持双向访问集合。添加了许多新的类和接口。
+	新的数组拷贝方法。Arrays.copyOf和Arrays.copyOfRange
+2.Scripting
+	可以让其他语言在java平台上运行。 java6包含了一个基于Mozilla Rhino实现的javascript脚本引擎。
+3.支持JDBC4.0规范
+
+
+
+****************Java7特性*********************************
+1.二进制前缀0b或者0B：
+	整型（byte、short、int、long）可以直接用二进制表示。
+	//二进制字面值前缀0b/oB
+	int i = 0b010； //10进制值为2
+	int j = 0B010;
+
+2.字面常量数字的下划线：
+	用下划线来凝结整数可提升其可读性，自身无含义，不可用在数字的起始和末尾。
+	int k = 1_1; //值为11
+
+3.switch支持String类型：
+
+4.泛型实例化类型自动推断
+	Map<String, List<String>> map = new HashMap<String, List<String>>(); //之前
+	Map<String, List<String>> map = new HashMap<>(); //现在
+
+5.try-with-resources语句
+	声明在try括号中的对象称为资源，在方法执行完毕后会被自动关闭，相对与之前必须再finally关闭资源，这一特性大大提高了代码的简洁性。
+	所有实现java.lang.AutoCloseable接口的类都作为资源被自动关闭。
+
+6.单个catch中捕获多个异常类型（用“|”分割）并通过改进的类型检查重新抛出异常。
+
+
+
+****************Java8特性*********************************
+lambda表达式
+
+stream流
+
+方法引用：
+	概念：只需要使用方法的名字，而具体调用交给函数式接口（需要和Lambda表达式配合使用）
+	分类：
+		1、构造器方法引用，调用默认构造器。格式为Class::new
+		2、静态方法引用。格式为Class::static_method
+		3、类普通方法引用，方法不能带参数。格式为Class::method
+		4、实例方法引用。格式为instance::method
+	实例1：
+		List<Integer> list = Arrays.asList(1, 2, 3, 4);
+		list.forEach(i -> System.out.print(i));
+		list.forEach(System.out::print);
+	例如2：
+		String[] stringArray = { "Barbara", "James", "Mary", "John", "Patricia", "Robert" };
+		Arrays.sort(stringArray, String::compareToIgnoreCase);
+		System.out.println(Arrays.asList(stringArray));
+
+
+接口中可以新增默认方法(default)和静态方法。java9中接口新增private方法
+	描述：以前若一个接口要添加一个方法，所有实现该接口的类都要去添加实现，而某些实现类根本不需要实现这个方法也要写一个空实现，所以接口默认方法解决了这个问题。
+
+	实例：
+		public class MethodRefTest {
+
+			public static void main(String[] args) {
+				UserService userService = new UserService();
+				System.out.println(userService.getDefaultUsername());
+				System.out.println(IUserService.getStaticUsername());
+			}
+		}
+
+		interface IUserService {
+			default String getDefaultUsername() {
+				return "defaultUsername";
+			}
+			static String getStaticUsername() {
+				return "staticUsername";
+			}
+		}
+
+		class UserService implements IUserService {}
+
+函数式接口：
+	@FunctionalInterface标识为一个函数式接口只能用在只有一个抽象方法的接口上。如Runnable类只有run方法
+	若该接口只有一个抽象方法可以不写@FunctionalInterface注解，它默认就符合函数式接口。
+
+
+Nashorn JavaScript引擎：
+	可以运行js代码的引擎
+
+
+java.util.concurrent包调整
+	HashMap、ConcurrentHashMap的底层实现变化。HashMap由数组+链表+红黑树实现。ConcurrentHashMap取消分段锁，采用CAS和synchronized来保证并发安全。
+	java8之前，HashMap底层的数据结构是数组+链表实现的，Java8之后是数组+链表+红黑树实现的，当链表的长度超过8之后，会转换成红黑树。作用：解决因哈希冲突导致的链表过长，查询效率低的问题
+	java.util.concurrent.ConcurrentHashMap 类添加了新的方法以支持新的StreamApi和lambada表达式
+	java.util.concurrent.atomic包下新增了类以支持可伸缩可更新的变量
+	java.util.concurrent.ForkJoinPool类新增了方法以支持 common pool
+	新增了java.util.concurrent.locks.StampedLock类，为控制读/写访问提供了一个基于性能的锁，且有三种模式可供选择
+
+
+新的时间、日期(Date Time API):
+	新增LocalDate、LocalTime、LocalDateTime、Duration。
+	加强对日期和时间的处理。包括所有关于日期、时间、时区、持续时间和时钟操作的类。
+	这些类都是不可变的、线程安全的。
+
+
+
+jvm内存管理方面，由元空间代替永久代
+	-1）元空间不在虚拟机中，而是使用本地内存
+	-2）默认情况下，元空间的大小仅受本地内存限制
+	-3）也可以通过-XX:MetaspaceSize指定元空间的大小
+
+
+BASE64编码解码
+	// 编码
+	String encodeToString = Base64.getEncoder().encodeToString("test?java8".getBytes("utf-8"));
+	System.out.println(encodeToString);
+
+	// 解码
+	byte[] decode = Base64.getDecoder().decode(encodeToString);
+	System.out.println(new String(decode, "utf-8"));
+
+
+*************************Lambda表达式***********************************
+Lambda表达式：
+描述：允许将函数作为一个方法的参数。作用：解决 Java 被诟病的匿名内部类的问题
+格式： (params) -> expression 或 (params) -> { statements; }
+主要组成：参数列表->表达式体。如(int x, int y) -> x+y;
+特征：
+	可选参数类型:参数类型可不用，编译器自动识别其类型
+	可选圆括号）:单个参数时，不需要用括号包围参数，多个参数或无参时需要括号
+	可选大括号:表达式主体仅有一条语句时不需要花括号，若多条语句时需要花括号
+	可选return关键字:表达式主体是单一表达式，return关键字可不用，编译器自动返回该值。若写了return则需要加上花括号
+
+
+Lambda表达式条件：
+	-1）使用Lambda必须具有接口，且要求接口中有且仅有一个抽象方法
+	-2）使用Lambda必须具有上下文推断。
+	备注：有且仅有一个抽象方法的接口，称为“函数式接口”。
+
+
+--例1：测试Lambda的特征
+	public static void main(String[] args) {
+		// 可选类型声明，int可省略
+		UserMath addMath = (int a, int b) -> a + b;
+		UserMath subMath = (a, b) -> a - b;
+		
+		// 可选大括号 && 可选return关键字
+		UserMath multMath = (a, b) -> { return a * b; }; //有花括号，有return关键字
+		UserMath division = (a, b) -> a / b; //无花括号，无return关键字
+
+		System.out.println("6 + 3 = " + operate(6, 3, addMath));
+		System.out.println("6 - 3 = " + operate(6, 3, subMath));
+		System.out.println("6 * 3 = " + operate(6, 3, multMath));
+		System.out.println("6 / 3 = " + operate(6, 3, division));
+
+		// 可选圆括号，单个参数情况
+		UserPrint userPrint = a -> System.out.println("hello " + a);
+		userPrint.printIt("123");
+	}
+	private static int operate(int i, int j, UserMath userMath) {
+		return userMath.operation(i, j);
+	}
+
+	interface UserPrint {
+		void printIt(String aa);
+	}
+	interface UserMath {
+		int operation(int a, int b);
+	}
+
+--例2：测试Lambda与方法引用
+public class LambdaTest2 {
+	public static void main(String[] args) {
+		User[] userArray = {
+				new User("testAA1", Date.valueOf("2018-05-01")),
+				new User("testAA3", Date.valueOf("2018-05-03")),
+				new User("testAA2", Date.valueOf("2018-05-02")),
+				new User("testAA4", Date.valueOf("2018-05-05")),
+				new User("testAA5", Date.valueOf("2018-05-05"))};
+		// Arrays.sort(userArray, (a, b) -> a.getBirthday().compareTo(b.getBirthday())); //方式一
+		// Arrays.sort(userArray, (a, b) -> User.compareByBirthday(a, b)); //方式二
+		Arrays.sort(userArray, User::compareByBirthday); //方式三：静态方法引用
+		System.out.println(Arrays.asList(userArray));
+	}
+}
+class User {
+	private String name;
+	private Date birthday;
+	
+	public User(String name, Date birthday) {
+		this.name = name;
+		this.birthday = birthday;
+	}
+	
+	get/set...
+}
+
+
+
+*************************流(Stream)***********************************
+	详情参考java.util.stream.Stream<T>
+	教程：http://www.javastack.cn/article/2018/jdk8-new-feature-stream-iterator/
+
+获取流：
+	--1、数组Array获取流
+	Arrays.stream(arr);
+	Stream.of(arr);
+	--2、集合Collection获取流
+	new ArrayList<>().stream();
+	new HashSet<>().stream();
+	new Vector<>().stream();
+	--3、Map获取流
+	new HashMap<>().keySet().stream();
+	new HashMap<>().values().stream();
+	new HashMap<>().entrySet().stream();
+
+parallelStream()方法：
+	采用共享线程池，默认其线程数是最大可用的CPU核数-1个。
+	最大可用cpu核数：Runtime.getRuntime().availableProcessors()
+
+相关API介绍：
+1、拼接方法(方法后面能做其它操作)：
+	filter:过滤流，过滤流中不符合要求的元素
+	map:映射流，将某种类型的流转换成另一种流。
+	sorted:排序
+	flagtMap:将多个流合并成一个新流，函数拼接
+	distinct:去重，函数拼接
+	limit:返回前几个元素，函数拼接
+	skip:跳过前几个元素，函数拼接
+	concat:组合，函数拼接
+	distinct:去重
+2、终结方法(方法后面不能做其它操作)：
+	toArray:转换成数组对象
+	collect:转换成目标数据，如list、map等
+	count:统计个数
+	min、max、count:聚合操作，最小值、最大值、总数量
+	reduce:翻译为减少、缩小。聚合操作，用来做统计
+	anyMatch:所有数据都匹配返回true
+	noneMatch:所有数据都不匹配返回true
+	findFirst:获取第一个元素
+	findAny:获取第一元素，并行环境返回最快处理完的那个线程的数据
+	forEach:循环操作
+	forEachOrdered:按元素顺序执行循环操作，并行parallel环境
+
+filter()方法：
+	过滤流，过滤流中不符合要求的元素
+	
+	// 查询是否存在admin用户
+	User user = users.stream().filter(user -> "admin".equals(user.getName())).findFirst().orElse(null);
+	// 求年龄>20岁，性别为男的人数
+	long count = list.stream().filter(p -> p.getAge() > 25 && "男".equals(p.getGender())).count();
+
+map()方法：
+	映射流，将某种类型的流转换成另一种流。常见mapToInt、mapToLong、mapToDouble
+	List<Integer> squaresList = numbers.stream().map(i -> i*i).sorted().collect(Collectors.toList());
+
+sorted()方法：
+	返回一个排序的Stream
+	实例：
+		String[] arr = {"scsa","bi","a","cd","ca156165"};
+		Object[] objArr1 = Arrays.stream(arr).sorted().toArray();
+		Object[] objArr2 = Arrays.stream(arr).sorted((o1, o2) -> o1.length() - o2.length()).toArray();
+		Object[] objArr3 = Arrays.stream(arr).sorted(Comparator.comparing(String::length)).toArray();
+		// 倒序输出
+		Object[] objArr4 = Arrays.stream(arr).sorted(Comparator.reverseOrder()).toArray();
+		Object[] objArr5 = Arrays.stream(arr).sorted(Comparator.naturalOrder()).toArray();
+		Object[] objArr6 = Arrays.stream(arr).sorted(Comparator.comparing(String::length).reversed()).toArray();
+
+collect(Collector<T,A,R>)方法：
+	Collectors类实现了很多归约操作，可用于返回列表或字符串。
+	如：
+		--1、收集到集合Collection中
+		List list = stream.collect(Collectors.toList()); //转list集合
+		Set set = stream.collect(Collectors.toSet()); //转set集合
+		--2、收集到数组中
+		Object[] objArray = stream.toArray();
+		String[] strArray = stream.toArray(String[]::new); //解决泛型数组问题
+	实例：
+		// 1、将strArr排除空元素后转换为list集合
+		List<String> list = strArr.stream().filter(str -> !str.isEmpty()).collect(Collectors.toList());
+		// 2、将strArr所有元素排除空元素后，以“，”隔开合并
+		String str = strArr.stream().filter(string -> !string.isEmpty()).collect(Collectors.joining(", "));
+		// 3、先按age排序，再按name排序
+		list.stream().sorted(Comparator.comparing(Person::getAge).thenComparing(Person::getName));
+		// 4、找出年龄最小的用户姓名
+		String name = list.stream().sorted(Comparator.comparing(x -> x.getAge())).findFirst().get().getName();
+
+reduce()方法：
+	详情：https://blog.csdn.net/icarusliu/article/details/79504602
+	--1、一个参数：Optional<T> reduce(BinaryOperator<T> accumulator)
+	int[] arr = {1,2,3,4};
+	int max = Arrays.stream(arr).reduce((a, b) -> a > b ? a : b).getAsInt(); // 求最大值，结果为4
+	int sum = Arrays.stream(arr).reduce((a, b) -> a + b).getAsInt(); // 求总和，结果为10
+	
+	--2、两个参数：T reduce(T identity, BinaryOperator<T> accumulator)方法
+	int initSum = 5; // 相当于在Stream的基础上多了一个初始化的值
+	int reduce = Arrays.stream(arr).reduce(initSum, (a, b) -> a + b); // 求总和，结果为15
+
+	--3、三个参数：<U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner)
+	--看不懂！！！
+	
+
+测试1：
+	public void java8Stream() {
+		List<Integer> list = Arrays.asList(2,3,5,8,6);
+		list.stream().min(Integer::compareTo).ifPresent(System.out::println); // 最小值
+		list.stream().max(Integer::compareTo).ifPresent(System.out::println); // 最大值
+		list.stream().reduce((a, b) -> a + b).ifPresent(System.out::println); // 总和
+		list.stream().sorted().forEach(e -> System.out.print(e + " ")); // 排序和遍历
+		list.stream().filter(e -> e > 3 && e < 8).forEach(e -> System.out.print(e + " ")); // 过滤和遍历
+	}
+
+测试2：
+	public static class User {
+		private String name;
+		private int grade;
+		... //省略
+	}
+	private void java8Stream2() {
+		List<User> list = new ArrayList<>();
+		list.add(new User("testAA1", 23));
+		list.add(new User("testAA2", 43));
+		list.add(new User("testAA3", 33));
+		list.add(new User("testAA4", 25));
+		
+		// 计算总成绩
+		int sum = list.stream().mapToInt(User::getGrade).reduce(0, (a, b) -> a + b);
+		System.out.println("团队总成绩：" + sum);
+	}
+
+	

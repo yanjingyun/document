@@ -22,10 +22,12 @@
 	什么是二叉平衡树，如何插入节点，删除节点
 
 树：
+	参考：TreeTest.java
 	前序遍历、中序遍历、后序遍历
 	前序(MLR-根左右)
 	中序(LMR-左根右)
 	后序(LRM-左右根)
+
 
 
 做搜索、回溯问题的套路是画图，代码其实就是根据画出的树形图写出来的。
@@ -52,6 +54,10 @@
 问：最优的集合去重，时间复杂度为O(1)。
 	常规做法：本来10W条记录的记录，若新添加一条记录，则都要跟原来10W条记录做对比，起时间复杂度为O(n)。
 	优化：类似于HashMap的结构，先创建一个大的数组，直接将集合元素插入数组中，若该数组下标已存在元素，则说明是重复元素
+
+问：求数组的最长连续递增数列，如：4，200，3，1，100，2。结果是1，2，3，4
+	算法1：先排序，然后从前往后遍历，if (array[i]-array[i-1]==1) dp[i]=dp[i-1]-1; else dp[i]=1;
+	面试官：用一个hashtable，hash到4的时候，看看hash（3）和hash（5）是否存在，类似这样的思路
 
 
 
@@ -229,6 +235,39 @@
 	        return n;
 		}
 	}
+
+问：根据树的前序遍历和中序遍历构造二叉树？
+如前序遍历preorder=[3,9,20,15,7] 中序遍历inorder=[9,3,15,20,7]，构造二叉树如下：
+  3
+ / \
+9   20
+    /\
+   15 7
+
+源代码：
+class Solution {
+	public static class TreeNode {
+		int val;
+		TreeNode left;
+		TreeNode right;
+		TreeNode(int x) { val = x; }
+	}
+	
+    public TreeNode buildTree(int[] preorder, int[] inorder) {
+        if(preorder.length==0||inorder.length==0){
+            return null;
+        }
+        TreeNode root=new TreeNode (preorder[0]);
+        for(int i=0;i<preorder.length;i++){
+            if(preorder[0]==inorder[i]){
+                root.left=buildTree(Arrays.copyOfRange(preorder,1,i+1),Arrays.copyOfRange(inorder,0,i));
+                root.right=buildTree(Arrays.copyOfRange(preorder,i+1,preorder.length),Arrays.copyOfRange(inorder,i+1,inorder.length));
+                break;
+            }
+        }
+        return root;
+    }
+}
 
 
 

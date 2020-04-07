@@ -140,6 +140,16 @@ oracle在where子句中添加自定义函数判断
 
 
 
+查询最晚日期一条缴费记录正常的人员信息：
+	描述：存在个人表、缴费记录表。某人同一天会产生多条缴费记录，且不一定是缴费正常，因此不能用row_number()
+	with temp as (
+		select s.person_id, s.pay_status,
+			rank() over (partition by s.person_id order by s.pay_date desc) rn
+		  from V_SOCIAL_INSURANCE s)
+	select * from v_PERSON t where
+		exists (select 1 from temp k where k.rn = 1 and k.pay_status = '1' and k.person_id = t.id)
+
+
 
 
 

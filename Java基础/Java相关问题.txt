@@ -174,13 +174,6 @@ String.format()方法使用：
 	System.out.println(MessageFormat.format("{0} + {1} = {2}", 1, 2, 1+2)); //测试3
 
 
-Java8的流(stream)：
-	--通过某条件过滤集合
-	List<User> users = new ArrayList<>();
-	String username = "testAA1";
-	User thisUser = users.stream().filter(user -> username.equals(user.getName())).findFirst().orElse(null);
-
-
 presto 快速查询数据(大数据分析)
 
 
