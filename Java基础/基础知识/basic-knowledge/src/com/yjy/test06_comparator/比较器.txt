@@ -1,0 +1,12 @@
+Comparable和Comparator比较：
+	同：它们都是用来做对象比较的。
+	1、同一类的两个对象之间想比较，对应的类就要实现Comparable接口并重写compareTo()方法。
+	2、某些情况下你不希望修改原有的类的结构，可创建一个继承了Comparator接口的类，并重写compare()方法。
+
+比较类型：
+	数组比较：Arrays.sort(T[], Comparator<? super T> c);
+	集合比较：Collections.sort(List<T> list, Comparator<? super T> c);
+
+应用场景：
+	-1）排序，比较两个对象排序问题，两个对象比较的结果有三种：大于，等于，小于
+	-2）分组，比较两个对象是否同属一组，两个对象比较的结果只有两种：等于(两个对象属于同一组)，不等于(两个对象属于不同组)	

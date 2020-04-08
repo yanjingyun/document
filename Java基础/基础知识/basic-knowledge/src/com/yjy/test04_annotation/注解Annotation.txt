@@ -1,0 +1,37 @@
+元注解：
+4种类型：@Document、@Target、@Inherited、@Retention
+	1、@Document：指明该元素可以被javadoc工具文档化
+	2、@Target：指明注解元素的范围。如@Target({ElementType.METHOD, ElementType.TYPE})
+	3、@Inherited：指明该元素被自动继承
+	4、@Retention：指明生命周期。如@Retention(RetentionPolicy.RUNTIME)
+
+注解元素范围取值：
+public enum ElementType {
+    TYPE, //类、接口、枚举
+    FIELD, //字段
+    METHOD, //方法
+    PARAMETER, //参数
+    CONSTRUCTOR, //构造器
+    LOCAL_VARIABLE, //局部变量
+    ANNOTATION_TYPE, //注解类
+    PACKAGE //包
+}
+
+3种生命周期：
+public enum RetentionPolicy {
+	SOURCE, //只在源码显示，编译时会丢弃, 在class字节码文件中不包含
+	CLASS, //默认，编译时会记录到class中，运行时忽略, 运行时无法获得
+	RUNTIME //注解会clas字节码文件中存在，在运行时可以通过反射获取到
+}
+
+Java内置注解：
+	@Override --重写父类中的方法
+	@Deprecated --标注方法已过期
+	@SuppressWarnings --编译器忽略特定的警告信息
+Java自定义注解：
+	以@Interface标注（和创建一个接口相似）
+
+获取注解类：
+MyAnnotation an = class/method/field.getAnnotation(MyAnnotation.class);
+an.value();
+	

@@ -1,0 +1,45 @@
+反射机制中的类包括：
+	java.lang.Class //类
+	java.lang.reflect.Constructor //构造器
+	java.lang.reflect.Field //属性
+	java.lang.reflect.Method //方法
+	java.lang.reflect.Modifier //修饰符
+
+获取Class方式：
+	Class c1 = Class.forName("com.yjy.User"); //方法一
+	Class c2 = User.class; //方法二
+	Class c3 = (new User()).getClass(); //方法三，c3是运行时类
+
+常用api：
+一、获取类、父类和接口：
+	类形式为Class，泛型形式为Class<T>
+	1、clazz.getName()：返回类的名字，包括包名。比如：com.test.User
+	2、clazz.getSimpleName()：返回类名称简称，不包括包名。比如：User
+	3、clazz.getSuperclass()：获取某类的父类。由于编译擦除，没有显示泛型参数！
+	4、clazz.getGenericSuperclass()：获得带有泛型的父类！！
+	5、clazz.getInterfaces()：获取某类实现的接口
+	6、clazz.newInstance()：快速地创建一个类的实例
+	注意getSuperclass()和getGenericSuperclass()方法的区别！
+二、获取属性：
+	clazz.getFields():获取“类及父类”中声明的public的属性，但不能访问私有属性；
+	clazz.getDeclaredFields():访问“本类”中所有的属性（与private/protected/public无关），但不能访问父类属性。
+	
+	Field stuNoField = clazz.getDeclaredField("stuNo"); //获取特定字段
+	stuNoField.setAccessible(true);
+	stuNoField.set(student, 23);
+	
+	field.isAnnotationPresent(MyFilter.class) //该字段field是否有MyFilter注解
+	MyAnnotation annotation = field.getAnnotation(MyAnnotation.class); //获取该field上的MyAnnotation注解
+三、获取方法：
+	clazz.getMethods():访问“类及父类”中声明为public的方法，但不能访问私有方法！
+	clazz.getDeclaredMethods()：访问“本类”中所有的方法（与private，protected，public无关），但不能访问父类的方法。
+	
+	Method declaredMethod = clazz.getDeclaredMethod("setStuNo", Integer.class); //特定方法
+	declaredMethod.invoke(student, 123);
+四、获取构造器：
+	clazz.getConstructors():访问“类及父类”中声明为public的构造函数。
+	clazz.getDeclaredConstructors()：访问“本类”中所有的构造函数,与public,private,protect无关。
+	clazz.getConstructor(new Class[]{String.class}); //获取特定类构造器
+
+
+

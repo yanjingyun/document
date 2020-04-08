@@ -1,0 +1,57 @@
+标题：蚂蚁感冒
+问题描述：
+	长100厘米的细长直杆子上有n只蚂蚁。它们的头有的朝左，有的朝右。 
+	    每只蚂蚁都只能沿着杆子向前爬，速度是1厘米/秒。
+	    当两只蚂蚁碰面时，它们会同时掉头往相反的方向爬行。
+	    这些蚂蚁中，有1只蚂蚁感冒了。并且在和其它蚂蚁碰面时，会把感冒传染给碰到的蚂蚁。
+	    请你计算，当所有蚂蚁都爬离杆子时，有多少只蚂蚁患上了感冒。
+【数据格式】
+	第一行输入一个整数n (1 < n < 50), 表示蚂蚁的总数。
+	接着的一行是n个用空格分开的整数 Xi (-100 < Xi < 100), Xi的绝对值，表示蚂蚁离开杆子左边端点的距离。
+	正值表示头朝右，负值表示头朝左，数据中不会出现0值，也不会出现两只蚂蚁占用同一位置。其中，第一个数据代表的蚂蚁感冒了。
+	要求输出1个整数，表示最后感冒蚂蚁的数目。
+例如，输入：
+3
+5 -2 8
+程序应输出：
+1
+
+再例如，输入：
+5
+-10 8 -20 12 25
+程序应输出：
+3
+
+分析：
+   解决这个题目的关键是当两只蚂蚁碰面时，它们会同时掉头往相反的方向爬行，可以理解为，这两只蚂蚁互相穿过，啧啧，这有点像带土写轮眼的时空忍术啊，哈哈哈~
+
+先考虑两个极端的情况：
+	当first ant向左移动的时候，如果first ant左边没有蚂蚁，则就不会有蚂蚁和first ant互穿，所以first ant就会一直走到杆子的尽头，即最后只有一直蚂蚁感冒；
+	当first ant向右移动的时候，情况类似。如果有其他的蚂蚁与first ant互穿，则相当于有蚂蚁和first ant分别向两个不同的方向移动，最后感冒的是first ant右边向左移动的蚂蚁和first ant左边向右移动的蚂蚁以及first ant。
+
+源代码：
+public class Test03 {
+
+	public static void main(String[] args) {
+		System.out.println(antCatchCode(3, new int[]{5,-2,8}));
+		System.out.println(antCatchCode(5, new int[]{-10, 8, -20, 12, 25}));
+	}
+
+	private static int antCatchCode(int n, int[] arr) {
+		int left = 0, right = 0;
+		for(int i = 1; i < n; i++) {
+			if (arr[i] > 0 && Math.abs(arr[i]) < Math.abs(arr[0]))//Math.abs()返回绝对值
+				left++;
+			if (arr[i] < 0 && Math.abs(arr[i]) > Math.abs(arr[0]))
+				right++;
+		}
+		
+		int count = 0;
+		if (arr[0] > 0 && right == 0 || arr[0] < 0 && left == 0)
+			count = 1;
+		else {
+			count = left + right + 1;
+		}
+		return count;
+	}
+}

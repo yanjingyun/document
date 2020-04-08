@@ -1,0 +1,69 @@
+标题：实现小写金额转大写金额
+
+源码：
+public class Test01 {
+
+	public static void main(String[] args) {
+		System.out.println(changeNumToBig("123000089"));
+		System.out.println(changeNumToBig("123000089.4"));
+		System.out.println(changeNumToBig("123000089.45"));
+		System.out.println(changeNumToBig("123000089.05"));
+	}
+
+	static char[] unit = { '元', '拾', '佰', '仟', '万', '拾', '佰', '仟', '亿', '拾', '佰', '仟' };
+	static char[] digit = { '零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖' }; // 数字表示
+
+	private static String changeNumToBig(String input) {
+		if (input == null || "".equals(input)) {
+			return "";
+		}
+
+		StringBuffer stringBuffer = new StringBuffer();
+		int spotIndex = input.indexOf('.');
+		if (spotIndex != -1) { // "XXX.xx"结构
+			part1(stringBuffer, spotIndex, input); // 处理整数部分
+			part2(stringBuffer, spotIndex, input); // 处理小数点部分
+		} else { // "XXX"结构
+			int suffix = input.length();
+			part1(stringBuffer, suffix, input); // 处理整数部分
+		}
+		String number = part3(stringBuffer); // 处理零部分
+		return number;
+	}
+
+	private static void part1(StringBuffer stringBuffer, int suffix, String input) {
+		int unitIndex = 0; // unit下标
+		while (suffix != 0) {
+			int charAt = input.charAt(--suffix) - 48; // char 转int类型
+			stringBuffer.insert(0, digit[charAt] + "" + unit[unitIndex++]);
+		}
+	}
+
+	private static void part2(StringBuffer stringBuffer, int prefix, String input) {
+		boolean isFirst = true;
+		while (prefix != input.length() - 1) {
+			int charAt = input.charAt(++prefix) - 48; // char 转int类型
+			if (isFirst) {
+				stringBuffer.append(digit[charAt] + "角");
+				isFirst = false;
+			} else {
+				stringBuffer.append(digit[charAt] + "分");
+			}
+		}
+	}
+
+	private static String part3(StringBuffer stringBuffer) {
+		String str = stringBuffer.toString();
+		int zeroIndex = str.indexOf('零');
+		while (zeroIndex != -1) {
+			char ch = str.charAt(zeroIndex + 1);
+			if (ch == '万' || ch == '亿') {
+				str = str.substring(0, zeroIndex) + str.substring(zeroIndex + 1, str.length());
+			} else {
+				str = str.substring(0, zeroIndex) + str.substring(zeroIndex + 2, str.length());
+			}
+			zeroIndex = str.indexOf('零');
+		}
+		return str;
+	}
+}

@@ -1,0 +1,23 @@
+Type接口：
+	java.lang.reflect.Type是Java中所有类型的公共接口。它包括原始类型、参数化类型、数组类型、类型变量和基本类型。
+
+Type的4种类型的接口：
+	-1）ParameterizedType：参数化类型（即泛型），比如Collection
+	-2）GenericArrayType：数组类型
+	-3）TypeVariable：类型变量，是各种类型变量的公共父接口
+	-4）WildcardType（译为“通配符”）：代表一种通配符类型表达式，比如?,? extends Serializable等。
+	
+	? extends XX描述：
+		XX类是用来限定通配符的上界，它只能匹配XX类和XX类的子类。
+	? super XX描述：
+		XX类是用来限定通配符的下界，它只能匹配XX类和XX类的超类。
+
+
+使用：
+	1）泛型类。如class Page<t> { private T data; }
+	2）泛型方法。如public <T> List<T> getResultList(String sql, Class<T> t, Map<String, Object> filter) {...}
+
+api说明：
+	getActualTypeArguments():返回一个Type对象数组，这个数组代表着这个Type声明中泛型参数的实际类型
+
+		
