@@ -1,0 +1,42 @@
+标题：原地移除元素
+描述：
+	给定数组nums和一个值val，原地移除所有数值等于val的元素，返回移除后数组的新长度。不要使用额外的数组空间，你必须在原地修改输入数组并在使用 O(1) 额外空间的条件下完成。
+
+源代码：
+public class Main {
+	public static void main(String[] args) {
+		Main mm = new Main();
+		int[] nums = {0,1,2,2,3,0,4,2};
+		int val = 2;
+		int removeElement = mm.removeElement(nums, val);
+		System.out.println(removeElement);
+		for (int i : nums) {
+			System.out.print(i + " ");
+		}
+	}
+
+	// 思路：遍历数组，若存在指定数，则count++，若count=0则说明前面的元素都不等于指定数，若count=1则说明前面有一个元素等于指定数，则需要移动1位
+	public int removeElement(int[] nums, int val) {
+		int count = 0, len = nums.length;
+		for (int i = 0; i < len; i++) {
+			if (nums[i] == val) {
+				count++;
+			} else {
+				nums[i - count] = nums[i];
+			}
+		}
+		return len - count;
+	}
+
+	//别人的代码
+	public int removeElement(int[] nums, int val) {
+		int n = 0;
+        for(int i = 0; i < nums.length; i++){
+            if(nums[i] != val){
+                nums[n] = nums[i];
+                n++;
+            }
+        }
+        return n;
+	}
+}

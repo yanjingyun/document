@@ -63,36 +63,21 @@ vim编辑文件：
 	:wq	#保存退出vim
 
 
-Linux根据关键字查询日志：
-	1.单文件：vi或vim编辑器打开文件。在查看模式下，“/关键字”向下查找，“?关键字”向上查找
-	2.多文件：grep ERROR /var/log/messages* #匹配到ERROR这个关键字的行和所在的日志文件直接输出到屏幕
-	3.cat命令查看。如cat xx.log | grep key 等价于 grep key xx.log
-tail查询日志
-	tail -1000f xx.log	#实时刷新最新的1000行日志
-	tail -1000f xx.log | grep [关键字] #查找最新1000行中与关键字匹配的行
-	tail -100f xxx.log | grep '2019-10-29 16:4[0-9]' #查找最新的100行中时间范围在2019-10-29 16:40-2019-10-29 16:49范围中的行
-	tail -1000f xxx.log | grep -A 5 [关键字] #查看最新的1000行中与关键字匹配的行加上匹配行后的5行
+查看Linux版本: > cat /etc/centos-release
+查看CPU个数：
+	查看逻辑cpu个数： cat /pro/cpuinfo | grep "processor" | wc -l
+	查看物理cpu个数： cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l
+	查看每个物理cpu的核数： cat /proc/cpuinfo | grep "cpu cores"
+	若所有物理cpu的cores个数加起来小于逻辑cpu个数，则该cpu使用了超线程技术。
+	查看每个物理cpu中逻辑cpu的个数：cat /proc/cpuinfo | grep "siblings"
+查看内存使用情况：> free -m
+	Mem：内存的使用情况总览表
+	total：机器总物理内存，单位为M
+	used：用掉的内存
+	free：空闲的内存
 
 
-find查找文件
-	> find . -type f -size +100M 	--查找大小超过5M的文件
-	> find /etc -name tnsnames.ora		--查找etc目录的tnsnames.ora文件
-	> find / | grep nginx.conf #查找根目录/及其子目录下名为nginx.conf的文件
-
-其它命令：
-	> top 	--查看资源占用率
-	> free 	--查看总内存、使用、空闲情况
-	> pwd	--查看当前目录
-	> tar -zxvf nginx.tar.gz	--解压包
-
-问：怎么查看进程和杀死进程？
-	> ps -ef | grep java --查看Java进程
-	> kill -9 [pid] #进程号 --杀死进程，“-9”强迫进程立即停止
-
-问：打印一个文件夹的所有文件？
-	ll ls
-
-
+*************************************************
 安装JDK：
 1.卸载Linux自带的JDK：
 	> java -version	//查看系统现有的jdk
@@ -139,26 +124,150 @@ find查找文件
 	> tail -f xx.out --查看xx.out文件
 	> tail -1000f catalina.out --查看最近1000行日志
 
-redis集群：
-	wget -P /redis http://download.redis.io/releases/redis-4.0.1.tar.gz
-	mkdir -p /redis_cluster/6001 /redis_cluster/6002 /redis_cluster/6003 //创建三个文件夹
-
-
-查看Linux版本: > cat /etc/centos-release
-查看CPU个数：
-	查看逻辑cpu个数： cat /pro/cpuinfo | grep "processor" | wc -l
-	查看物理cpu个数： cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l
-	查看每个物理cpu的核数： cat /proc/cpuinfo | grep "cpu cores"
-	若所有物理cpu的cores个数加起来小于逻辑cpu个数，则该cpu使用了超线程技术。
-	查看每个物理cpu中逻辑cpu的个数：cat /proc/cpuinfo | grep "siblings"
-查看内存使用情况：> free -m
-	Mem：内存的使用情况总览表
-	total：机器总物理内存，单位为M
-	used：用掉的内存
-	free：空闲的内存
 
 
 
+显示一个文件的第2000-5000行：
+	> cat file | head -n 5000 | tail -n +2000 #显示20000行到5000行
+	说明：
+		tail -n +2000 表示从2000行开始显示
+		tail -n 2000 表示显示文件最后2000行，差别很大
+	> cat file | tail -n +2000 | head -n 5000 #从第2000行开始，共显示5000行，也就是2000~6999行！
+
+将当前目录下以“.log”结尾且修改时间大于90天的5G以上的大文件删除：
+	find ./ -name "*.log" -type f -mtime +90 -size +10G -maxdepth 1 -print -exec rm {} \;
+	说明：
+		-name "*.log":按名称查找如果忽略大小写则用-iname，注意引号别丢
+		-type f:文件类型限定为文件，目录是d
+		-mtime +90:修改时间大于90天。-n指n天以内
+		-size +10G:文件大小过滤
+		-maxdepth 1:限制查找最大深度，当前目录是1
+		-print:将找到的文件以相对路径的形式打印
+		-exec rm {}; 找到的文件将执行删除命令，最后是"空格"+{}+"分号;"都不能省。
+		补充：
+			若是删除文件用rm -rf
+			若想要删除前确认，将“-exec rm {} ;”替换成“-ok rm {} ;”
+
+发现磁盘空间不够，如何快速找出占用空间最大的文件？
+	> find / -type f -size +10G #找出大于10G的文件
+
+如何在log文件中搜索找出error的日志？
+	描述：more、tail、vi 但是由于日志太大了，而我只需要记录ERROR信息就可以了，有什么办法或命令能够从后向前查看日志中最后记录的一个ERROR信息的办法呢？
+	> tail -100 |grep error #查看最后100条日志中并过滤出包含error内容的
+
+线上发送频繁full gc如何处理? CPU 使用率过高怎么办?
+
+Thread dump文件如何分析？
+	dump文件用途、生成、分析
 
 
 
+********************
+top命令：
+第一行：基本信息
+	系统时间：“19:26:23 up”
+	系统运行时间：“2 days, 14:46”，这里表示已经运行了2天14小时46分钟
+		
+	当前登录用户数：“1 user”
+	负载均衡(load average):0.04 0.04 0.01
+		average后面三个数分别是1分钟、5分钟、15分钟的负载情况
+		load average数据是每隔5秒钟检查一次活跃的进程数，然后按特定算法计算出的数值。如果这个数除以逻辑CPU的数量，结果高于5的时候就表明系统在超负荷运转了
+第二行：任务信息
+	总进程:159 total, 运行:1 running, 休眠:157 sleeping, 停止: 1 stopped, 僵尸进程: 0 zombie
+第三行：CPU使用情况
+	0.0%us【user space】— 用户空间占用CPU的百分比。
+	0.1%sy【sysctl】— 内核空间占用CPU的百分比。
+	0.0%ni【】— 改变过优先级的进程占用CPU的百分比
+	99.9%id【idolt】— 空闲CPU百分比
+	0.0%wa【wait】— IO等待占用CPU的百分比
+	0.0%hi【Hardware IRQ】— 硬中断占用CPU的百分比
+	0.0%si【Software Interrupts】— 软中断占用CPU的百分比
+第四行：物理内存使用情况
+	1012288k total,   234464k used,   777824k free,    24084k buffers【缓存的内存量】
+第五行：swap交换分区信息
+	614396k total,        0k used,   614396k free,    72356k cached【缓冲的交换区总量】
+	说明：
+		可用内存=free+buffer+cached
+		对于内存监控，在top里我们要时刻监控第五行swap交换分区的used，如果这个数值在不断的变化，说明内核在不断进行内存和swap的数据交换，这是真正的内存不够用了。
+		第四行中使用中的内存总量（used）指的是现在系统内核控制的内存数，
+		第四行中空闲内存总量（free）是内核还未纳入其管控范围的数量。
+		纳入内核管理的内存不见得都在使用中，还包括过去使用过的现在可以被重复利用的内存，内核并不把这些可被重新使用的内存交还到free中去，因此在linux上free内存会越来越少，但不用为此担心。
+第六行：空行
+第七行以下：各进程（任务）的状态监控
+	pid -进程id
+	user -进程所有者
+	pr -进程优先级
+	ni -nice值。负值表示高优先级，正值表示低优先级
+	virt -进程使用的虚拟内存总量，单位kb。virt=swap+res
+	res -进程使用的、未被换出的物理内存大小，单位kb。res=code+data
+	shr -共享内存大小，单位kb
+	s -进程状态。d=不可中断的睡眠状态 r=运行 s=睡眠 t=跟踪/停止 z=僵尸进程
+	%cpu -上次更新到现在的cpu时间占用百分比
+	%mem -进程使用的物理内存百分比
+	time+ -进程使用的cpu时间总计，单位1/100秒
+	command -进程名称（命令名/命令行）
+
+********************
+grep命令
+	--用于查找文件里付符合条件的字符串
+	grep [-cinvABC] 'word' filename
+	-c:打印符合要求的行数
+	-n:在输出符合要求的行同时连同行号一起输出
+	-v:打印不符合要求的行
+	-A:后跟一个数字(有无空格都可以)，例如-A2则表示打印符合要求的行以及下面两行
+	-B:后跟一个数字，例如-B2打印符合要求的行以及上面两行
+	-C:后跟一个数字，例如-C2打印符合要求的行以及上下各两行
+	-r:会把目录下面所有的文件全部遍历
+实例：
+	> grep -n 'root' 1.txt		#打印包含root的行，并输出行号
+	> grep -n -v 'root' 1.txt 	#打印不包含root的行，并输出行号
+	> grep '[0-9]' 1.txt	#打印包含数字的行
+	> grep '^[a-zA-Z]' 1.txt	#打印以英文字母开头的行
+	> grep test *.log 	#查找包含test字符串的所有日志文件
+	> grep 'testAA' ./*	#查看当前目录下所有文件是否存在“testAA”内容
+
+实例1-Linux根据关键字查询日志：
+	1.单文件：vi或vim编辑器打开文件。在查看模式下，“/关键字”向下查找，“?关键字”向上查找
+	2.多文件：grep ERROR /var/log/messages* #匹配到ERROR这个关键字的行和所在的日志文件直接输出到屏幕
+	3.cat命令查看。如cat xx.log | grep key 等价于 grep key xx.log
+
+问：如何在log文件中搜索找出error的日志？
+	grep -n 'error' *.log
+
+
+********************
+tail查询日志
+	tail -1000f xx.log	#实时刷新最新的1000行日志
+	tail -1000f xx.log | grep [关键字] #查找最新1000行中与关键字匹配的行
+	tail -100f xxx.log | grep '2019-10-29 16:4[0-9]' #查找最新的100行中时间范围在2019-10-29 16:40-2019-10-29 16:49范围中的行
+	tail -1000f xxx.log | grep -A 5 [关键字] #查看最新的1000行中与关键字匹配的行加上匹配行后的5行
+
+
+********************
+find查找文件
+	> find . -type f -size +100M 	--查找大小超过5M的文件
+	> find /etc -name tnsnames.ora		--查找etc目录的tnsnames.ora文件
+	> find / | grep nginx.conf #查找根目录/及其子目录下名为nginx.conf的文件
+
+
+********************
+其它命令：
+	> top 	--查看资源占用率
+	> free 	--查看总内存、使用、空闲情况
+	> pwd	--查看当前目录
+	> tar -zxvf nginx.tar.gz	--解压包
+
+问：怎么查看进程和杀死进程？
+	> ps -ef | grep java --查看Java进程
+	> kill -9 [pid] #进程号 --杀死进程，“-9”强迫进程立即停止
+
+问：打印一个文件夹的所有文件？
+	ll ls
+
+
+************
+sed命令
+	--利用脚本处理文本文件
+实例：
+	#将redis.conf的7000替换为7001，并以新文件保存
+	sed 's/7000/7001/g' redis.conf > /myredis/redis7001/redis.conf 

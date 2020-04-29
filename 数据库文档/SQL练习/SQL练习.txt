@@ -1,0 +1,139 @@
+
+已知模型：
+student: sid sname sage ssex
+teacher: tid tname
+course: cid cname tid
+sc: sid cid score
+
+# 删除选修课成绩小于50分的学生选课记录
+delete from sc t where t.score < 50 or t.score is null;
+
+# 查询哪些没人选的课程号和课程名
+--使用not exists替换not in
+select a.cid, a.cname from course a where not exists (select 1 from sc b where b.cid = a.cid);
+
+# 查询课程的课程名、选修人数和考试最高分
+select cname, count(sid), max(score) from course a, sc b where a.cid = b.cid group by a.cid;
+
+# 查询课程“c001”比课程“c002”成绩高的所有学生学号
+select a.sid from sc a, sc b where a.sid=b.sid 
+	and a.cid='c001' and b.cid='c002' and a.score > b.score;
+或者
+select a.sid from
+	(select t.sid, t.score from sc t where t.cid='c001') a,
+	(select t.sid, t.score from sc t where t.cid='c002') b
+	where a.sid=b.sid and a.score > b.score;
+
+
+# 查询选修了课程“c001”和“c002”的学生
+select sid from sc where cid in ('c001', 'c002') group by sid having count(cid) = 2;
+
+# 查询平均成绩大于60分的同学的学号、姓名和平均成绩
+select a.sid, a.sname, b.avg_score from student a,
+	(select t.sid, avg(t.score) avg_score from sc t group by t.sid having avg(t.score) > 60) b
+	where a.sid=b.sid;
+
+# 查询所有同学的学号、姓名、选课数、总成绩
+select a.sid, a.sname, b.count_cid, b.sum_score from student a,
+	(select t.sid, count(t.cid) count_cid, sum(t.score) sum_score from sc t group by sid) b
+	where a.sid=b.sid;
+
+# 查询两门以上不及格课程的同学学号和姓名
+select a.sid, a.sname from student a where 
+	exists (select 1 from sc b where b.score < 60 and b.sid = a.sid group by b.sid having count(b.cid) > 1);
+
+# 查询各课程的选修人数(注：某些课程可能没人选)
+select a.cid, a.cname, b.count_sid from course a
+	left join (select t.cid, count(t.sid) count_sid from sc t group by cid) b on b.cid=a.cid;
+
+# 查询每门课程成绩最好的前两名：
+	select a.s_id,a.c_id,a.s_score from score a where (select count(1) from score b where b.c_id=a.c_id and b.s_score>=a.s_score)<=2 order by a.c_id
+
+# 统计每门课程的学生选修人数（超过5人的课程才统计）。要求输出课程号和选秀人数，查询结果按人数降序排序，若人数相同则按课程号升序排序
+	select c_id,count(*) as total from score group by c_id having total>5 order by total,c_id asc
+
+# 查询每门课程的平均成绩，结果按平均成绩降序排列，平均成绩相同时，按课程编号升序排列
+	select c_id,round(avg(s_score),2) avg_score from score group by c_id order by avg_score desc,c_id asc
+
+# 查询至少选修两门课程的学生学号
+	select sid, count(sid) as csid from score group by sid having csid > 2;
+
+# 查询平均成绩大于等于85的所有学生的学号、姓名和平均成绩
+	select a.s_id,b.s_name,ROUND(avg(a.s_score),2) as avg_score from score a left join student b on a.s_id=b.s_id GROUP BY s_id HAVING avg_score>=85
+
+# 查询课程名称为“数学”，且分数低于60的学生名字和分数
+	select a.s_name,b.s_score from score b left join student a on a.s_id=b.s_id where b.c_id=(select c_id from course where c_name ='数学') and b.s_score<60
+
+# 查询所有学生的课程及分数情况
+select 	a.s_id,a.s_name,
+		sum(case c.c_name when '语文' then b.s_score else 0 end) as '语文',
+		sum(case c.c_name when '数学' then b.s_score else 0 end) as '数学',
+		sum(case c.c_name when '英语' then b.s_score else 0 end) as '英语',
+		sum(b.s_score) as  '总分'
+	from student a left join score b on a.s_id = b.s_id 
+		left join course c on b.c_id = c.c_id 
+	group by a.s_id,a.s_name
+
+
+case..when..使用:
+	1、与groupBy结合，自定义列统计；
+	2、与groupBy结合，自定义分组统计。
+	3、有条件选择更新字段update
+
+# 查询各班级男女人数
+select class_id,
+	count(case when ssex=1 then 1 else NULL end) 男生数,
+	count(case when ssex=2 then 1 else NULL end) 女生数
+	--sum(case when ssex=1 then 1 else 0 end) 男生数,
+	--sum(case when ssex=2 then 1 else 0 end) 女生数
+	from student s group by class_id;
+
+# 有一个表table1(A,B,C)，用SQL语句选出两个列，第一列是A、B两列的较大者，第二列是B、C两列的较小者。
+select
+	(case when a > b then a else b end) 列1,
+	(case when c > d then c else d end) 列2
+	from table1;
+# 有一张表table2(语文成绩、数学成绩、英语成绩)，请用一条sql语句按以下显示条件得出结果：
+	显示条件：大于或等于80显示为优秀，大于或等于60表示及格，小于60分表示不及格。
+	显示格式：
+		语文 数学 英语
+		及格 优秀 不及格
+	select
+		(case when 语文 >= 80 then '优秀'
+			when 语文 >= 60 then '及格'
+			else '不及格') as 语文,
+		(case when 数学 >= 80 then '优秀'
+			when 数学 >= 60 then '及格'
+			else '不及格') as 数学,
+		(case when 英语 >= 80 then '优秀'
+			when 英语 >= 60 then '及格'
+			else '不及格') as 英语
+		from table;
+# 人口统计数据，要求按照国家和性别进行分组，得到结果如下：
+	原始数据：
+		国家 性别 人口
+		中国  1   345
+		中国  2   540
+		美国  1   340
+		美国  2   200
+	改变后数据：
+		国家  男  女
+		中国 345 540
+		美国 340 200
+	select country,
+		sum(case when sex = 1 then population else 0 end) 男性,
+		sum(case when sex = 2 then population else 0 end) 女性
+		from teableA group by country;
+
+# 根据现有工资更新工资：
+	update person
+		set salary = 
+		(case 
+		when salary >= 5000 then salary * 0.9
+		when salary >= 2000 and salary < 4500 then salary * 1.5
+		else salary end);
+
+
+
+
+

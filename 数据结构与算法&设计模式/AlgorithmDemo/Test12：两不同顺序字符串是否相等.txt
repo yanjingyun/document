@@ -1,0 +1,45 @@
+标题：两不同顺序字符串是否相等
+描述：
+	由相同的字符组成是指两个字符串，字母以及各个字母的个数是相同的，只是顺序不同。如：“aaaabbc”与“abcbaaa”是由相同字符组成。
+方法：
+	方法1：排序法。将两个字符串转换后为字节数组，分别排序后，判断是否相等。
+	方法2：集合法（空间换时间）。利用Map集合key唯一性，遍历一个字符串，将字符作为key，字符出现次数为value，遇到重复字符则value+1.之后遍历第二个字符串，遇到字符就将对应的value-1，若value值为1时，将该字符remove掉。最后判断map是否为空，为空则说明两字符串相同。
+	方法3：数组法（空间换时间）。由于ASCII字符共266个(0~255)，申请一个字节数组byte[256]，初始化为0，然后遍历第一个字符串，将对应的ASCII下标+1，然后遍历第二个字符串，将对应标-1。若最后数组中各个元素的值都是0，则说明字符串相等，反之不等。
+
+
+源代码：
+public class Test12 {
+
+	public static void main(String[] args) {
+		String str1 = "aaaabbc";
+		String str2 = "abcbaaa";
+		System.out.println(compareStr(str1, str2));
+	}
+
+	private static boolean compareStr(String str1, String str2) {
+		if (str1.length() != str2.length()) return false;
+		
+		char[] ch1 = str1.toCharArray();
+		char[] ch2 = str2.toCharArray();
+		
+		int[] count = new int[256];
+		for (int i = 0, len = ch1.length; i < len; i++) {
+			count[ ch1[i] ] ++;
+		}
+		for (int i = 0, len = ch2.length; i < len; i++) {
+			count[ ch2[i] ] --;
+		}
+		
+		for (int i = 0; i < 256; i++) {
+			if(count[i]!=0) {
+				return false;
+			}
+		}
+		return true;
+	}
+}
+
+
+
+
+

@@ -1,0 +1,104 @@
+
+
+问：请解释下nginx如何处理http请求？
+	1、nginx在启动时，会解析配置文件，得到需要监听的端口与ip地址，然后在nginx的master进程里面先初始化好这个该监控的Socket（创建Socket，设置addr、reuse等选项，绑定到指定的ip地址端口，再listen监听）；
+	2、然后fork（一个现有进程可以调用fork函数创建一个新进程，由fork创建的新进程称为子进程）出多个子进程；
+	3、子进程会竞争accept新的连接。此时，客户端就可以向 nginx 发起连接了。当客户端与nginx进行三次握手，与 nginx 建立好一个连接后。此时，某一个子进程会 accept 成功，得到这个建立好的连接的 Socket ，然后创建 nginx 对连接的封装，即 ngx_connection_t 结构体。
+	4、接着，设置读写事件处理函数，并添加读写事件来与客户端进行数据的交换。
+	5、最后，Nginx 或客户端来主动关掉连接，到此，一个连接就寿终正寝了。
+
+
+问：Nginx 是如何实现高并发的？
+	如果一个 server 采用一个进程(或者线程)负责一个request的方式，那么进程数就是并发数。那么显而易见的，就是会有很多进程在等待中。等什么？最多的应该是等待网络传输。其缺点胖友应该也感觉到了，此处不述。
+
+	而 Nginx 的异步非阻塞工作方式正是利用了这点等待的时间。在需要等待的时候，这些进程就空闲出来待命了。因此表现为少数几个进程就解决了大量的并发问题。
+
+	Nginx是如何利用的呢，简单来说：同样的 4 个进程，如果采用一个进程负责一个 request 的方式，那么，同时进来 4 个 request 之后，每个进程就负责其中一个，直至会话关闭。期间，如果有第 5 个request进来了。就无法及时反应了，因为 4 个进程都没干完活呢，因此，一般有个调度进程，每当新进来了一个 request ，就新开个进程来处理。
+
+	Nginx 不这样，每进来一个 request ，会有一个 worker 进程去处理。但不是全程的处理，处理到什么程度呢？处理到可能发生阻塞的地方，比如向上游（后端）服务器转发 request ，并等待请求返回。那么，这个处理的 worker 不会这么傻等着，他会在发送完请求后，注册一个事件：“如果 upstream 返回了，告诉我一声，我再接着干”。于是他就休息去了。此时，如果再有 request 进来，他就可以很快再按这种方式处理。而一旦上游服务器返回了，就会触发这个事件，worker 才会来接手，这个 request 才会接着往下走。
+
+	由于 web server 的工作性质决定了每个 request 的大部份生命都是在网络传输中，实际上花费在 server 机器上的时间片不多。这是几个进程就解决高并发的秘密所在。
+
+问：为什么 Nginx 不使用多线程？
+	Apache: 创建多个进程或线程，而每个进程或线程都会为其分配 cpu 和内存（线程要比进程小的多，所以 worker 支持比 perfork 高的并发），并发过大会榨干服务器资源。
+
+	Nginx: 采用单线程来异步非阻塞处理请求（管理员可以配置 Nginx 主进程的工作进程的数量）(epoll)，不会为每个请求分配 cpu 和内存资源，节省了大量资源，同时也减少了大量的 CPU 的上下文切换。所以才使得 Nginx 支持更高的并发。
+
+
+
+问：什么叫CDN服务？
+	CDN ，即内容分发网络。
+	其目的是，通过在现有的 Internet中增加一层新的网络架构，将网站的内容发布到最接近用户的网络边缘，使用户可就近取得所需的内容，提高用户访问网站的速度。
+	一般来说，因为现在 CDN 服务比较大众，所以基本所有公司都会使用 CDN 服务。
+
+
+
+问：nginx有哪些负载均衡策略？
+	轮询(round_robin)、IP哈希(ip_hash)、最少连接(least_conn)
+
+问：nginx如何开启压缩？
+	开启nginx gzip压缩后，网页、css、js等静态资源的大小会大大减少，从而可以节约大量的带宽，提高传输效率。虽然会消耗cpu资源，但是为了给用户更好的体验是值得的。
+	开启方法：在nginx.conf中的http{}里找到gzip相关配置
+		gzip on; #开启压缩
+		gzip_min_length 1k; #允许压缩的页面最小字节数，考虑是小于1k可能会越压越大
+		gzip_buffers 4 16k; #
+		gzip_comp_level 5;
+		gzip_types text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php;
+	开启压缩后，强制刷新刷新页面(ctrl+F5)，然后通过F12查看请求的响应头部能看到Content-Encoding:gzip。
+	gzip压缩前后效果对比：jquery原大小90kb，压缩后只有30kb。
+	gizp虽然好用，但是以下类型的资源不建议启用：图片类型、大文件
+
+问：fastcgi 与 cgi 的区别？
+	--1、cgi
+	web 服务器会根据请求的内容，然后会 fork 一个新进程来运行外部 c 程序（或 perl 脚本…）， 这个进程会把处理完的数据返回给 web 服务器，最后 web 服务器把内容发送给用户，刚才 fork 的进程也随之退出。
+	如果下次用户还请求改动态脚本，那么 web 服务器又再次 fork 一个新进程，周而复始的进行。
+	--2、fastcgi
+	web 服务器收到一个请求时，他不会重新 fork 一个进程（因为这个进程在 web 服务器启动时就开启了，而且不会退出），web 服务器直接把内容传递给这个进程（进程间通信，但 fastcgi 使用了别的方式，tcp 方式通信），这个进程收到请求后进行处理，把结果返回给 web 服务器，最后自己接着等待下一个请求的到来，而不是退出。
+
+
+nginx常用配置：
+	worker_processes 8; #工作进程个数
+	worker_connections 65535; #每个工作进程能并发处理的最大连接数（包含所有连接数）
+	error_log  	/data/logs/nginx/error.log #错误日志
+	access_log  /data/logs/nginx/access.log #进入日志
+	log_format  main  '$remote_addr"$request" ''$status $upstream_addr "$request_time"'; # 进入日志格式
+
+	## 若未使用 fastcgi 功能的，可以无视
+	fastcgi_connect_timeout=300; # 连接到后端 fastcgi 超时时间
+	fastcgi_send_timeout=300; # 向 fastcgi 请求超时时间(这个指定值已经完成两次握手后向fastcgi传送请求的超时时间)
+	fastcgi_rend_timeout=300; # 接收 fastcgi 应答超时时间，同理也是2次握手后
+	fastcgi_buffer_size=64k; # 读取 fastcgi 应答第一部分需要多大缓冲区，该值表示使用1个64kb的缓冲区读取应答第一部分(应答头),可以设置为fastcgi_buffers选项缓冲区大小
+	fastcgi_buffers 4 64k; # 指定本地需要多少和多大的缓冲区来缓冲fastcgi应答请求，假设一个php或java脚本所产生页面大小为256kb,那么会为其分配4个64kb的缓冲来缓存
+	fastcgi_cache TEST; # 开启fastcgi缓存并为其指定为TEST名称，降低cpu负载,防止502错误发生
+
+	listen       80; # 监听端口
+	server_name  abc.test.com; # 允许域名
+	root  	/data/release/rrc/web; # 项目根目录
+	index  index.php index.html index.htm; # 访问根文件
+
+
+问：nginx日志格式中$time_local表示的是什么时间？当我们从前到后观察日志里的$time_local时间，会发现时间顺序前后错乱？
+	$time_local -在服务器里请求开始写入本地时间
+	因为请求发生时间有前有后，所以$time_local时间顺序会前后错乱。
+
+
+
+问：怎么配置负载均衡？
+
+问：怎么限流？
+
+问：怎么使用nginx缓存？
+
+问：请解释 x nginx 如何处理 P HTTP 请求？
+
+问：在 x nginx 中如何使用未定义的服务器名称来阻止处理请求？
+
+问：使用“反向代理服务器”的优点是什么？
+
+问：nginx的压力测试？能抗住多少压力？
+
+
+
+简单介绍一下nginx？
+为什么用nginx？
+nginx的四个主要组成部分？

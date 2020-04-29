@@ -264,7 +264,7 @@ parallelStream()方法：
 	distinct:去重，函数拼接
 	limit:返回前几个元素，函数拼接
 	skip:跳过前几个元素，函数拼接
-	concat:组合，函数拼接
+	concat:组合，函数拼接。如Stream<String> concatStream = Stream.concat(list1.stream(), list2.stream());
 	distinct:去重
 2、终结方法(方法后面不能做其它操作)：
 	toArray:转换成数组对象
@@ -279,7 +279,20 @@ parallelStream()方法：
 	forEach:循环操作
 	forEachOrdered:按元素顺序执行循环操作，并行parallel环境
 
-filter()方法：
+
+findFirst() && findAny()
+	。。。
+
+anyMatch() && allMatch()
+	。。。
+
+skip() && limit()
+	List<String> list = Arrays.asList("a", "b", "c", "d", "e");
+	list.stream().skip(2).forEach(System.out::println); // c d e
+	list.stream().limit(2).forEach(System.out::println); //a b
+
+
+filter()过滤方法：
 	过滤流，过滤流中不符合要求的元素
 	
 	// 查询是否存在admin用户
@@ -287,11 +300,23 @@ filter()方法：
 	// 求年龄>20岁，性别为男的人数
 	long count = list.stream().filter(p -> p.getAge() > 25 && "男".equals(p.getGender())).count();
 
-map()方法：
+map()映射方法：
 	映射流，将某种类型的流转换成另一种流。常见mapToInt、mapToLong、mapToDouble
+	// <R> Stream<R> map(Function<? super T, ? extends R> mapper);
+	list.stream().map(item -> item.toUpperCase()).forEach(System.out::println);
 	List<Integer> squaresList = numbers.stream().map(i -> i*i).sorted().collect(Collectors.toList());
 
-sorted()方法：
+flatMap()方法:
+	// <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper)
+	List<Integer> a = Arrays.asList(1, 2, 3);
+	List<Integer> b = Arrays.asList(4, 5, 6);
+	// [[1, 2, 3], [4, 5, 6]]
+	List<List<Integer>> collect = Stream.of(a, b).collect(Collectors.toList());
+	// 将多个集合中的元素合并成一个集合，[1, 2, 3, 4, 5, 6]
+	List<Integer> mergeList = Stream.of(a, b).flatMap(list -> list.stream()).collect(Collectors.toList());
+
+
+sorted()排序方法：
 	返回一个排序的Stream
 	实例：
 		String[] arr = {"scsa","bi","a","cd","ca156165"};
@@ -312,6 +337,16 @@ collect(Collector<T,A,R>)方法：
 		--2、收集到数组中
 		Object[] objArray = stream.toArray();
 		String[] strArray = stream.toArray(String[]::new); //解决泛型数组问题
+		--3、收集到Map中
+		Map<String, String> map = Stream.of(1,2,3,4,5).map(i -> i * 10).collect(Collectors.toMap(key -> "key" + key/10, value -> "value:" + value)); //方式0
+		List<User> userList = Arrays.asList(
+				new User(1, "testAA1"),
+				new User(2, "testAA1"),
+				new User(3, "testAA1"));
+		Map<Integer, User> userMap = userList.stream().collect(Collectors.toMap(User::getId, Function.identity())); // 方式1
+		Map<Integer, String> usernameMap = userList.stream().collect(Collectors.toMap(User::getId, User::getName)); // 方式2
+		--4、收集到TreeSet
+		TreeSet<Integer> treeSet = Stream.of(1, 3, 4).collect(Collectors.toCollection(TreeSet::new));
 	实例：
 		// 1、将strArr排除空元素后转换为list集合
 		List<String> list = strArr.stream().filter(str -> !str.isEmpty()).collect(Collectors.toList());
@@ -322,7 +357,24 @@ collect(Collector<T,A,R>)方法：
 		// 4、找出年龄最小的用户姓名
 		String name = list.stream().sorted(Comparator.comparing(x -> x.getAge())).findFirst().get().getName();
 
-reduce()方法：
+
+Collectors元素聚合：
+	List<Integer> list = Arrays.asList(1, 2, 3);
+	// 最大值
+	Integer maxValue = list.stream().collect(Collectors.collectingAndThen(Collectors.maxBy((a, b) -> a - b), Optional::get));
+	// 最小值
+	Integer minValue = list.stream().collect(Collectors.collectingAndThen(Collectors.minBy((a, b) -> a - b), Optional::get));
+	// 求和
+	Integer sumValue = list.stream().collect(Collectors.summingInt(item -> item));
+	// 平均值
+	Double avg = list.stream().collect(Collectors.averagingDouble(x -> x));
+
+	// 映射：先对集合中的元素进行映射，然后再对映射的结果使用Collectors操作
+	// A,B,C
+	String collect = Stream.of("a", "b", "c").collect(Collectors.mapping(x -> x.toUpperCase(), Collectors.joining(",")));
+
+
+reduce()归纳方法：
 	详情：https://blog.csdn.net/icarusliu/article/details/79504602
 	--1、一个参数：Optional<T> reduce(BinaryOperator<T> accumulator)
 	int[] arr = {1,2,3,4};
@@ -330,12 +382,67 @@ reduce()方法：
 	int sum = Arrays.stream(arr).reduce((a, b) -> a + b).getAsInt(); // 求总和，结果为10
 	
 	--2、两个参数：T reduce(T identity, BinaryOperator<T> accumulator)方法
+	int[] arr = {1,2,3,4};
 	int initSum = 5; // 相当于在Stream的基础上多了一个初始化的值
 	int reduce = Arrays.stream(arr).reduce(initSum, (a, b) -> a + b); // 求总和，结果为15
 
 	--3、三个参数：<U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner)
 	--看不懂！！！
-	
+
+
+分组：
+	--两种方式：
+	1、groupingBy(Function<? super T, ? extends K> classifier) // 参数是Function类型，Function返回值可以是要分组的条件，也可以是要分组的字段。返回的结果是Map，其中key的数据类型为Function体中计算类型，value是List<T>类型，为分组的结果
+	2、partitioningBy 用于分成两组的情况
+
+	// 奇偶数分组：奇数分一组，偶数分一组 {false=[1, 3, 5, 7, 9], true=[2, 4, 6, 8, 10]}
+	List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+	Map<Boolean, List<Integer>> result = arr.stream().collect(Collectors.groupingBy(i -> i % 2 == 0));
+	Map<Boolean, List<Integer>> result = arr.stream().collect(Collectors.partitioningBy(i -> i%2 == 0));
+	System.out.println(result);
+
+	// 按照用户类型分类
+	List<User> list = new ArrayList<>();
+	list.add(new User("testAA1", "01"));
+	list.add(new User("testAA2", "02"));
+	list.add(new User("testAA3", "01"));
+	list.add(new User("testAA4", "03"));
+	Map<Integer, List<User>> map = list.stream().collect(Collectors.groupingBy(User::getType));
+	System.out.println(map);
+
+	// 分组并对分组中的数据统计
+	private void testGroupingBy3() {
+		 List<Foo> list = new ArrayList<>(4);
+		 list.add(new Foo(1, 2));
+		 list.add(new Foo(2, 23));
+		 list.add(new Foo(2, 6));
+		 Map<Integer, IntSummaryStatistics> collect = list.stream().collect(Collectors.groupingBy(Foo::getType, Collectors.summarizingInt(Foo::getNum)));
+		 IntSummaryStatistics statistics1 = collect.get(1);
+		 IntSummaryStatistics statistics2 = collect.get(2);
+		 System.out.println(statistics1.getSum());
+		 System.out.println(statistics2.getSum());
+		 System.out.println(statistics2.getAverage());
+		 System.out.println(statistics2.getMax());
+		 System.out.println(statistics2.getMin());
+		 System.out.println(statistics2.getCount());
+	}
+	public static class Foo {
+		private Integer type;
+		private Integer num;
+		public Foo(Integer type, Integer num) {
+			this.type = type;
+			this.num = num;
+		}
+		...
+	}
+
+累计操作：
+	System.out.println(Stream.of(1, 3, 4).collect(Collectors.reducing(1, x -> x + 1, (result, b) -> {
+		System.out.println(result + "-" + b);
+		return result * b;
+	})));
+
+
 
 测试1：
 	public void java8Stream() {

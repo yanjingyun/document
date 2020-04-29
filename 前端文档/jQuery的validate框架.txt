@@ -6,6 +6,7 @@
 	<script src="http://static.runoob.com/assets/jquery-validation-1.14.0/lib/jquery.js"></script>
 	<script src="http://static.runoob.com/assets/jquery-validation-1.14.0/dist/jquery.validate.min.js"></script>
 
+this.optional(element) --用于表单控件的值不为空时才触发校验。
 
 简单实例：
 -1）js部分
@@ -375,7 +376,7 @@ $("[name=adverseDrugReaction]").change(function() {
 
 实例：日期校验
 	$.validator.addMethod("datex", function(value, element, param) {
-		return this.optional(element) || (new Date(value).getDate()==date.substring(value.length-2));
+		return this.optional(element) || (new Date(value).getDate()==value.substring(value.length-2));
 	}, "日期不合法");
 
 	$.validator.addMethod("geDate", function(value, element, param) {// greater then or Equal
