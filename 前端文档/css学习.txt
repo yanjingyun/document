@@ -181,3 +181,79 @@ div居中实例：
 		margin-top: -100px;
 		background-color: red;
 	}
+
+
+checkbox 上下左右对齐：
+	<view style="padding-left: 95px;">
+		<input name="personType" :value="personType" style="display: none;" />
+		<checkbox-group style="display: flex;flex-wrap:wrap;" @change="(e) => personType = e.target.value.sort().toString()">
+			<label v-for="(item, index) in personTypeArr" :key="index">
+				<checkbox :value="item.code" /> {{item.name}} <br>
+			</label>
+		</checkbox-group>
+	</view>
+
+
+button前面添加图标：
+	.login-doctor::before {
+		content: '';
+		display: inline-block;
+		width: 32px;
+		height: 32px;
+		background: url('~@/static/login-doctor.png') no-repeat;
+		background-size: 100% 100%;
+		vertical-align: middle;
+		margin-bottom: 9px;
+		margin-right: 15px;
+	}
+
+
+
+button添加图片(居中显示)：
+	<button open-type="getUserInfo" @getuserinfo="getUserInfoAction1" class="login-btn">
+		<view class="login-btn-text">
+			<image src="../../static/login-person.png" class="login-btn-img" />
+			受检人登录
+		</view>
+	</button>
+	<button open-type="getUserInfo" @getuserinfo="getUserInfoAction2" class="login-btn">
+		<view class="login-btn-text">
+			<image src="../../static/login-doctor.png" class="login-btn-img" />
+			医护人员登录
+		</view>
+	</button>
+
+	.login-btn {
+		margin: 40upx 20upx;
+		height: 130upx;
+		background-color: #FFF;
+		border: 1px solid #F2F2F2;
+	}
+	
+	.login-btn-text {
+		display: flex;
+		align-items: center;
+		padding-left: 16upx;
+		height: 130upx;
+		font-size: 32upx;
+	}
+	
+	.login-btn-img {
+		width: 72upx;
+		height: 72upx;
+		margin-right: 20upx;
+	}
+
+
+checkbox上下左右对齐：
+<view>
+	<view>人员类型<text class="zz-color-red">*</text></view>
+	<view style="padding-left: 50px;">
+		<input name="personType" :value="personType" style="display: none;" />
+		<checkbox-group style="display: flex;flex-wrap:wrap;" @change="(e) => personType = e.target.value.sort((a, b) => a - b).toString()">
+			<label v-for="(item, index) in personTypeArr" :key="index" style="width: 132px;">
+				<checkbox :value="item.code" :checked="personType.split(',').includes(item.code)" /> {{item.name}} <br>
+			</label>
+		</checkbox-group>
+	</view>
+</view>

@@ -326,3 +326,9 @@ springboot项目如何进行远程调试
 		消息队列的应用场景很多，但比较核心的有3个：解耦、异步、削锋
 	消息队列
 		https://segmentfault.com/a/1190000017399969
+
+
+
+CommandLineRunner类：
+	springboot启动时执行任务CommandLineRunner。
+	描述：平常开发中有可能需要实现在项目启动后执行的功能，SpringBoot提供的一种简单的实现方案就是添加一个model并实现CommandLineRunner接口，实现功能的代码放在实现的run方法中
