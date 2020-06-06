@@ -1,57 +1,9 @@
 
-Linux相关工具：
+Linux连接工具：
 	SecureCRT
 	Xshell
 	WinSCP
 
-
-windows10下安装VMware虚拟机并搭建CentOS系统环境：
-	https://www.cnblogs.com/xingxia/p/vmware_windows.html
-使用VMware在本地搭建多个CentOS虚拟机：
-	https://blog.csdn.net/yangshangwei/article/details/82766404
-
-CentOS7安装：
-	开放20和22端口：
-		Xshell通过sll连接，端口是20或22。CentOS7没有开放任何端口，所以不能在window上访问，也不能通过xshell连接。
-		CentOS7放弃了iptables防火墙而启用firewall防火墙。
-		firewall-cmd –zone=public –add-port=20/tcp –permanent #开放20端口
-		firewall-cmd –zone=public –add-port=22/tcp –permanent #开放22端口
-	防火墙端口：
-		1、查看所有已开放的端口
-			sudo firewall-cmd --zone=public --list-ports
-		2、添加（--permanent永久生效，没有此参数重启后失效）
-			sudo firewall-cmd --zone=public --add-port=8080/tcp --permanent
-		3、重新载入(更新防火墙规则)
-			sudo firewall-cmd --reload
-	查看防火墙开放的端口：
-		> more /etc/sysconfig/iptables
-	查看端口是否被占用
-		> netstat -anp | grep 端口号
-		> netstat -nultp (此处不用加端口号)
-		--说明：
-		listen表示已被占用，最后一行显示被服务xx占用
-		查看具体端口时候，必须要看到tcp，端口号，LISTEN那一行，才表示端口被占用
-
-	> yum install vim  	#安装vim编辑器
-	> yum install wget 	#安装wget下载
-	> cd /usr/local/src	#切换到下载文件目录
-
-	添加用户:
-		> useradd -d /usr/testUser -m testUser 	--添加用户testUser，产生一个主目录/usr/testUser
-		> useradd testUser	--添加用户
-		> passwd testUser		--修改密码
-		> su testUser 		--切换用户
-	用户组：
-		> groupadd testGroup	--添加组
-
-	CentOS用户无法开启系统权限：
-		问题描述：XXX is not in the sudoers file. This incident will be reported
-		详细：https://blog.csdn.net/jeremyjone/article/details/81355568
-		步骤：
-			1、切换为root用户：$ su
-			2、添加文件的写权限：$ chmod u+w /etc/sudoers
-			3、编辑sudoers文件：$ vim /etc/sudoers 
-			#找到“root ALL=(ALL)	ALL”这一行，在下一行添加“test ALL=(ALL) ALL”内容
 
 vim编辑文件：
 	vim fileName #进入vi命令
@@ -61,6 +13,7 @@ vim编辑文件：
 	:q 	#不保存退出vim
 	:q!	#强制不保存退出vim
 	:wq	#保存退出vim
+	/text #查找所匹配的内容text
 
 
 查看Linux版本: > cat /etc/centos-release
@@ -78,82 +31,85 @@ vim编辑文件：
 
 
 *************************************************
-安装JDK：
-1.卸载Linux自带的JDK：
-	> java -version	//查看系统现有的jdk
-	> rpm -qa|grep java //查看jdk的信息
-	> yum remove *openjdk* //卸载jdk
-2.从网上下载jdk
-	wget https://download.oracle.com/otn-pub/java/jdk/8u201-b09-demos/42970487e3af4f5aa5bca3f542482c60/jdk-8u201-linux-x64-demos.tar.gz
-3.解压
-	tar -zxvf jdk-8u171-linux-x64.tar.gz
-4.设置环境变量
-	> vim /etc/profile
-	在文件末尾追加：
-	JAVA_HOME=/opt/java/jdk1.8.0_171
-	JRE_HOME=$JAVA_HOME/jre
-	PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
-	CLASSPATH=:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib/dt.jar
-	export JAVA_HOME JRE_HOME PATH CLASSPATH
-5.最后启用新的配置
-	source /etc/profile
-6.检查新安装的jdk
-	java -version
-7.jdk自带命令查看GC情况
-	> jstat ...
+jvm监控工具：
+jps：jvm进程状况工具
+	格式：jps [options] [hostid]
+	options说明:
+		-q不输出类名、jar名和传入main方法的参数
+		-l输出main类或jar的全限名
+		-m输出传入方法的参数
+		-v输出传入jvm的参数
 
 
-安装tomcat：
-1.命令行下载
-	> wget http://mirrors.shu.edu.cn/apache/tomcat/tomcat-8/v8.0.52/bin/apache-tomcat-8.0.52.tar.gz
-2.解压tomcat
-	> tar -zxvf apache-tomcat-8.0.52.tar.gz
-3.移动tomcat
-	> sudo mv apache-tomcat-8.0.52/ /usr/local/apache-tomcat-8.0.52
-4.启动&关闭tomcat
-	> cd apache-tomcat-8.0.52/bin
-	> ./startup.sh 	#启动
-	> ./shutdown.sh #关闭
-5.查看tomcat进程是否启动
-	> ps aux | grep tomcat
-	> ps -ef |grep tomcat #查看tomcat进程
-		-Dcatalina.base=/opt/jira7.3.4/atlassian-jira-software-7.3.4-standalone //对应启动目录
-	> ps -ef | grep 8080 #查看端口
-6.查看tomcat启动日志
-	> cd tomcat/logs/
-	> tail -f xx.out --查看xx.out文件
-	> tail -1000f catalina.out --查看最近1000行日志
+jstack：Java堆栈跟踪工具
+	jstack可以跟踪线程的调用堆栈，以便追踪错误原因。
+	用于生成Java虚拟机当前时刻的线程快照。线程快照是当前Java虚拟机内每一条线程正在执行的方法堆栈的集合，生成线程快照的主要目的是定位线程出现长时间停顿的原因，如线程死锁、死循环、请求外部资源导致的长时间等等。
 
 
+jstat：jvm统计信息监控工具
+	jstat可以检查jvm的内存使用情况，gc情况以及线程状态等；
+	jstat用于监视虚拟机各种运行状态信息的命令工具。它可以显示本地或远程虚拟机进行中的类装载、内存、垃圾收集、jit编译等运行数据，它是线上定位jvm性能的首选工具。
+	格式：jstat [generalOption | outputOptions vmid [interval | [s|ms] [count]]]
+		generalOption	#单个常用的命令行选项，如-help,-options或-version
+		outputOptions	#一个或多个输出选项，由单个statOption选项组成，可以和-t,and -j等选项配合使用
+	参数选项：
+		jstat -class pid #显示加载class的数量，及所占空间等信息
+		jstat -compiler pid #显示vm实时编译的数量等信息
+		jstat -gc pid #显示gc信息，查看gc的次数及时间。其中最后五项分别为young gc的次数，young gc的时间，full gc的次数，full gc的时间，gc的总时间。
+		更多详情：https://github.com/h2pl/Java-Tutorial/blob/master/docs/java/jvm/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3JVM%E8%99%9A%E6%8B%9F%E6%9C%BA9%EF%BC%9AJVM%E7%9B%91%E6%8E%A7%E5%B7%A5%E5%85%B7%E4%B8%8E%E8%AF%8A%E6%96%AD%E5%AE%9E%E8%B7%B5.md
+
+jinfo：java配置信息
+	格式：jinfo [option] pid
+
+jmap：Java内存映射工具
+	jmap用于把堆栈快照转储到文件系统，然后可以用其他工具去排查。
+	用于生产堆转存快照。打印出某个Java进行（使用pid）内存内的，所有对象的情况。（如产生那些对象，及其数量）
+	格式：
+		jmap [option] pid
+		jmap [option] executable core
+
+jmap命令(Java Memory Map)：
+	jmap用于生成heap dump文件。
+	如果不使用这个命令，还可以利用-XX:+HeapDumpOutOfMemoryError参数来让虚拟机出现OOM错误时自动生成dump文件。
+	jmap不仅能生成dump文件，还可以查询finalize执行队列、Java堆和永久代的详细信息，如当前使用率、当前使用的是哪种收集器等。
+	堆快照（heap dump）：
+		堆快照是一个用来检查Java内存中的对象和数据的内存文件。该文件可以通过执行JDK中的jmap命令来创建。在创建文件的过程中，所有Java程序都将暂停，因此，不要在系统执行过程中创建该文件。？？？
+
+visualvm是一款很不错的gui调试工具，可以远程登录主机以便访问其jvm的状态并进行监控。
 
 
-显示一个文件的第2000-5000行：
-	> cat file | head -n 5000 | tail -n +2000 #显示20000行到5000行
-	说明：
-		tail -n +2000 表示从2000行开始显示
-		tail -n 2000 表示显示文件最后2000行，差别很大
-	> cat file | tail -n +2000 | head -n 5000 #从第2000行开始，共显示5000行，也就是2000~6999行！
+****************************实战****************************
+cpu飙升:找出最耗cpu的线程并定位代码 || 查看占用CPU最高的进程
+	描述：在线上有时候某个时刻，可能会出现应用某个时刻突然cpu飙升的问题。对此我们应该熟悉一些指令，快速排查对应代码。
+	> top #1.找到最耗cpu的进程PID
+	> top -H -p  pid #2.通过pid得到该进程最耗cpu的线程
+	> printf "%x\n" 2012 #3.得到线程id为2012其对应的十六进制7dc
+	4.过滤指定线程，打印堆栈信息
+		--打印进程堆栈，并通过线程id，过滤得到线程堆栈信息
+		语法：jstack pid | grep threadPid
+		例如：jstack 15325 | grep 7dc -C5 --color
 
-将当前目录下以“.log”结尾且修改时间大于90天的5G以上的大文件删除：
-	find ./ -name "*.log" -type f -mtime +90 -size +10G -maxdepth 1 -print -exec rm {} \;
-	说明：
-		-name "*.log":按名称查找如果忽略大小写则用-iname，注意引号别丢
-		-type f:文件类型限定为文件，目录是d
-		-mtime +90:修改时间大于90天。-n指n天以内
-		-size +10G:文件大小过滤
-		-maxdepth 1:限制查找最大深度，当前目录是1
-		-print:将找到的文件以相对路径的形式打印
-		-exec rm {}; 找到的文件将执行删除命令，最后是"空格"+{}+"分号;"都不能省。
-		补充：
-			若是删除文件用rm -rf
-			若想要删除前确认，将“-exec rm {} ;”替换成“-ok rm {} ;”
 
-发现磁盘空间不够，如何快速找出占用空间最大的文件？
-	> find / -type f -size +10G #找出大于10G的文件
+查看耗cpu的线程：
+	top -查看最耗费cpu的进程
+	top -H -p pid #查看具体的线程信息
+	jstack pid | grep -A 10 [线程的16进制]
 
-如何在log文件中搜索找出error的日志？
-	描述：more、tail、vi 但是由于日志太大了，而我只需要记录ERROR信息就可以了，有什么办法或命令能够从后向前查看日志中最后记录的一个ERROR信息的办法呢？
-	> tail -100 |grep error #查看最后100条日志中并过滤出包含error内容的
+线程死锁
+	描述：比如说我们现在已经有一个线程死锁的程序，导致某些操作waiting中
+	1.查找Java进程：top
+	2.查看Java进程的线程快照信息：
+		--从输出信息可以看到，有一个线程死锁发生，并且指出了那行代码出现的。如此可以快速排查问题
+		jstack -l pid
+
+Java死锁排查：
+	详情：https://www.cnblogs.com/aflyun/p/9194104.html
+	1.运行死锁程序
+	2.命令窗口使用ps+jstack
+	> ps -ef | grep java #获取pid，即Java进程ID
+	> jstack -l pid #查看线程，能发现死锁
+	> JConsole #打开图形化监控工具
+	> jvisualvm #打开图形化监控工具
 
 线上发送频繁full gc如何处理? CPU 使用率过高怎么办?
 
@@ -226,13 +182,24 @@ grep命令
 	> grep test *.log 	#查找包含test字符串的所有日志文件
 	> grep 'testAA' ./*	#查看当前目录下所有文件是否存在“testAA”内容
 
+问：如何在log文件中搜索找出error的日志？
+	grep -n 'error' *.log
+
 实例1-Linux根据关键字查询日志：
 	1.单文件：vi或vim编辑器打开文件。在查看模式下，“/关键字”向下查找，“?关键字”向上查找
 	2.多文件：grep ERROR /var/log/messages* #匹配到ERROR这个关键字的行和所在的日志文件直接输出到屏幕
 	3.cat命令查看。如cat xx.log | grep key 等价于 grep key xx.log
 
-问：如何在log文件中搜索找出error的日志？
-	grep -n 'error' *.log
+
+********************
+cat命令查询内容
+
+问：显示一个文件的第2000-5000行？
+	> cat file | head -n 5000 | tail -n +2000 #显示20000行到5000行
+	说明：
+		tail -n +2000 表示从2000行开始显示
+		tail -n 2000 表示显示文件最后2000行，差别很大
+	> cat file | tail -n +2000 | head -n 5000 #从第2000行开始，共显示5000行，也就是2000~6999行！
 
 
 ********************
@@ -242,12 +209,41 @@ tail查询日志
 	tail -100f xxx.log | grep '2019-10-29 16:4[0-9]' #查找最新的100行中时间范围在2019-10-29 16:40-2019-10-29 16:49范围中的行
 	tail -1000f xxx.log | grep -A 5 [关键字] #查看最新的1000行中与关键字匹配的行加上匹配行后的5行
 
+如何在log文件中搜索找出error的日志？
+	描述：more、tail、vi 但是由于日志太大了，而我只需要记录ERROR信息就可以了，有什么办法或命令能够从后向前查看日志中最后记录的一个ERROR信息的办法呢？
+	> tail -100 |grep error #查看最后100条日志中并过滤出包含error内容的
 
 ********************
 find查找文件
 	> find . -type f -size +100M 	--查找大小超过5M的文件
 	> find /etc -name tnsnames.ora		--查找etc目录的tnsnames.ora文件
 	> find / | grep nginx.conf #查找根目录/及其子目录下名为nginx.conf的文件
+
+
+找出占用空间最大的文件：
+	> find / -type f -size +10G #找出大于10G的文件
+
+将当前目录下以“.log”结尾且修改时间大于90天的5G以上的大文件并删除：
+	find ./ -name "*.log" -type f -mtime +90 -size +10G -maxdepth 1 -print -exec rm {} \;
+	说明：
+		-name "*.log":按名称查找如果忽略大小写则用-iname，注意引号别丢
+		-type f:文件类型限定为文件，目录是d
+		-mtime +90:修改时间大于90天。-n指n天以内
+		-size +10G:文件大小过滤
+		-maxdepth 1:限制查找最大深度，当前目录是1
+		-print:将找到的文件以相对路径的形式打印
+		-exec rm {}; 找到的文件将执行删除命令，最后是"空格"+{}+"分号;"都不能省。
+		补充：
+			若是删除文件用rm -rf
+			若想要删除前确认，将“-exec rm {} ;”替换成“-ok rm {} ;”
+
+
+************
+sed命令
+	--利用脚本处理文本文件
+实例：
+	#将redis.conf的7000替换为7001，并以新文件保存
+	sed 's/7000/7001/g' redis.conf > /myredis/redis7001/redis.conf 
 
 
 ********************
@@ -263,11 +259,3 @@ find查找文件
 
 问：打印一个文件夹的所有文件？
 	ll ls
-
-
-************
-sed命令
-	--利用脚本处理文本文件
-实例：
-	#将redis.conf的7000替换为7001，并以新文件保存
-	sed 's/7000/7001/g' redis.conf > /myredis/redis7001/redis.conf 

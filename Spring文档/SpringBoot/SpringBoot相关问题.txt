@@ -87,7 +87,7 @@
 	对于servlet堆栈应用程序，spring-boot-starter-web包含spring-boot-starter-tomcat，也可以使用spring-boot-starter-jetty或spring-boot-starter-undertow替代。
 	对于反应栈应用程序，spring-boot-starter-webflux包括反应堆的Netty通过包括spring-boot-starter-reactor-netty，也可用其它替代。
 
-问：SpringBoot项目添加通用JS代码？
+问：Thymeleaf项目添加通用JS代码？
 	描述：抽象出head部分的css和js文件封装成公共文件，具体页面仅需引入该公共文件即可。
 	实例：
 		--详情：https://blog.csdn.net/qq_27493017/article/details/85233351

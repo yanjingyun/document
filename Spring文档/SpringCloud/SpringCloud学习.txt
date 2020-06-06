@@ -53,7 +53,7 @@ SpringCloud和dubbo区别？
 	2、SpringCloud是Apache旗下的Spring体系下的微服务解决方案；Dubbo是阿里系的分布式服务治理框架从技术维度上,其实SpringCloud远远的超过Dubbo,Dubbo本身只是实现了服务治理,而SpringCloud现在以及有21个子项目以后还会更多。
 	3、服务的调用方式Dubbo使用的是RPC远程调用,而SpringCloud使用的是 Rest API,其实更符合微服务官方的定义。
 	4、服务的注册中心来看,Dubbo使用了第三方的ZooKeeper作为其底层的注册中心,实现服务的注册和发现,SpringCloud使用Spring Cloud Netflix Eureka实现注册中心,当然SpringCloud也可以使用ZooKeeper实现,但一般我们不会这样做
-	服务网关,Dubbo并没有本身的实现,只能通过其他第三方技术的整合,而SpringCloud有Zuul路由网关,作为路由服务器,进行消费者的请求分发,SpringCloud还支持断路器,与git完美集成分布式配置文件支持版本控制,事务总线实现配置文件的更新与服务自动装配等等一系列的微服务架构要素
+	5、服务网关,Dubbo并没有本身的实现,只能通过其他第三方技术的整合,而SpringCloud有Zuul路由网关,作为路由服务器,进行消费者的请求分发,SpringCloud还支持断路器,与git完美集成分布式配置文件支持版本控制,事务总线实现配置文件的更新与服务自动装配等等一系列的微服务架构要素
 
 rest和rpc的区别？
 	rest风格的系统交互更方便，rpc调用服务提供方和调用方式之间依赖太强。
@@ -76,7 +76,7 @@ rest和rpc的区别？
 
 
 概述：
-	SpringCloud是基于SpringBoot的分布式微服务框架，为开发人员提供分布式服务的相关技术模块。如服务注册与发现(注册中心和服务提供者)、服务消费者(负载均衡)、熔断器、配置管理、消息总线、路由网关、服务追踪等。
+	SpringCloud是基于SpringBoot的分布式微服务框架，为开发人员提供分布式服务的相关技术模块。如服务注册与发现(注册中心和服务提供者)、负载均衡(服务消费者)、熔断器、配置管理、消息总线、路由网关、服务追踪等。
 微服务系统描述：
 	在微服务架构中，根据业务来拆分成一个个的服务，服务与服务之间可以相互调用，在SpringCloud可以用RestTemplate+Ribbon和Feign来调用。
 	客户端的请求首先通过负载均衡（zuul、nginx），再到达服务网关（zuul集群、SpringCloudGateway），然后再到具体的服务。
@@ -85,7 +85,7 @@ rest和rpc的区别？
 配置方案：
 	1、将整个系统按业务拆分成若干子系统或微服务，且每个子系统可部署多个应用，多个应用间使用负载均衡。
 	2、需要一个注册中心(Eureka Server)，所有服务都将注册到注册中心。注册中心可部署多个，以保证高可用。
-	3、所有服务(EurekaClient)都统一注册到注册中心，服务之间采用feign/feign进行调用。每个服务可配置多个，调用同一服务可按照一定策略来实现负载均衡。
+	3、所有服务(EurekaClient)都统一注册到注册中心，服务之间采用feign进行调用。每个服务可配置多个，调用同一服务可按照一定策略来实现负载均衡。
 	3、所有客户端都通过统一网地址访问后台的服务，通过路由配置zuul或gwteway网关来判断一个url请求由哪个服务处理。请求转发到服务上的时候使用负载均衡Ribbon/feign。
 	5、使用断路器 hystrix，及时处理服务调用时的超时和错误，防止由于其中一个服务的问题而导致整体系统的瘫痪。
 	6、还需要一个监控功能，监控每个服务调用花费的时间等。
@@ -127,6 +127,16 @@ rest和rpc的区别？
 		若前端、移动端要调用后端系统，统一从Zuul网关进入，由Zuul网关转发请求给对应的服务
 		zuul默认和Ribbon结合实现了负载均衡的功能。比如／api/user转发到到user服务，/api/shop转发到到shop服务。
 
+
+技术选型：
+	开发语言：java + groovy，groovy的好处是网关服务不需要重启就可以动态的添加filter来实现一些功能；
+	微服务基础框架：springboot；
+	网关基础组件：netflix zuul；
+	服务注册中心：consul；
+	权限校验：jwt；
+	API监控：prometheus + grafana；
+	API统一日志收集：logback + ELK；
+	压力测试：Jmeter；
 
 
 *************************RPC理论*************************
@@ -175,64 +185,39 @@ CAP理论：
 	答案：https://zhuanlan.zhihu.com/p/99164801?utm_source=qq&utm_medium=social&utm_oi=965555060286144512
 
 1.概念
-	SpringCloudEureka是SpringCloudNetflix项目下的服务治理模块，基于rest服务，用于定位服务，以实现云端中间件服务发现和故障转移。对微服务架构而言，有了服务注册与发现，只需要使用服务的标识符，就可以访问到服务，而不需要修改服务调用的配置文件。功能类似于dubbo的注册中心，比如zookeeper。
-	rureka由两个组件组成：Eureka服务端和Eureka客户端。Eureka服务端用于服务注册中心，支持集群部署。
-
-	Eureka 采用了 C-S 的设计架构。Eureka Server 作为服务注册功能的服务器，它是服务注册中心。 而系统中的其他微服务，使用 Eureka 的客户端连接到 Eureka Server并维持心跳连接。这样系统的维护人员就可以通过 Eureka Server 来监控系统中各个微服务是否正常运行
-2.原理
+	Eureka服务端用于服务注册中心，支持集群部署。Eureka客户端
 	系统的其它微服务，使用eureka客户端连接到eureka服务端并维持心跳连接。这样就能通过eureka服务端来监控系统中各微服务是否正常运行。SpringCloud的一些其它模块（如zuul）就可以通过eurekaServer来发现系统中的其它服务，并执行相关的逻辑。
-3.eureka包含两个组件：服务端(eureka server)和客户端(eureka client)
-	eureka server提供服务注册服务，支持集群部署。
-	各个节点启动后，会在eurekaServer中进行注册，这样eurekaServer中的服务注册表中将会存储所有可用服务节点的信息，服务节点的信息可以在界面中直观的看到。
+2.eureka包含两个组件：
+	Eureka由两个组件组成：Eureka服务端(Eureka Server)和Eureka客户端(Eureka Client)。
+	Eureka服务端是注册中心，提供服务注册服务，支持集群部署。
+	Eureka客户端是系统中其它服务，需注册到Eureka服务端并维持心跳连接，这样在Eureka服务端的服务注册表中将会存储所有可用服务节点的信息，服务节点的信息可以在界面中直观的看到。
+	Eureka客户端同时也具备了一个内置的、使用轮询(round-robin)负载均衡器。在应用启动后，将会想eurekaServer发送心跳（默认周期为30秒）。若eurekaServer在多个心跳周期内没有接收到某个节点的心跳，eurekaServer将会从服务注册表中把这个服务节点移除(默认90秒)。
 
-	eureka客户端是一个java客户端，用于处理服务注册与发现。
-	eureka客户端同时也具备了一个内置的、使用轮询(round-robin)负载均衡器。在应用启动后，将会想eurekaServer发送心跳（默认周期为30秒）。若eurekaServer在多个心跳周期内没有接收到某个节点的心跳，eurekaServer将会从服务注册表中把这个服务节点移除（默认90秒）
-
-	三大角色：
-	注册中心(eureka server)：提供服务注册与发现；
-	服务提供者(service provider)：将自身服务注册到eureka，从而使服务消费方能够找到；
-	服务消费者(service consumer)：从eureka获取注册服务列表，从而能够消费服务。
-
-	eurekaServer集群配置(applicaion.yml):
-	server:
-		port: 7001
-	eureka:
-		instance:
-			hostname:eureka_server
-		client:
-			register-with-eureka: false #false表示不再向注册中心注册自己
-			fetch-register: false #false表示自己是注册中心
-			service-url:
-				#设置与eureka Server交互的地址查询服务和注册都需要依赖这个地址
-				#defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/ #单机
-				defaultZone: http://eureka1001:1001/eureka/,http://eureka1002:1002/eureka/ #集群
+3.Eureka续约与剔除：
+	Eureka客户端启动后，会周期性地向Eureka服务端发送心跳以续约自己的信息，避免自己的注册信息被剔除。续约的方式与服务注册基本一致：首先更新自身状态，再同步到其它Peer。
+	若Eureka服务端在一段时间内没有收到某微服务实例的心跳，Eureka服务端会将该微服务节点注销（自我保护模式除外）
 
 
-4.Eureka续约与剔除：
-	服务实例启动后，会周期性地向 Eureka Server发送心跳以续约自己的信息，避免自己的注册信息被剔除。续约的方式与服务注册基本一致：首先更新自身状态，再同步到其它Peer。
-	如果Eureka Server在一段时间内没有接收到某个微服务节点的心跳，Eureka Server将会注销该微服务节点（自我保护模式除外）
-
-
-5.自我保护模式：
-	需求描述：默认情况下，若eurekaServer在一定时间内没有收到某个微服务实例的心跳，eurekaServer将会注销该实例（默认90秒）。但当网络分区故障发生时，微服务与eurekaServer之间无法正常通信，以上行为可能变得非常危险了--因为微服务本身其实健康的，此时本不应该注销该服务实例。
-	
-	默认情况下，如果Eureka Server在90s内没有接收到某个微服务实例的心跳，会注销该实例。但是在微服务架构下服务之间通常都是跨进程调用，网络通信往往会面临着各种问题，导致此实例被注销。
+4.自我保护模式：
+	描述：默认情况下，若Eureka服务端在一定时间内没有收到某服务实例的心跳，Eureka服务端会将该微服务节点注销（默认90秒）。但当网络分区故障发生时，Eureka客户端与Eureka服务端之间无法正常通信（即Eureka服务端的网络有问题），以上行为可能变得非常危险了，因为微服务本身其实健康的，此时本不应该注销该服务实例。
 	
 	当Eureka Server检测到大规模服务异常时，会自动进入自我保护机制：
-		Eureka不再从注册列表中移除因为长时间没收到心跳而应该过期的服务。
-		Eureka仍然能够接收新服务的注册和查询请求，但是不会被同步到其他节点上（即保证当前节点依然可用）。
+		Eureka服务端不再从注册列表中移除因为长时间没收到心跳而应该过期的服务。
+		Eureka服务端仍然能够接收新服务的注册和查询请求，但是不会被同步到其他节点上（即保证当前节点依然可用）。
 		当网络稳定时，当前实例新的注册信息会被同步到其他节点中。
 
 	解决：eureka通过“自我保护模式”来解决这个问题--当eurekaServer节点在短时间内丢失过多客户端时（可能发生网络分区故障），那么该节点就会进入自我保护模式。一旦进入该模式，eurekaServer就会保护服务注册表的信息，不在删除服务注册表中的数据（也就是不会注销任何微服务）。但网路故障恢复后，该eurekaServer节点会自动退出自我保护模式。
 	在自我保护模式中，eurekaServer会保护服务注册表中的信息，不再注销任何服务实例。当它收到的心跳重新恢复到阈值以上时，该eurekaServer节点就会自动退出自我保护模式。这样设计是为了宁可保留错误的服务注册信息，也不盲目注销任何可能健康的服务实例。
 
-
-Eureka注册中心、服务提供者、服务消费者：
+5.Eureka三大角色(注册中心、服务提供者、服务消费者)：
 	1、注册中心(eureka server)：
+		提供服务注册与发现；
 		在启动类上添加@EnableEurekaServer注解，表明自己是一个eurekaServer。
 	2、服务提供者(eureka client)：
+		即service，将自身服务注册到eureka，从而使服务消费方能够找到；
 		当client向server注册时，它会提供一些元数据，例如主机和端口，URL，主页等。服务注册中心从每个client实例接收心跳消息。如果心跳超时，则通常将该实例从注册server中删除。
-	3、服务消费者(ribbon/feign)：
+	3、服务消费者(eureka client + ribbon/feign)：
+		即open-service，从eureka获取注册服务列表，从而能够消费服务。
 		在微服务架构中，业务都会拆分成一个独立的服务，服务与服务的通讯是基于http restful的。
 		Spring Cloud有两种服务调用方式：1）ribbon+restTemplate，2）feign。
 		ribbon是一个负载均衡客户端，可以很好的控制http和tcp的一些行为。Feign默认集成了ribbon。
@@ -243,27 +228,44 @@ Eureka注册中心、服务提供者、服务消费者：
 	启动：需要依赖spring-cloud-starter-eureka-server，并将主启动类标识@EnableEurekaServer。在yml配置文件中配置自己的访问地址等信息。默认情况下eureka server也是一个eureka client，必须要指定一个server。
 	自我保护策略：在短时间内大量微服务没有心跳服务，会开启保护模式，不会立即删除注册表中没有心跳的微服务。当心跳回到阈值时会自动关闭保护模式。
 	为什么需要自我保护策略？答：短时间内大量微服务没有心跳可能原因是注册中心网络中断了，无法与大部分服务连接。
-2）服务注册(服务消费者)：
+
+	注册中心集群：
+		#设置与eureka Server交互的地址查询服务和注册都需要依赖这个地址
+		#defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/ #单机
+		defaultZone: http://eureka1001:1001/eureka/,http://eureka1002:1002/eureka/ #集群
+2）服务注册(eureka客户端)：
+	当eureka客户端向eurekaServer注册时，它提供自身的元数据，如ip地址、端口、运行状况指示符url、主页等。
 	启动：需要依赖spring-cloud-starter-netflix-eureka-client，并将主启动类标识@EnableEurekaClient，在yml配置文件中指定注册中心的访问地址等信息，这样本服务启动后会自动注册进eureka服务注册中心中。
 	每个服务单元向注册中心登记自己提供的服务，将主机、端口号、版本号、通信协议等一些附加信息告知注册中心，注册中心按服务名分类组织服务清单。
 3）服务发现(服务消费者)：
 	@EnableDiscoveryClient 本应用的主启动类上添加此注解表示：服务发现。进而可以在所有bean中使用DiscoveryClient接口来访问Eureka.或结合RestTemplate来访问Restful风格的http服务。
 4）Eureka集群：
 	各Eureka相互知晓。每个客户端要知晓所有Eureka，类似RocketMQ的NameServer。
-5）与Zookeeper比较：
-	eureka有自我保护机制。没有主从概念。
-	zookeeper出现网络故障时会花30-120s来选举新master，而导致注册中心不可用，可用性不好。
+5）服务续约(Renew):
+	eureka客户端默认会每隔30s发送一次心跳来续约。通过续约l来告知eurekaServer该eureka客户端仍然存在，没有问题。正常情况下，如果eurekaServer在90s没有收到eureka客户的续约，它会将该实例从其注册表中删除。
+6）获取注册表信息(Fetch Register):
+	eureka客户端从服务器获取注册信息并将其缓存在本地。客户端会使用该信息查询对应服务，从而进行远程调用。该注册列表信息定期（每隔30s）更新一次。每次返回注册列表信息可能与eureka客户端的缓存信息不同，eureka客户端自动处理。如果由于某种原因导致注册列表信息不能及时匹配，eureka客户端则会重新获取整个注册表信息。eureka服务器缓存注册列表信息，整个注册表及每个应用程序的信息进行了压缩，压缩内容和没有压缩的内容完全相同。
+7）服务下线(Cancel):
+	eureka客户端在程序关闭时向eureka服务器发送取消请求。发送请求后，该客户端实例信息将从服务器的实例注册表中删除。
+	该下线请求不会自动完成，它需要调用：DiscoveryManager.getInstance().shutdownComponent();
+8）服务剔除(Eviction):
+	在默认的情况下，当eureka客户端连续90s（3个续约周期）没有向eureka服务器发送服务续约，即心跳，eureka服务器会将该服务实例从服务注册表删除。
+
 
 
 6.与zookeeper对比
+	--概括：
+	eureka有自我保护机制。没有主从概念。
+	zookeeper出现网络故障时会花30-120s来选举新master，而导致注册中心不可用，可用性不好。
+	ZooKeeper在选举期间注册服务瘫痪，虽然服务最终会恢复，但是选举期间不可用的。
+	Eureka各个节点是平等关系，只要有一台Eureka就可以保证服务可用，而查询到的数据并不是最新的。
+
+	--详情：
 	著名的CAP理论指出，一个分布式系统不可能同时满足C(一致性)、A(可用性)、P(分区容错性)
 	1、zookeeper保证的是CP，eureka保证的是AP。
 	2、zookeeper有leader和follower角色，eureka个节点平等
 	3、zookeeper采用过半数存活原则，eureka采用自我保护机制解决分区问题
 	4、eureka本质上是一个工程，而zookeeper只是一个进程。
-
-	ZooKeeper在选举期间注册服务瘫痪,虽然服务最终会恢复,但是选举期间不可用的。
-	Eureka各个节点是平等关系,只要有一台Eureka就可以保证服务可用,而查询到的数据并不是最新的
 
 	zookeeper保证CP：
 		当向注册中心查询服务列表时，我们可以容忍注册中心返回的是几分钟以前的注册信息，但不能接收服务直接down掉。
@@ -288,44 +290,59 @@ Eureka注册中心、服务提供者、服务消费者：
 
 
 
-*************************Ribbon、Feign*************************
+*************************服务间通讯(Ribbon、Feign)*************************
 服务与服务之间通讯：
 	基于http restful的。
-	spring cloud有两种调用方式：1）ribbon+restTemplate 2）feign
+	spring cloud有两种调用方式：1、ribbon+restTemplate； 2、feign
+	RestTemplate：用于进行http请求
+负载均衡：
+	描述：在微服务架构中，根据业务来拆分成一个个的服务，服务与服务之间可以相互调用，在SpringCloud可以用RestTemplate+Ribbon或Feign来调用。为了保证其高可用，单个服务通常会集群部署。将用户请求平摊分配到多个服务。
+负载均衡调度算法：
+	nginx：轮询、加权轮询
+	Ribbon：轮询策略(RoundRobinRule)、随机策略(RandomRule)、重试
 
-ribbon
+	
+Ribbon介绍：
+	构建过程：依赖eureka
+	客户端首先引入eureka客户端组件，再从restTemplate的bean上加上@LoadBalanced注解，就可以用微服务的名称从eureka集群中获取服务列表，进而选出一台服务器。
+	核心组件：IRule根据特定算法从服务列表中选取一个要访问的服务。自带7种均衡策略。默认轮询。
+	修改默认策略：向容器中注册一个IRule的bean，这样ribbon就会使用用户自己的策略来覆盖默认策略。
+	自定义策略：
+		在主启动类上加@RibbonClient(name="服务名", configuration=XxxRuler.class)，从而在启动服务的时候就能去加载自定义的Ribbon配置类。
+		代码中向容器注入自己的XxxRuler的bean.
 
-
-feign
-	feign是一个声明式WebSocket客户端。
+Feign介绍：
+	feign是一个声明式WebSocket客户端。采用的是基于接口注解。
 	SpringCloud对feign进行了封装，使其支持了SpringMVC标准注解和HttpMessageConverters。
+	Feign整合了ribbon，并和eureka结合，默认实现了负载均衡的效果。Feign还具有熔断的能力。
+	OpenFeign也是运行在消费者端的，使用Ribbon进行负载均衡，所以OpenFeign直接内置了Ribbon。
+	
+	--测试实例：
+	// 使用 @FeignClient 注解来指定提供者的名字
+	@FeignClient(value = "eureka-client-provider")
+	public interface TestClient {
+	    // 这里一定要注意需要使用的是提供者那端的请求相对路径，这里就相当于映射了
+	    @PostMapping(value = "/provider/xxx")
+	    CommonResponse<List<Plan>> getPlans(@RequestBody planGetRequest request);
+	}
 
-Ribbon和Feign的区别：
+	@RestController
+	public class TestController {
+	    // 这里就相当于原来自动注入的 Service
+	    @Autowired
+	    private TestClient testClient;
+	    // controller 调用 service 层代码
+	    @RequestMapping(value = "/test", method = RequestMethod.POST)
+	    public CommonResponse<List<Plan>> get(@RequestBody planGetRequest request) {
+	        return testClient.getPlans(request);
+	    }
+	}
+
+ribbon和 feign 的区别？
+	Ribbon和feign都是客户端的负载均衡的工具，Feign的底层就是通过Ribbon实现的，它是对Ribbon的进一步的封装，让Ribbon更加好用。
 	Ribbon是一个基于HTTP和TCP客户端的负载均衡器。它可以在客户端配置ribbonServerList（服务端列表），然后轮询请求以实现负载均衡。
 	Feign是在Ribbon的基础上进行了一次封装，是一个使用起来更加方便的HTTP客户端，让调用者更像是调用一个本地方法一样调用远程服务。
 	其中OpenFeign是在NetflixFeign的基础上扩展了对SpringMVC的注解支持，在新版本的SpringCloud中已经没有了对Feign的依赖集成。
-ribbon和 feign 的区别？
-	1、Ribbon 和 feign 都是客户端的负载均衡的工具，Feign的底层就是通过Ribbon实现的，它是对Ribbon的进一步的封装，让Ribbon 更加好用。
-	2、Ribbon 使用HttpClient 或 RestTemplate 模拟http请求，步骤相当繁琐。而Feign采用接口+注解的方式 ，将需要调用的其他服务的方法定义成抽象方法即可， 不需要自己构建http请求。然后就像是调用自身工程的方法调用，而感觉不到是调用远程方法，使得编写 客户端变得非常容易。类似于 mybatis 的 @Mapper注解 。
-
-
-
-负载均衡（Ribbon、Feign）
-	出现原因：在微服务架构中，根据业务来拆分成一个个的服务，服务与服务之间可以相互调用，在SpringCloud可以用RestTemplate+Ribbon和Feign来调用。为了保证其高可用，单个服务通常会集群部署。将用户请求平摊分配到多个服务。
-	1）Ribbon：
-		构建过程：依赖eureka
-		客户端首先引入eureka客户端组件，再从restTemplate的bean上加上@LoadBalanced注解，就可以用微服务的名称从eureka集群中获取服务列表，进而选出一台服务器。
-		核心组件：IRule根据特定算法从服务列表中选取一个要访问的服务。自带7种均衡策略。默认轮询。
-		修改默认策略：向容器中注册一个IRule的bean，这样ribbon就会使用用户自己的策略来覆盖默认策略。
-		自定义策略：
-			在主启动类上加@RibbonClient(name="服务名", configuration=XxxRuler.class)，从而在启动服务的时候就能去加载自定义的Ribbon配置类。
-			代码中向容器注入自己的XxxRuler的bean.
-	2）feign描述：
-		feign是一个声明式的伪http客户端。feign采用的是基于接口注解。
-		Feign 整合了ribbon，并和eureka结合，默认实现了负载均衡的效果。Feign还具有熔断的能力。
-
-
-
 
 
 *************************断路器（Hystrix）*************************
@@ -365,7 +382,7 @@ ribbon和 feign 的区别？
 	3、积分服务挂了你就熔断，好歹你干点儿什么啊！别啥都不干就直接返回啊？没问题，咱们就来个降级：每次调用积分服务，你就在数据库里记录一条消息，说给某某用户增加了多少积分，因为积分服务挂了，导致没增加成功！这样等积分服务恢复了，你可以根据这些记录手工加一下积分。这个过程，就是所谓的降级。
 
 
-限流：
+服务限流：
 	详情：https://www.fangzhipeng.com/springcloud/2018/12/22/sc-f-gatway4.html
 前言：
 	每一个对外提供服务的API接口都是需要做流量控制的，不然会导致系统直接崩溃。原理跟保险丝一样，若用电符合超载就会烧断保险丝以达到保护的作用。API限流的意义也是如此，如果API上的流量请求超过核定的数值我们就对请求进行引流或直接拒绝等操作。
@@ -388,7 +405,7 @@ ribbon和 feign 的区别？
 	4、另外：计数器算法：可能存在“突刺现象”
 
 
-降级：
+服务降级：
 前言：
 	服务降级，就是对不怎么重要的服务进行低优先级的处理。说白了，就是尽可能的把系统资源让给优先级高的服务。资源有限，而请求是无限的。如果在并发高峰期，不做服务降级处理，一方面肯定会影响整体服务的性能，严重的话可能会导致宕机某些重要的服务不可用。所以，一般在高峰期，为了保证网站核心功能服务的可用性，都要对某些服务降级处理。
 服务降级方法：
@@ -396,51 +413,131 @@ ribbon和 feign 的区别？
 		判断应用来源，高峰时段拒绝低优先级应用的服务请求，保证核心应用正常工作。也可以随机拒绝请求，直接返回服务器繁忙，避免同时涌入过多的请求，这在电商秒杀时用的特别多。
 	关闭服务：
 		既然是高峰期，那么可以关闭一些冷门的或者边缘不重要的服务，给核心服务让出资源。如淘宝每年双11时候都会关闭如评价、确定收货等一些与下单核心业务无关的服务，以保证用户下单支付正常，当然肯定也会使用拒绝服务，0点高峰期很多用户看到的基本是服务器繁忙。
-	
 
-
-服务熔断和服务降级：
-	熔断机制是应对雪崩效应的一种微服务链路保护机制。当某个微服务不可用或者响应时间太长时，会进行服务降级，进而熔断该节点微服务的调用，快速返回错误的响应信息。当检测到该节点微服务调用响应正常后恢复调用链路。在SpringCloud框架里熔断机制通过Hystrix或Resilience4j来实现。
-	
+服务熔断:
+	当调用目标服务的请求和调用大量超时或失败，服务调用方为避免造成长时间的阻塞造成影响其他服务，后续对该服务接口的调用不再经过进行请求，直接执行本地的默认方法。
+	熔断机制是应对雪崩效应的一种微服务链路保护机制。当某个微服务不可用或者响应时间太长时，会进行服务降级，进而熔断该节点微服务的调用，快速返回错误的响应信息。当检测到该节点微服务调用响应正常后恢复调用链路。
+	在SpringCloud框架里熔断机制通过Hystrix或Resilience4j来实现。
+服务降级：
+	描述：当消费者调用提供者时由于各种原因出现无法调用的情况时，消费者可以进行服务降级。那么，若客户端通过网关调用消费者无法调用时，zuul具有服务降级功能。
 	服务降级，当某个服务熔断之后，客户端将不再调用此请求，此时客户端返回一个本地的fallback回调，返回一个缺省值。这样做，虽然会出现局部的错误，但可以避免因为一个服务挂机，而影响到整个架构的稳定性。
-
-
+服务限流:
+	当系统资源不够，不足以应对大量请求，对系统按照预设的规则进行流量限制或功能限制。
 
 *************************路由网关（zuul/gateway）*************************
-	描述：类似nginx反向代理的功能。在微服务架构中，后端服务往往不直接开放给调用者，而是通过访问统一入口（API网关）根据请求url，路由到相应的服务。
+描述：
+	类似nginx反向代理的功能。在微服务架构中，后端服务往往不直接开放给调用者，而是通过访问统一入口（API网关）根据请求url，路由到相应的服务。
 	比如安卓、ios、pc前端、小程序等客户端，不用去关心后端有几百个服务，所有请求都往网关走，网关会根据请求中的一些特征，将请求转发给后端的个服务。
 	作用：在网关处可以做统一的访问入口、负载均衡、降级、限流、安全认证授权等等。
-
-服务网关的作用：
-	简化客户端调用复杂度，统一处理外部请求。
-	数据裁剪以及聚合，根据不同的接口需求，对数据加工后对外。
-	多渠道支持，针对不同的客户端提供不同的网关支持。
-	遗留系统的微服务化改造，可以作为新老系统的中转组件。
-	统一处理调用过程中的安全、权限问题。
 	Spring Cloud中的网关有：Zuul和Spring Cloud Gateway，最新版本中推荐使用后者。
 
-1.zuul概述：
-	zuul包含了对请求的路由和过滤两个功能。
-	路由功能负责将外部请求转发到具体的微服务实例上，是实现外部访问统一入口的基础。
-	过滤器负责对请求的处理过程进行干预，可实现请求校验、服务聚合等功能。
-	zuul和eureka整合，将zuul自身注册为eureka服务治理下的应用，同时从eureka中获得其它微服务的消息，即以后的访问微服务都是通过zuul跳转后获得。
+
+微服务架构流程：
+	总体流程：服务网关、open-service和service
+	1、服务网关、open-service和service启动时都注册到注册中心上去；
+	2、用户请求时直接请求网关，网关做智能路由转发到open-service，这包括服务发现、负载均衡、权限校验、监控、限流等操作；
+	3、open-service聚合内部service响应，返回给网关，网关再返回给用户。
 
 
-zuul描述：
-	路由和过滤的作用。也是一个微服务集群，也需要注册到Eureka中。
-	可以设置统一的访问入口，所有服务都可以通过它来间接访问。
-	--使用步骤：
+什么是网关？
+	服务网关 = 路由转发 + 过滤器
+	路由转发：网关接收一切外界请求，转发到后端的微服务上
+	过滤器：在服务网关中可以完成一系列横切功能，例如权限校验、限流及监控等。
+
+服务网关基本功能：
+	1、智能路由：接收外界一切请求，并转发到后端的对外服务open-service上去；
+		附：我们只转发外部请求，服务之间的请求不走网关，这就表示全链路追踪、内部服务API监控、内部服务之间调用的容错、智能路由不能在网关完成；当然，也可以将所有的服务调用都走网关，那么几乎所有的功能都可以集成到网关中，但是这样的话，网关的压力会很大，不堪重负。
+	2、权限校验：只校验向open-service服务的请求，不校验服务内部的请求；
+	3、api监控：只监控经过网关的请求，以及网关本身的一些性能指标（如gc等）
+	4、限流：与监控配合
+	5、api日志统一收集
+
+引入网关的注意点：
+	1、增加了网关，就多了层转发（原本用户请求直接访问open-service即可），性能会下降一点（但下降不大，通过网关性能会很好，而且网关与open-service的访问通常是内网访问，速度很快）；
+	2、网关的单点问题：在整个网络调用过程中，一定会有一个单点，可能是网关、nginx、dns服务器等。防止网关单点，可以在网关层前边再挂一台nginx，nginx的性能极高，基本不会挂。但是这样一个请求就转发了两次，所以最好的方式是网关单点服务部署在一台牛逼的机器上（通过压测来估算机器的配置），而且nginx与zuul的性能比较，根据国外的一个哥们儿做的实验来看，其实相差不大。
+	3、网关要尽量轻。
+
+
+*************************zuul*************************
+zuul概述：
+	主要功能：路由转发和过滤。zuul和eureka整合，会将zuul自身注册注册到Eureka中。
+	请求路由：可作为外部访问统一入口，接收所有外部请求，再转发到具体的微服务实例上。
+	过滤器：对请求的处理过程进行干预，可实现请求校验、服务聚合等功能。
+	
+使用步骤：
 	1）添加Eureka和Zuu的maven依赖。
 	2）主启动类上添加@EnableZuulProxy注解，无需@EnableDiscoveryClient注解。
 	3）配置Eureka的相关配置信息。
 	4）使用http://路由网关的ip+port/要请求的微服务名称/原微服务访问地址
 	5）还可以将“微服务名称”进行映射。
 
-服务降级：
-	描述：当消费者调用提供者时由于各种原因出现无法调用的情况时，消费者可以进行服务降级。那么，若客户端通过网关调用消费者无法调用时，zuul具有服务降级功能。
+功能：
+1、统一前缀：
+	直接调用服务消费者地址http://localhost:9000/consumer1/student/update；
+	这时我们在zuul项目的配置文件中添加zuul.prefix=/zuul
+	就需要通过http://localhost:9000/zuul/consumer1/student/update
+2、路由策略配置：
+	之前的访问方式会将微服务名称暴露给用户，会存在安全性问题，所以需要自定义路径来代替微服务名称，即自定义路由策略。
+	zuul:
+		routes:
+			consumer1: /FrancisQ1/**
+			consumer2: /FrancisQ2/**
+	这时就可调用localhost:9000/zuul/FrancisQ1/student/update进行访问了。
+3、服务名屏蔽：
+	由于配置完路由策略之后，直接使用微服务名还是能访问的，这时候需要将服务名屏蔽掉。
+	zuul:
+		ignore-services: "*"
+4、路径屏蔽：
+	Zuul还可以指定屏蔽掉的路径URI，即只要用户请求中包含指定的URI路径，那么该请求将无法访问到指定的服务。通过该方式可以限制用户的权限。
+	zuul:
+		ignore-patterns: **/auto/**
+5、敏感请求头屏蔽：
+	默认情况下，像Cookie、Set-Cookie等敏感请求头信息会被zuul屏蔽掉，我们可以将这些默认屏蔽去掉，当然，也可以添加要屏蔽的请求头。
+6、zuul过滤器：
+	过滤器类型：Pre、Routing、Post。前置Pre就是在请求之前进行过滤，Routing路由过滤器就是我们上面所讲的路由策略，而Post后置过滤器就是在 Response 之前进行过滤的过滤器。
+7、令牌桶限流：
+	首先我们会有个桶，如果里面没有满那么就会以一定固定的速率会往里面放令牌，一个请求过来首先要从桶中获取令牌，如果没有获取到，那么这个请求就拒绝，如果获取到那么就放行。
+
+	实例：将请求数量控制在一秒两个。
+	@Component
+	@Slf4j
+	public class RouteFilter extends ZuulFilter {
+	    // 定义一个令牌桶，每秒产生2个令牌，即每秒最多处理2个请求
+	    private static final RateLimiter RATE_LIMITER = RateLimiter.create(2);
+	    @Override
+	    public String filterType() {
+	        return FilterConstants.PRE_TYPE;
+	    }
+
+	    @Override
+	    public int filterOrder() {
+	        return -5;
+	    }
+
+	    @Override
+	    public Object run() throws ZuulException {
+	        log.info("放行");
+	        return null;
+	    }
+
+	    @Override
+	    public boolean shouldFilter() {
+	        RequestContext context = RequestContext.getCurrentContext();
+	        if(!RATE_LIMITER.tryAcquire()) {
+	            log.warn("访问量超载");
+	            // 指定当前请求未通过过滤
+	            context.setSendZuulResponse(false);
+	            // 向客户端返回响应码429，请求数量过多
+	            context.setResponseStatusCode(429);
+	            return false;
+	        }
+	        return true;
+	    }
+	}
 
 
-*************************配置中心（Config）*************************
+
+*************************配置中心（SpringCloud Config）*************************
 	作用：配置管理。
 	SpringCloudConfig提供服务端和客户端。服务端采用git存储配置信息，这样有助于对配置内容进行版本管理。每个微服务作为客户端
 	服务端创建：
@@ -456,10 +553,21 @@ zuul描述：
 
 
 *************************消息总线(SpringCloud Bus)*************************
-	背景：我们有多个应用程序使用Spring Cloud Config读取属性，而Spring Cloud Config从git读取这些属性。假设git中eureka注册属性更改为指向另一台eureka服务器，这种情况下我们不得不重新启动服务已获取更新的属性。另一种使用执行器端点/刷新的方式，但是我们将不得不为每个模块单独调用这个url。
+背景：我们有多个应用程序使用Spring Cloud Config读取属性，而Spring Cloud Config从git读取这些属性。假设git中eureka注册属性更改为指向另一台eureka服务器，这种情况下我们不得不重新启动服务已获取更新的属性。另一种使用执行器端点/刷新的方式，但是我们将不得不为每个模块单独调用这个url。
 
-	SpringCloud Bus通过轻量消息代理连接各个分布的节点。这回用在广播状态的变化（例如配置变化）或其它的消息指令。
-	SpringCloud Bus的一个核心思想是通过分布式的启动器对SpringBoot应用进行扩展，也可用来建立一个多个应用之间的通信频道
+SpringCloud Bus通过轻量消息代理连接各个分布的节点。这回用在广播状态的变化（例如配置变化）或其它的消息指令。
+SpringCloud Bus的一个核心思想是通过分布式的启动器对SpringBoot应用进行扩展，也可用来建立一个多个应用之间的通信频道
+
+什么时候用cloud bus？
+	1、更新动态IP：后端服务器集群时，在大促销活动经常发生服务的扩容、缩容、上线、下线。因而后端服务器的数量、IP就会变来变去，若想进行一些线上的管理和维护工作，就需要维护服务器的IP。
+	2、失效所有机器的某缓存：比如我们需要更新配置、比如我们需要同时失效所有服务器上的某个缓存，都需要向所有的相关服务器发送命令，也就是调用一个接口。
+	采用zookeeper方式，统一存储服务器的ip地址，需要的时候，向对应服务器发送命令。这是一个方案，但是他的解耦性、灵活性、实时性相比消息总线都差那么一点。
+cloud bus能做什么？
+	当前spring cloud bus提供了两个可用的接口:
+		1./bus/env用于设置某一个配置项；
+		2./bus/refresh用于刷新所有绑定到刷新点的配置项。
+
+
 
 
 *************************链路追踪(SpringCloud Sleuth)*************************
@@ -473,109 +581,14 @@ zuul描述：
 
 
 
-*************************Zookeeper*************************
-概述：
-	Zookeeper是一个开源的分布式协调服务，由雅虎创建，是Google Chubby的开源实现。分布式应用程序可以基于Zookeeper实现数据发布/订阅、负载均衡、命名服务、分布式协调/通知、集群管理、Master选举、配置维护、名字服务、分布式同步、分布式锁和分布式队列等功能。
-核心概念：
-	--1）集群角色
-	在Zookeeper中有三种角色：Leader、Follower、Observer
-	一个Zookeeper集群同一时刻只会有一个Leader，其它都是Follower或Observer。
-	Zookeeper默认只有Leader和Follower两种角色，没有Observer角色。
-	
-	--2）节点读写服务分工：
-	Zookeeper集群的所有机器通过一个Leader选举过程来选定一台被称为“Leader”的机器，Leader服务器为客户端提供读和写服务。
-	Follower和Observer都能提供读服务，不能提供写服务。两者唯一的却别在于，Observer机器不参与Leader选举过程，也不参与写操作的“过半写成功”策略，因此Observer可以在不影响写性能的情况下提升集群的读性能。
-	
-	--3）Session：
-	Session是指客户端会话。在Zookeeper中，一个客户端连接是指客户端和Zookeeper服务器之间的TCP长连接。
-	ZooKeeper对外的服务端口默认是2181，客户端启动时，首先会与服务器建立一个TCP连接，从第一次连接建立开始，客户端会话的生命周期也开始了，通过这个连接，客户端能够通过心跳检测和服务器保持有效的会话，也能够向ZooKeeper服务器发送请求并接收响应，同时还能通过该连接接收来自服务器的watch事件通知。
-	Session的SessionTimeout值用来设值一个客户端会话的超时时间。当由于服务器压力太大、网络故障或客户端主动断开连接等各种原因导致客户端连接断开时，只要在SessionTimeout规定的事件内能重新连接上集群中任意一台服务器，那么之前创建的会话仍然有效。
 
-	--4）数据节点：
-	ZooKeeper结构其实就是一个树形结构，Leader是根节点，其它节点相当于Follower节点。
-	ZooKeeper节点分两类：
-		-1）持久节点：
-		-2）临时节点：其生命周期跟客户端会话绑定，一旦客户端会话失效，那么该客户端所创建的所有临时节点都会被移除。
-
-	--5）状态信息：
-	每个节点除了存储数据内容之外，还存储了节点本身的一些状态信息。用get命令可以同时获得某个节点的内容和状态信息。
-	在ZooKeeper中，version属性是用来实现乐观锁机制中的“写入校验”的。
-
-	--6）事务操作：
-	在ZooKeeper中，能改变ZooKeeper服务器状态的操作称为事务操作。一般包括数据节点创建和删除、数据内容更新和客户端会话创建与失效等操作。对应每一个事务请求，ZooKeeper都会为其分配一个全局唯一的事务ID，用ZXID表示，通常是一个64位的数字。每一个ZXID对应一次更新操作，从这些ZXID中可以间接地识别出ZooKeeper处理这些事务操作请求的全局顺序。
-
-	--7）Watcher（事件监听器）：
-	ZooKeeper允许用户在指定节点上注册一些Watcher，并且在一些特定事件触发的时候，ZooKeeper服务端会将事件通知到感兴趣的客户端上去。该机制是ZooKeeper实现分布式协调服务的重要特性。
-
-应用场景：
-	ZooKeeper是一个高可用的分布式数据管理与协调框架。基于对ZAB算法的实现，该框架能够很好地保证分布式环境中数据的一致性。也基于这样的特性，使得ZooKeeper成为了解决分布式一致性问题的利器。
-1.数据发布与订阅（配置中心）：
-	数据发布与订阅，即所谓的配置中心，即发布者将数据发布到ZooKeeper节点上，供订阅者进行数据订阅，进而达到动态获取数据的目的，实现配置信息的集中式管理和动态更新。
-
-	发布/订阅系统一般有两种设计模式：
-		-1）推模式（Push）：服务端主动将数据更新发送给所有订阅的客户端。
-		-2）拉模式（Pull）：客户端主动发起请求来获取最新数据，通常客户端都采用定时轮询拉取的方式。
-
-	ZooKeeper采用的是推拉相结合的方式：
-		客户端想服务端注册自己需要关注的节点，一旦该节点的数据发生变更，那么服务端就会向相应的客户端发送Watcher事件通知，客户端接收到这个消息通知后，需要主动到服务端获取最新的数据。
-
-2.命名服务
-	在分布式系统中，通过使用命名服务，客户端应用能够根据指定名字来获取资源或服务的地址，提供者等信息。被命名的实体通常可以是集群中的机器，提供的服务，远程对象等等。--这些我们都可以统称他们的名字。
-	ZooKeeper的命名服务即生成全局唯一的ID。
-
-3.分布式协调服务/通知
-	ZooKeeper中特有的Watcher注册与异步通知机制，能够很好的实现分布式环境下不同机器，甚至不同系统之间的通知与协调，从而实现对数据变更的实时处理。使用方法通常是不同的客户端。
-	如果及其节点发生了变化，那么所有订阅的客户端都能够受到相应的Watcher通知，并做出相应的处理。
-	ZooKeeper的分布式协调/通知，是一种通用的分布式系统机器间的通信方式。
-
-4.Master选举
-	针对Master选举的需求，通常情况下，我们可以选择常见的关系型数据库中的主键特性来实现：希望成为Master的机器都向数据库中插入一条相同主键Id的记录，数据库回帮我们进行主键冲突检查，即只有一台机器能插入成功，该机器就是Master。
-
-	利用ZooKeepr的强一致性，能够很好地保证在分布式高并发情况下节点的创建一定能够保证全局唯一性，即ZooKeeper将会保证客户端无法创建一个已经存在的 数据单元节点。
-
-	也就是说，如果同时有多个客户端请求创建同一个临时节点，那么最终一定只有一个客户端请求能够创建成功。利用这个特性，就能很容易地在分布式环境中进行 Master 选举了。
-5.分布式锁
-	分布式锁是控制分布式系统之间同步访问共享资源的一种方式。
-	分布式锁分类：
-		--1）排它锁
-		定义锁：ZooKeepr上的一个机器节点可以表示一个锁
-		获得锁：把ZooKeepr上的一个节点看作是一个锁，获得锁就通过创建心事节点的方式来实现。ZooKeeper 会保证在所有客户端中，最终只有一个客户端能够创建成功，那么就可以认为该客户端获得了锁。同时，所有没有获取到锁的客户端就需要到/exclusive_lock节点上注册一个子节点变更的Watcher监听，以便实时监听到lock节点的变更情况。
-		释放锁：因为锁是一个临时节点，释放锁有两种方式。1.当前获得锁的客户端机器发生宕机或重启，那么该临时节点就会被删除，释放锁；2. 正常执行完业务逻辑后，客户端就会主动将自己创建的临时节点删除，释放锁。
-
-		--2）共享锁：
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*************************其它*************************
+*************************其它问题*************************
 分布式锁：
 	分布式锁（全局锁）实现：基于redis实现、基于Zookeeper实现、基于Consul实现
 	--实例：基于Concul的分布式锁
 	基于Consul的分布式锁主要利用key/value存储API中的acquire和release操作来实现。
 	acquire操作：当锁不存在持有者时返回true，并且设值setValue，同时执行操作的session会持有对该key的锁，否则就返回false。
 	release操作：使用指定session来释放某个key的锁，如果指定的session无效，则会返回false，否则就会设值setValue，并返回true。
-
-
-微服务如何实现session共享？
-	描述：在微服务中，一个完整的项目被拆分成多个不同的独立服务，各服务独立部署在不同的服务器上，各自的session被从物理空间上隔开了，但我们需要在不同微服务之间共享session。
-	方案：SpringSession+Redis实现session共享。
-		将所有微服务的session统一保存在redis上，当各微服务对session有相关读写操作时，都去操作redis上的session。
-
 
 
 分布式事务：
@@ -588,17 +601,16 @@ zuul描述：
 	服务器A的事务如果执行顺利，那么事务A就先行提交，如果事务B也执行顺利，则事务B也提交，整个事务就算完成。但是如果事务B执行失败，事务B本身回滚，这时事务A已经被提交，所以需要执行一个补偿操作，将已经提交的事务A执行的操作反操作，恢复到未执行事务A前的状态。
 
 
+微服务如何实现session共享？
+	描述：在微服务中，一个完整的项目被拆分成多个不同的独立服务，各服务独立部署在不同的服务器上，各自的session被从物理空间上隔开了，但我们需要在不同微服务之间共享session。
+	方案1：SpringSession+Redis实现session共享。
+		将所有微服务的session统一保存在redis上，当各微服务对session有相关读写操作时，都去操作redis上的session。
+	方案2：去session化，采用jwt保存用户基本信息。
 
 
-RestTemplate：用于进行http请求
 
-扛住阿里双十一高并发流量，Sentinel是怎么做到的？
-	Sentinel 承接了阿里巴巴近 10 年的双十一大促流量的核心场景
-	名词解释：
-		1、服务熔断:当调用目标服务的请求和调用大量超时或失败，服务调用方为避免造成长时间的阻塞造成影响其他服务，后续对该服务接口的调用不再经过进行请求，直接执行本地的默认方法
-		2、服务限流:当系统资源不够，不足以应对大量请求，对系统按照预设的规则进行流量限制或功能限制
-		3、服务降级:为了保证核心业务在大量请求下能正常运行，根据实际业务情况及流量，对部分服务降低优先级，有策略的不处理或用简单的方式处理
-	服务降级的实现可以基于人工开关降级（秒杀、电商大促等）和自动检测（超时、失败次数、故障），熔断可以理解为一种服务故障降级处理
+
+
 
 
 

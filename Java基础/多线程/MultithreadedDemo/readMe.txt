@@ -38,6 +38,11 @@ com.yjy.test08_dead_lock //测试死锁
 	1.测试死锁(DeadLockDemo.java)
 
 
+com.yjy.test09_countdownlatch //测试CountDownLatch同步类
+	描述1：张三、李四、王五约好一起去吃饭，等到所有人都到齐了才让服务员上菜。
+	描述2：若有一名顾客迟迟未到，饭店都打烊了，因此服务员不能一直等。
+		将Waiter类中latch.await()改成latch.await(3, TimeUnit.SECONDS);
+
 
 
 

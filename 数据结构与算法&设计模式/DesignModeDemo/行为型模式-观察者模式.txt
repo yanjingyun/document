@@ -1,0 +1,118 @@
+观察者模式(Observer Pattern)：
+目的：一个对象（目标对象）的状态发生改变，所有的依赖对象（观察者对象）都将得到通知，进行广播通知。
+何时使用：一个对象状态改变，所有的依赖对象都将得到通知。
+优点：1、观察者和被观察者都说抽象耦合的；2、建立一套触发机制
+应用实例：
+	通知老师来了
+	拍卖，拍卖师观察最高标价，然后通知其它竞价者。
+	zookeeper观察数据状态变化后，通知在zookeeper上注册的观察者做出反应。
+
+实例代码：竞价，拍卖师观察最高标价，然后通知其它竞价者。
+1、定义主题：竞价
+public class Subject {
+
+	// 观察者数组
+	private List<Observer> observers = new ArrayList<>();
+
+	// 竞价描述
+	private String state;
+
+	public String getState() {
+		return state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	// 增加观察者
+	public void addObservers(Observer observer) {
+		this.observers.add(observer);
+	}
+
+	// 删除观察者
+	public void delObservers(Observer observer) {
+		this.observers.remove(observer);
+	}
+
+	// 通知所有观察者
+	public void notifyObservers() {
+		for (Observer observer : observers) {
+			observer.update();
+		}
+	}
+
+	// 具体业务
+	public void changeState(String state) {
+		this.state = state;
+		this.notifyObservers();
+	}
+}
+
+2、定义观察者&具体观察者
+public abstract class Observer {
+
+	protected Subject subject;
+
+	public abstract void update();
+}
+
+class Bidder1 extends Observer {
+
+	public Bidder1(Subject subject) {
+		this.subject = subject;
+		this.subject.addObservers(this);
+	}
+
+	@Override
+	public void update() {
+		System.out.println("竞价者1收到消息：" + subject.getState());
+	}
+
+}
+
+class Bidder2 extends Observer {
+
+	public Bidder2(Subject subject) {
+		this.subject = subject;
+		this.subject.addObservers(this);
+	}
+
+	@Override
+	public void update() {
+		System.out.println("竞价者2收到消息：" + subject.getState());
+	}
+
+}
+
+class Bidder3 extends Observer {
+
+	public Bidder3(Subject subject) {
+		this.subject = subject;
+		this.subject.addObservers(this);
+	}
+
+	@Override
+	public void update() {
+		System.out.println("竞价者3收到消息：" + subject.getState());
+	}
+
+}
+
+3、测试
+public class ObserverPatternDemo {
+
+	public static void main(String[] args) {
+		// 1.创建一个主题
+		Subject subject = new Subject();
+		
+		// 2.定义具体观察者
+		new Bidder1(subject);
+		new Bidder2(subject);
+		new Bidder3(subject);
+		
+		// 开始竞价
+		subject.changeState("竞价者1出100.00元");
+		subject.changeState("竞价者2出100.01元");
+	}
+}

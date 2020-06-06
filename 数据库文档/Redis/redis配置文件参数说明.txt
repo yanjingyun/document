@@ -33,7 +33,22 @@ requirepass 123456 # 设置复杂一点的密码
 
 
 
+# redis默认只允许本机连接，所以需要找到“bind 127.0.0.1”并将这行注释掉
+bind 127.0.0.1
 
+#redis在3.0版本以后增加了保护模式，需要设置密码，如不需要设置密码，可将“protected-mode yes”改为no，即关闭保护模式
+protected-mode no
+
+# 端口号
+port 6379
+
+# 设置redis以守护线程方式启动，改成yes
+daemonize yes
+
+# 分别配置pid，log，db文件的保存地址，目录为我们事先创建好的相关目录
+pidfile /opt/redis-5.0.0/pid/redis.pid
+logfile /opt/redis-5.0.0/log/redis.log
+dir /opt/redis-5.0.0/db
 
 
 

@@ -1,3 +1,18 @@
+
+
+JPA多对多查询报错：
+	描述：通过userId拿到user记录，进而拿到roles集合，但这样会报错。
+	错误信息: org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: com.yjy.sso.entity.SysUser.sysRoles, could not initialize proxy - no Session
+	代码：
+	public List<SysPermission> findByUserId(Integer userId) {
+    	SysUser sysUser = sysUserDao.findById(userId).get();
+    	List<SysRole> sysRoles = sysUser.getSysRoles();
+    	List<Integer> roleIds = sysRoles.stream().map(SysRole::getId).collect(Collectors.toList());
+    	return sysPermissionDao.findByIds(roleIds);
+    }
+    解决：在方法上面添加@Transactional注解！！
+
+
 @Query写自定义查询报错：
 	报错信息：javax.persistence.TransactionRequiredException: Executing an update/delete query
 	解决：
@@ -24,6 +39,11 @@ JPA与hibernate关系：
 	sequence ：根据底层数据库的序列来生成主键，条件是数据库支持序列。这个值要generator一起使用，generator指定生成主键使用的生成器（可能oracle中自己编写的序列）
 	identity ：主键由数据库自动生成（主要支持自动增长的数据库，如mysql）
 	auto ：主键由程序控制，也是GenerationType的默认值
+主键生成(自增ID)：
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
+
 
 
 jpa实现表自关联：
@@ -39,4 +59,65 @@ jpa实现表自关联：
 		@OrderBy(value = "id")
 		// 输出语句：where ( t.enable='1') and t.parent_guid=? order by t.guid
 		private List<ChartConfig> children;
+	}
+
+一对多关联：
+	--描述：Customer和Order是一对多关系
+	@Entity(name="t_customer")
+	public class Customer implements Serializable {
+
+		@Id
+		@GeneratedValue(strategy = GenerationType.IDENTITY)
+		private Integer id;
+		
+		@OneToMany(cascade=CascadeType.ALL, mappedBy="customer")
+		private List<Order> orders = new ArrayList<Order>();
+
+		...
+	}
+	@Entity(name="t_order")
+	public class Order implements Serializable {
+
+		@Id
+		@GeneratedValue(strategy = GenerationType.IDENTITY)
+		private Integer id;
+		
+		@ManyToOne(fetch = FetchType.LAZY)
+		@JoinColumn(name="customer_id")
+		private Customer customer;
+
+		...
+	}
+
+
+多对多关联：
+	--描述：User和Role是多对多关联，中间表为sys_user_role
+	@Entity
+	@Table(name = "sys_user")
+	public class SysUser implements Serializable {
+
+	    @Id
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	    private Integer id;
+	    
+	    @ManyToMany(cascade = CascadeType.ALL)
+		@JoinTable(name = "sys_user_role", 
+			joinColumns = {@JoinColumn(name = "user_id", referencedColumnName = "id")}, 
+			inverseJoinColumns = {@JoinColumn(name = "role_id", referencedColumnName = "id")})
+		private List<SysRole> sysRoles = new ArrayList<>();
+
+		... //省略get/set
+	}
+	@Entity
+	@Table(name = "sys_role")
+	public class SysRole implements Serializable {
+
+	    @Id
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	    private Integer id;
+	    
+	    @ManyToMany(cascade=CascadeType.ALL, fetch=FetchType.LAZY, mappedBy="sysRoles")
+		private List<SysUser> sysUsers = new ArrayList<>();
+
+		...
 	}

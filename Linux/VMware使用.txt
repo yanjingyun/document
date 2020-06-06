@@ -1,0 +1,234 @@
+
+****************************************************************
+windows10下安装VMware虚拟机并搭建CentOS系统环境：
+	https://www.cnblogs.com/xingxia/p/vmware_windows.html
+使用VMware在本地搭建多个CentOS虚拟机：
+	https://blog.csdn.net/yangshangwei/article/details/82766404
+
+安装centOS7：
+	网络类型：
+		桥接网络：选择桥接模式的话虚拟机和宿主机在网络上就是平级的关系，相当于连接在同一交换机上
+		NAT:虚拟机要联网得先通过宿主机才能和外面进行通信
+		仅主机：虚拟机与宿主机直接连起来
+	自定义硬件：将声卡、打印机等不需要的硬件移除
+
+NAT(Network Address Translation网络地址转换)
+	当在专用网络内部的一些主机本来已经分配到了本地IP地址（即仅在本专用网内使用的专用地址），但现在又想和因特网上的主机通信（并不需要加密）时，可使用NAT方法。
+	简单说就是我们现在加例有很多设备要上网，但只有一条宽带线，只有一个公网IP。同一个局域网下的设备之间互相通信就是靠本地IP地址通信，当局域网的设备需要访问因特网时，不可能每个设备都分配一个公网IP地址。
+	所以NAT技术出现了，NAT将局域网的每个设备通过同一个公网IP访问因特网。NAT还解决了IPv4地址不足的问题。
+
+
+克隆一个centOS7：
+	...
+
+账号：
+	root/yjy@2020
+
+
+CentOS7安装：
+	开放20和22端口：
+		Xshell通过sll连接，端口是20或22。CentOS7没有开放任何端口，所以不能在window上访问，也不能通过xshell连接。
+		CentOS7放弃了iptables防火墙而启用firewall防火墙。
+		firewall-cmd –zone=public –add-port=20/tcp –permanent #开放20端口
+		firewall-cmd –zone=public –add-port=22/tcp –permanent #开放22端口
+	防火墙端口：
+		1、查看所有已开放的端口
+			sudo firewall-cmd --zone=public --list-ports
+		2、添加（--permanent永久生效，没有此参数重启后失效）
+			sudo firewall-cmd --zone=public --add-port=8080/tcp --permanent
+		3、重新载入(更新防火墙规则)
+			sudo firewall-cmd --reload
+	查看防火墙开放的端口：
+		> more /etc/sysconfig/iptables
+	查看端口是否被占用
+		> netstat -anp | grep 端口号
+		> netstat -nultp (此处不用加端口号)
+		--说明：
+		listen表示已被占用，最后一行显示被服务xx占用
+		查看具体端口时候，必须要看到tcp，端口号，LISTEN那一行，才表示端口被占用
+
+	> yum install vim  	#安装vim编辑器
+	> yum install wget 	#安装wget下载
+	> cd /usr/local/src	#切换到下载文件目录
+
+	添加用户:
+		> useradd -d /usr/testUser -m testUser 	--添加用户testUser，产生一个主目录/usr/testUser
+		> useradd testUser	--添加用户
+		> passwd testUser		--修改密码
+		> su testUser 		--切换用户
+	用户组：
+		> groupadd testGroup	--添加组
+	
+	CentOS用户无法开启系统权限：
+		问题描述：XXX is not in the sudoers file. This incident will be reported
+		详细：https://blog.csdn.net/jeremyjone/article/details/81355568
+		步骤：
+			1、切换为root用户：$ su
+			2、添加文件的写权限：$ chmod u+w /etc/sudoers
+			3、编辑sudoers文件：$ vim /etc/sudoers 
+			#找到“root ALL=(ALL)	ALL”这一行，在下一行添加“test ALL=(ALL) ALL”内容
+
+
+****************************************************************
+安装JDK：
+1.卸载Linux自带的JDK：
+	> java -version	//查看系统现有的jdk
+	> rpm -qa|grep java //查看jdk的信息
+	> yum remove *openjdk* //卸载jdk
+2.从网上下载jdk
+	wget https://download.oracle.com/otn-pub/java/jdk/8u201-b09-demos/42970487e3af4f5aa5bca3f542482c60/jdk-8u201-linux-x64-demos.tar.gz
+3.解压
+	tar -zxvf jdk-8u171-linux-x64.tar.gz
+4.设置环境变量
+	> vim /etc/profile
+	在文件末尾追加：
+	JAVA_HOME=/opt/java/jdk1.8.0_171
+	JRE_HOME=$JAVA_HOME/jre
+	PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
+	CLASSPATH=:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib/dt.jar
+	export JAVA_HOME JRE_HOME PATH CLASSPATH
+5.最后启用新的配置
+	source /etc/profile
+6.检查新安装的jdk
+	java -version
+7.jdk自带命令查看GC情况
+	> jstat ...
+
+
+****************************************************************
+安装tomcat：
+1.命令行下载
+	> wget http://mirrors.shu.edu.cn/apache/tomcat/tomcat-8/v8.0.52/bin/apache-tomcat-8.0.52.tar.gz
+2.解压tomcat
+	> tar -zxvf apache-tomcat-8.0.52.tar.gz
+3.移动tomcat
+	> sudo mv apache-tomcat-8.0.52/ /usr/local/apache-tomcat-8.0.52
+4.启动&关闭tomcat
+	> cd apache-tomcat-8.0.52/bin
+	> ./startup.sh 	#启动
+	> ./shutdown.sh #关闭
+5.查看tomcat进程是否启动
+	> ps aux | grep tomcat
+	> ps -ef |grep tomcat #查看tomcat进程
+		-Dcatalina.base=/opt/jira7.3.4/atlassian-jira-software-7.3.4-standalone //对应启动目录
+	> ps -ef | grep 8080 #查看端口
+6.查看tomcat启动日志
+	> cd tomcat/logs/
+	> tail -f xx.out --查看xx.out文件
+	> tail -1000f catalina.out --查看最近1000行日志
+
+
+****************************************************************
+CentOS7安装redis5：
+	--前提准备：
+	> yum -y install wget --需要提前安装wget
+	> yum install gcc-c++ --需要提前安装gcc
+	--安装：
+	> wget http://download.redis.io/releases/redis-5.0.8.tar.gz --1.下载压缩包
+	> tar xzf redis-5.0.8.tar.gz --2.解压
+	> cd redis-5.0.8
+	> make --3.编译，这里进redis-5.0.8/目录下直接make编译就好了
+	> make install PREFIX=/usr/local/redis --4.安装，指定安装路径
+	> cd /usr/local/redis/bin --5.进入安装路径
+	> ll --6.查看redis
+		redis-benchmark redis性能测试工具
+		redis-check-aof AOF文件修复工具
+		redis-check-rdb RDB文件修复工具
+		redis-cli redis命令行客户端
+		redis.conf redis配置文件
+		redis-sentinal redis集群管理工具
+		redis-server redis服务进程
+
+启动redis：
+	--方式1：前端模式启动（窗口关闭则redis-server程序结束）
+	> /usr/local/redis/bin/redis-server --服务端启动
+	> ps -ef | grep redis --查看redis进程
+	--客户端连接
+	> /usr/local/redis/bin/redis-cli
+	> set aa abc
+	> get aa
+
+	--方式2：后端模式启动（通过配置文件启动）
+	> cd ~ --返回root目录
+	> cd redis-5.0.8 --进入redis目录
+	> mkdir /myredis --创建文件夹
+	> mkdir /myredis/6001
+	> cp redis.conf /myredis/6001 --拷贝redis.conf到该目录下
+	> cd /myredis/6001
+	> vim redis.conf --编辑文件
+		a.修改属性daemonize=yes
+			/daemonize  --vim中快速查询daemonize字符串
+		b.将端口号6379替换为6001
+			> find -name redis.conf | xargs perl -pi -e 's|6379|6001|g'
+		i --vim中编辑
+		保存：按esc键，在输入“:wq”后回车
+	> /usr/local/redis/bin/redis-server /myredis/6001/redis.conf --启动redis，指定配置文件
+	> ps -ef | grep redis --查看redis进程，注意port变化
+	
+	--客户端连接
+	> /usr/local/redis/bin/redis-cli -p 6001
+	> set aa abc
+	> get aa
+
+结束redis：
+	> ps -ef|grep redis --查询redis进程
+	> kill -s 9 22279 --杀死redis进程，22279为redis的pid
+
+
+
+		
+****************************************************************
+安装nginx：
+	> yum -y install gcc pcre-devel zlib-devel openssl openssl-devel --安装nginx前提
+	> https://nginx.org/download/nginx-1.18.0.tar.gz --1.下载安装包
+	> tar -zxvf nginx-1.18.0.tar.gz --2.解压
+	> cd nginx-1.18.0 --3.进入nginx目录
+	> ./configure --prefix=/usr/local/nginx --4.配置
+	> make --5.编译
+	> make install --6.安装
+	
+	--检查是否安转成功
+	> cd /usr/loca/nginx/
+	> ./sbin/nginx -t
+
+	--启动nginx
+	> cd /usr/local/nginx/sbin
+	> ./nginx #启动nginx
+	#这时候在浏览器输入http://192.168.20.206发现地址打不开，排查
+	> ping 192.168.20.206 #能连接
+	> telnet 192.168.20.206 80 #说明服务器的80端口是打不开的
+
+	--开打80端口
+	> firewall-cmd --query-port=80/tcp --查看80端口是否开启
+	> firewall-cmd --add-port=80/tcp --permanent #开启80端口，permanent表示永久生效
+	> systemctl restart firewalld --重启防火墙
+	浏览器输入：http://192.168.20.206 能看到对应页面
+
+	--nginx指定配置文件启动 格式：nginx -c 配置文件
+	> cd ~
+	> cd nginx-1.18.0/conf
+	> cp ./nginx.conf ./nginx备份.conf --备份原始配置文件
+	> /usr/local/nginx/sbin/nginx -c /root/nginx-1.18.0/conf/nginx.conf --指定配置文件启动
+
+搭建负载均衡服务：
+	1.修改配置文件(nginx.conf):
+		http {
+			...
+			upstream tomcats {
+			   server 192.168.20.11:8080;
+			   server 192.168.20.11:8090;
+			}
+			location / {
+				...
+				proxy_pass http://tomcats;
+			}
+		}
+	2.重启：/usr/local/nginx/sbin/nginx -c /root/nginx-1.18.0/conf/nginx.conf -s reload
+	3.创建两个springboot项目并启动。
+	4.测试：http://192.168.192.128/test #能看到交替打印不通端口
+			
+
+
+
+
+

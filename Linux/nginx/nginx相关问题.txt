@@ -56,27 +56,6 @@
 	web 服务器收到一个请求时，他不会重新 fork 一个进程（因为这个进程在 web 服务器启动时就开启了，而且不会退出），web 服务器直接把内容传递给这个进程（进程间通信，但 fastcgi 使用了别的方式，tcp 方式通信），这个进程收到请求后进行处理，把结果返回给 web 服务器，最后自己接着等待下一个请求的到来，而不是退出。
 
 
-nginx常用配置：
-	worker_processes 8; #工作进程个数
-	worker_connections 65535; #每个工作进程能并发处理的最大连接数（包含所有连接数）
-	error_log  	/data/logs/nginx/error.log #错误日志
-	access_log  /data/logs/nginx/access.log #进入日志
-	log_format  main  '$remote_addr"$request" ''$status $upstream_addr "$request_time"'; # 进入日志格式
-
-	## 若未使用 fastcgi 功能的，可以无视
-	fastcgi_connect_timeout=300; # 连接到后端 fastcgi 超时时间
-	fastcgi_send_timeout=300; # 向 fastcgi 请求超时时间(这个指定值已经完成两次握手后向fastcgi传送请求的超时时间)
-	fastcgi_rend_timeout=300; # 接收 fastcgi 应答超时时间，同理也是2次握手后
-	fastcgi_buffer_size=64k; # 读取 fastcgi 应答第一部分需要多大缓冲区，该值表示使用1个64kb的缓冲区读取应答第一部分(应答头),可以设置为fastcgi_buffers选项缓冲区大小
-	fastcgi_buffers 4 64k; # 指定本地需要多少和多大的缓冲区来缓冲fastcgi应答请求，假设一个php或java脚本所产生页面大小为256kb,那么会为其分配4个64kb的缓冲来缓存
-	fastcgi_cache TEST; # 开启fastcgi缓存并为其指定为TEST名称，降低cpu负载,防止502错误发生
-
-	listen       80; # 监听端口
-	server_name  abc.test.com; # 允许域名
-	root  	/data/release/rrc/web; # 项目根目录
-	index  index.php index.html index.htm; # 访问根文件
-
-
 问：nginx日志格式中$time_local表示的是什么时间？当我们从前到后观察日志里的$time_local时间，会发现时间顺序前后错乱？
 	$time_local -在服务器里请求开始写入本地时间
 	因为请求发生时间有前有后，所以$time_local时间顺序会前后错乱。

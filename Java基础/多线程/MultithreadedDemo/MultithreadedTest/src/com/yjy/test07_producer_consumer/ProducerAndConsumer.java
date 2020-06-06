@@ -5,7 +5,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 /**
- * 模拟多个生产者和多个消费者
+ * 模拟多个生产者和多个消费者：ArrayBlockingQueue实现
  */
 public class ProducerAndConsumer {
 	
