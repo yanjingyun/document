@@ -1,0 +1,41 @@
+AQS原理：
+	1、有一个state变量，初始值为0，假设当前线程为A,每当A获取一次锁，status++. 释放一次，status–.锁会记录当前持有的线程。
+	2、当A线程拥有锁的时候，status>0. B线程尝试获取锁的时候会对这个status有一个CAS(0,1)的操作，尝试几次失败后就挂起线程，进入一个等待队列。
+	3、如果A线程恰好释放，–status==0, A线程会去唤醒等待队列中第一个线程，即刚刚进入等待队列的B线程，B线程被唤醒之后回去检查这个status的值，尝试CAS(0,1),而如果这时恰好C线程也尝试去争抢这把锁。
+非公平锁实现：
+	C直接尝试对这个status CAS(0,1)操作，并成功改变了status的值，B线程获取锁失败，再次挂起，这就是非公平锁，B在C之前尝试获取锁，而最终是C抢到了锁。
+公平锁实现：
+	C发现有线程在等待队列，直接将自己进入等待队列并挂起,B获取锁。
+
+
+
+AQS(AbstractQueueSynchronizer，队列同步器)概念：
+	它提供了一个FIFO队列，内部维护的是一个FIFO的双向链表。每个Node其实是由线程封装，当线程争抢锁失败后会封装成Node加入到ASQ队列中去。
+	AQS使用state变量来表示同步状态，state>0时表示已经获取锁，state=0时候表示释放锁。提供三个方法操作state：getState/setState/compareAndSetState。
+	AQS通过内置FIFO同步队列来完成资源获取线程的排队工作。当线程争抢锁失败后会其封装成Node加入到ASQ队列中去，同时阻塞该线程。当同步状态释放时，则会把节点中的线程唤醒，使其再次尝试获取同步状态。
+	AQS是一个抽象类，子类通过继承同步器并实现它的抽象方法来管理同步状态。
+	自定义同步器在实现时只需要实现共享资源state的获取与释放方式即可，至于具体线程等待队列的维护（如获取资源失败入队、唤醒出队等），AQS已经在顶层实现好了，所以使用AQS不仅能够极大地减少实现工作，而且也不必处理在多个位置上发生的竞争问题。
+
+AQS的两种功能：
+	独占锁：每次只能一个线程持有锁，如ReentrantLock就是以独占锁实现的互斥锁；
+	共享锁：允许多个线程同时获取锁，并发访问共享资源，如ReentrantReadWriteLock。
+
+相关API方法：
+	--1.state方法
+	getState()：返回同步状态的当前值
+	setState(int newState)：设值当前同步状态
+	compareAndSetState(int expect, int update)：使用CAS设置当前状态，该方法能够保证状态设置的原子性
+	--2.自定义同步器
+	tryAcquire(int arg)：独占式获取同步锁，获取同步状态成功后，其它线程需要等待该线程释放同步状态才能获取同步状态；
+	tryRelease(int arg)：独占式释放同步状态；
+	tryAcquireShared(int arg)：共享式获取同步状态，返回值大于等于0则表示获取成功，否则获取失败；
+	tryReleaseShared(int arg)：共享式释放同步状态；
+	isHeldExclusively()：当前同步器是否在独占式模式下被线程占用，一般该方法表示是否被当前线程所独占；
+	--3.其余方法
+	acquire(int arg)：独占式获取同步状态；
+	acquireShared(int arg)：共享式获取同步状态；
+	release(int arg)：独占式释放同步状态；
+	releaseShared(int arg)：共享式释放同步状态；
+
+
+

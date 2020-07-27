@@ -90,6 +90,9 @@ Buffer(缓存)：
 	当你调用Selector的select()或者selectNow()方法它只会返回有数据读取的SelectableChannel的实例。
 
 
+问：直接缓冲区与非直接缓冲器有什么区别？
+	...
+
 
 
 IO多路复用：
@@ -105,6 +108,23 @@ select、poll、epoll作用：
 	2、poll基于链表存储。它将用户传入的数组拷贝到内核空间，然后查询每个fd对应的设备状态。本质上跟select没有区别，轮询链表，且需要拷贝数据，但它没有最大连接数的限制。
 	1和2两种方法适合在请求总数比较少，并且活跃请求数较多的情况。1和2都需要在内核空间和用户空间之间不断拷贝数据。
 	3、epoll基于红黑树存储。它在内核空间开辟该数据结构，树节点中存放的是一个socket描述符以及用户程序感兴趣的事件类型。同时epoll还会维护一个链表，用于存储已经就绪的socket描述符节点。
+
+
+select模型：
+	NIO最主要的就是实现了对异步操作的支持。其中一种通过把一个套接字通道(SocketChannel)注册到一个选择器(Selector)中，不时调用选择器的select方法就能返回满足的选择键(SelectionKey)，键中包含了SOCKET事件信息，这就是select模型。
+
+
+select和epoll区别？
+	1）select有最大并发数限制，默认最大文件句柄数1024，可修改。epoll没有最大文件句柄数限制，仅受系统中进程能打开的最大文件句柄数限制。
+	2）select每次都要线性扫描fd_set集合。epoll只在集合不为空才轮询。
+	3）select存在内核空间和用户空间的内存拷贝问题。epoll中减少内存拷贝，mmap将用户空间的一块地址和内核空间的一块地址同时映射到相同的一块物理内存地址。
+
+问：Epoll导致的selector空轮询？
+	Java NIO Epoll 会导致 Selector 空轮询，最终导致 CPU 100%。
+	官方声称在JDK1.6版本的update18修复了该问题，但是直到JDK1.7版本该问题仍旧存在，只不过该BUG发生概率降低了一些而已，它并没有得到根本性解决。
+	Netty的解决方案：
+		对 Selector 的 select 操作周期进行统计，每完成一次空的 select 操作进行一次计数，若在某个周期内连续发生 N 次空轮询，则判断触发了 Epoll 死循环 Bug。
+		然后，Netty 重建 Selector 来解决。判断是否是其他线程发起的重建请求，若不是则将原 SocketChannel 从旧的 Selector 上取消注册，然后重新注册到新的 Selector 上，最后将原来的 Selector 关闭。
 
 
 

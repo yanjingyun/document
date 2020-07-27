@@ -6,6 +6,27 @@
 Redis的全称是什么？
 	Remote Dictionary Server。
 
+Redis数据类型:
+	1.String:字符串 [key-value]
+	2.Hash:散列 [key-field-value]
+	3.List:列表
+	4.Set:集合
+	5.Sorted Set:有序集合 [key-score-member]
+redis其它数据结构：
+	--1.HyperLogLog
+	用于统计UV数据（UniqueVisitor，独立访客），即统计同一个用户一天之内的访问请求，并且同一个用户的多次请求只能统计一次。因此可使用IP地址来区分用户。
+	用Set集合来存储，既能去重又能统计用户ID总数。但当网站数据量上千万时，就需要一个很大的set集合统计，这个非常浪费空间。
+	特点：
+		在输入元素的数量或者体积非常非常大时，计算基数所需的空间总是固定的、并且使很小的。
+		每个HyperLogLog键只需要花费12kb内存，就可以计算接近2^64个不同元素的基数。
+		HyperLogLog只会根据输入元素来计算基数，而不会存储输入元素本身，因此不能像集合那样返回输入的各个元素。
+
+	--2.位图(BitMap)
+	用于网站的DAU(Daily Active User,日活跃用户数量)
+	教程：https://blog.csdn.net/Crazypokerk_/article/details/100600292
+
+
+
 非关系型数据库的优势，解决什么问题？
 	不用关心各种约束问题。
 
@@ -152,6 +173,16 @@ redis的AOF如何缩减自身文件大小？
 
 
 
+5. Redis架构模式
+	1)单机版: 简单，内存容量有限、处理能力有限、无法高可用
+	2)主从复制:允许主多从，被复制的是主服务器master, 复制品是从服务器slave, slave只读
+		能缓解主服务器的读压力，无法分解写压力，无法高可用
+		[master和slave实例连接正常时，master会发送一连串的命令流来保持对slave的更新，以便于将自身数据集的改变复制给slave]
+	3)哨兵:Sentinel会不断地检查主服务器和从服务器是否运作正常，当一个主服务器不能正常工作时，哨兵会开始次自动故障迁移操作，它会将失效主服务器的其中一个从服务器升级为新的主服务器使得集群可以使用新主服务器代替失效服务器。
+	4)集群:使用哈希槽，集群的每个节点负责一部分hash槽，分散写压力，使用主从复制模式，主节点失效，会自动选举它的从节点为新主。
+		不能保证数据强致性
+
+
 redis的主从复制实现（旧版）？
 	分步骤：数据同步、命令同步
 	--数据同步
@@ -253,12 +284,15 @@ redis过期策略及内存淘汰机制？redis的缓存失效策略？
 内存淘汰机制：
 	# maxmemory-policy volatile-lru //在redis.conf配置
 	--参数说明：
-	noeviction 		内存不足时，写入报错
-	allkeys-lru 	内存不足时，会移除最近最少使用的key。推荐使用。
-	allkeys-random	内存不足时，随机移除某个key
-	volatile-lru	内存不足时，在设置了过期时间的键空间中移除最近最少使用的key。这种情况一般是redis既当缓存，又做持久化存储时使用。
-	volatile-random	内存不足时，在设置了过期时间的键空间中随机移除某个key。
-	volatile-ttl	内存不足时，在设置了过期时间的键空间中优先移除有更早过期时间的key。
+	volatile-lru 	//在已设置过期时间的数据集中，移除最近最少使用的key
+	volatile-ttl 	//在已设置过期时间的数据集中，移除将要过期的key
+	volatile-random //在已设置过期时间的数据集中，随机移除一个key
+
+	allkeys-lru 	//在数据集中，移除最近最少使用的key
+	allkeys-random 	//在数据集中，随机移除一个key
+
+	no-eviction		//内存不足时，写入报错
+
 
 问：Redis回收使用的是什么算法？
 	LRU算法

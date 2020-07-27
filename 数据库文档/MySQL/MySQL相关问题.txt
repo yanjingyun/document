@@ -217,6 +217,15 @@ MySQL都有什么锁，死锁判定原理和具体场景，死锁怎么解决？
 
 
 
+问：性别字段是否需要加索引？
+	聚集索引，叶子节点存储行记录，InnoDB索引和记录是存储在一起的。
+	普通索引，叶子节点存储了主键的值。
+	在InnoDB引擎中每个表都会有一个聚集索引，如果表定义了主键，那主键就是聚集索引。一个表只有一个聚集索引,其余为普通索引。如果性别sex字段定义为普通的索引，那么在使用普通索引查询时，会先加载普通索引，通过普通索引查询到实际行的主键，用主键通过聚集索引去查询最终的行。
+	如果不对sex性别字段加索引，那么查找过程就是直接全表扫描查询到聚集索引定位到行，而不需要普通索引和聚集索引的切换，所以效率可能更高一点。
+
+
+
+
 压测工具MySQLSlap
 1.自动生成sql测试
 mysqlslap -a-to-generate sql -root -root #自动生成sql并执行测试性能
@@ -227,3 +236,18 @@ mysqlslap --auto-generate-sql --concurrency= 100 --interations=3 -uroot -proot #
 --engine=innodb：mysqlslap --auto-generate-sql --concurrency=100 --interations=3 -- engine-innodb -uroot -proot
 # 模拟100个客户端执行sql.执行3轮，myisam的处理性能
 --engine=myisam：mysqlslap --auto-generate-sql --concurrency=100 --interations=3 --engine-innodb -uroot -proot
+
+
+
+数据库相关
+1.常见的数据库优化手段
+	log同步刷盘改异步刷盘
+	集群的话强双写改异步同步
+	针对sql优化（explain慢sql）
+	添加索引
+2.索引的优缺点，什么字段上建立索引
+	优点：查的快，支持range
+	缺点：大部分查询实际需要回表，索引建立会额外消耗内存和磁盘，对开发者的sql也有要求
+	字段：区分度大的字段
+3.数据库连接池。
+4.durid的常用配置。

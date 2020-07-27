@@ -1,3 +1,22 @@
+
+问：SpringBoot日志？
+使用slf4j:
+	使用门面模式的日志框架，有利于维护和各个类的日志处理方式统一。
+	实现方式统一使用Logback框架。
+什么时候打日志？
+	1、碰到if-else或switch分支，在分支首行打印日志，用来确认进入哪个分支。
+	2、进入核心功能时，能通过日志看到整个流程
+基本格式：
+	if (logger.isDebugEnabled()) { logger.debug(...); }
+	logger.debug("Processing trade with id:[{}] and symbol : [{}] ", id, symbol);
+	说明：
+		1、必须使用参数化信息的方式
+		2、对于debug日志，必须判断是否为debug级别后再使用。
+		3、不要进行字符串拼接，这样会产生很多String对象，占用空间，影响性能。
+			反例：logger.debug("Processing trade with id: " + id + " and symbol:" + symbol);
+		4、使用[]进行参数变量隔离
+
+
 问：SpringBoot有什么优点？
 
 问：什么是SpringBoot？

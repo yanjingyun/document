@@ -1,6 +1,14 @@
+问：如果类 a 继承类 b，实现接口c，而类 b 和接口 c 中定义了同名变量，请问会出现什么问题
+	覆盖了，没啥问题呀
+	前一个同事在父类定义了一个变量，后一个同事不同又在子类定义了同名的变量，屁事都没有
 
 
-Java内存分为堆内存（Heap）和栈内存（Stack）。
+修饰符限制范围：
+	public：公用，谁来了都给你用
+	default：包内使用，子类不可使用
+	protected：包内使用，子类也可使用
+	private：自己用
+
 
 Java有8种基本数据结构（btye、char、int、short、float、double、long、boolean），加上对象引用（reference类型，它不等同于对象本身，而是指向对象起始地址的引用指针）。
 
@@ -175,6 +183,13 @@ String.format()方法使用：
 
 
 presto 快速查询数据(大数据分析)
+
+
+Object类中的方法：
+	hashcode/equal/wait/notify/nofityall/getclass/tostring/finalize
+引申点：
+	wait和sleep区别
+	hashcode存在哪儿（对象头里）
 
 
 Object的hashCode()和equals()介绍
