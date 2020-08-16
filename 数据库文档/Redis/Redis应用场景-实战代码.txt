@@ -1,0 +1,178 @@
+
+****************************String - 缓存****************************
+// 1.Cacheable 注解
+// controller 调用 service 时自动判断有没有缓存，如果有就走redis缓存直接返回，如果没有则数据库然后自动放入redis中
+// 可以设置过期时间，KEY生成规则 （KEY生成规则基于 参数的toString方法）
+@Cacheable(value = "yearScore", key = "#yearScore")
+public List<YearScore> findBy (YearScore yearScore) {}
+
+// 2.手动用缓存
+if (redis.hasKey(???) { ... }
+redis.set(find from DB)...
+
+
+****************************String - 限流|计数器****************************
+
+
+
+****************************String - 分布式锁（重点）****************************
+/***
+ * 核心思路：
+ *     分布式服务调用时setnx,返回1证明拿到，用完了删除，返回0就证明被锁，需等待
+ *     SET KEY value [EX seconds] [PX milliseconds] [NX|XX]
+ *     EX second:设置键的过期时间为second秒
+ *     PX millisecond:设置键的过期时间为millisecond毫秒
+ *     NX：只在键不存在时，才对键进行设置操作
+ *     XX:只在键已经存在时，才对键进行设置操作
+ *
+ * 1.设置锁
+ *     A. 分布式业务统一Key
+ *     B. 设置Key过期时间
+ *     C. 设置随机value,利用ThreadLocal 线程私有存储随机value
+ *
+ * 2.业务处理
+ *     ...
+ *
+ * 3.解锁
+ *     A. 无论如何必须解锁 - finally (超时时间和finally 双保证)
+ *     B. 要对比是否是本线程上的锁，所以要对比线程私有value和存储的value是否一致(避免把别人加锁的东西删除了)
+ */
+@RequestMapping("/redisLock")
+public String testRedisLock () {
+    try {
+        for(;;){
+            RedisContextHolder.clear();
+            String uuid = UUID.randomUUID().toString();
+
+            String set = jedis.set(KEY, uuid, "NX", "EX", 1000);
+            RedisContextHolder.setValue(uuid);
+
+            if (!"OK".equals(set)) {
+                // 进入循环-可以短时间休眠
+            } else {
+                // 获取锁成功 Do Somethings....
+                break;
+            }
+        }
+    } finally {
+        // 解锁 -> 保证获取数据，判断一致以及删除数据三个操作是原子的， 因此如下写法是不符合的
+        /*if (RedisContextHolder.getValue() != null && jedis.get(KEY) != null && RedisContextHolder.getValue().equals(jedis.get(KEY))) {
+                jedis.del(KEY);
+            }*/
+
+        // 正确姿势 -> 使用Lua脚本,保证原子性
+        String luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end";
+        Object eval = jedis.eval(luaScript, Collections.singletonList(KEY), Collections.singletonList(RedisContextHolder.getValue()));
+    }
+    return "锁创建成功-业务处理成功";
+}
+
+****************************String - 分布式Session（重点）****************************
+首先明白为什么需要分布式session？
+	nginx负载均衡分发到不同的tomcat，即使利用IP分发，可以利用request获取session，但是其中一个挂了，怎么办？
+注意理解其中的区别 A服务-用户校验服务 B服务-业务代码
+
+情况1-AB服务单机部署：
+	cookie：登录成功后，存储信息到cookie，A服务自身通过request设置session，获取session，B服务通过唯一key或者userid 查询数据库获取用户信息
+	cookie+redis：登录成功后，存储信息到cookie，A服务自身通过request设置session，获取session，B服务通过唯一key或者userid 查询redis获取用户信息
+情况2-A服务多节点部署，B服务多节点部署：
+	B服务获取用户信息的方式其实是不重要的，必然要查，要么从数据库，要么从cookie
+	A服务：登录成功后，存储唯一key到cookie，与此同时，A服务需要把session（KEY-UserInfo）同步到redis中，不能存在单纯的request（否则nginx分发到另一个服务器就完犊子了）
+
+官方实现：
+	spring-session-data-redis
+	有一个内置拦截器，拦截request，session通过redis交互，普通使用代码依然是request.getSession....但是实际上这个session的值已经被该组件拦截，通过redis进行同步了
+
+
+****************************List简单队列-栈****************************
+// 说白了利用redis - list数据结构 支持从左从右push，从左从右pop
+@Component
+public class RedisStack {
+
+    @Resource
+    Jedis jedis;
+
+    private final static String KEY = "Stack";
+
+    /** push **/
+    public void push (String value) {
+        jedis.lpush(KEY, value);
+    }
+
+    /** pop **/
+    public String pop () {
+        return jedis.lpop(KEY);
+    }
+}
+
+@Component
+public class RedisQueue {
+
+    @Resource
+    JedisPool jedisPool;
+
+    private final static String KEY = "Queue";
+
+    /** push **/
+    public void push (String value) {
+        Jedis jedis = jedisPool.getResource();
+        jedis.lpush(KEY, value);
+    }
+
+    /** pop **/
+    public String pop () {
+        Jedis jedis = jedisPool.getResource();
+        return jedis.rpop(KEY);
+    }
+}
+
+
+
+****************************List 社交类APP - 好友列表****************************
+根据时间显示好友，多个好友列表，求交集，并集  显示共同好友等等...
+疑问：难道大厂真的用redis存这些数据吗？？？多大的量啊... 我个人认为实际是数据库存用户id，然后用算法去处理，更省空间
+
+
+
+****************************Set 抽奖 | 好友关系（合，并，交集）****************************
+// 插入key 及用户id
+sadd cat:1 001 002 003 004 005 006
+
+// 返回抽奖参与人数
+scard cat:1
+
+// 随机抽取一个
+srandmember cat:1
+
+// 随机抽取一人，并移除
+spop cat:1
+
+
+****************************Zset 排行榜****************************
+根据分数实现有序列表
+微博热搜：每点击一次 分数+1 即可
+
+--- 不用数据库目的是因为避免order by 进行全表扫描
+
+
+
+
+****************************异步队列****************************
+上文说到利用 redis-list 实现队列
+假设场景:A服务生产数据 - B服务消费数据，即可利用此种模型构造-生产消费者模型
+
+1. 使用Redis中的List作为队列
+2.使用BLPOP key [key...] timeout  -> LPOP key [key ...] timeout:阻塞直到队列有消息或者超时
+（方案二：解决方案一中，拿数据的时，生产者尚未生产的情况）
+
+3.pub/sub：主题订阅者模式
+基于reds的终极方案，上文有介绍，基于发布/订阅模式
+缺点:消息的发布是无状态的，无法保证可达。对于发布者来说，消息是“即发即失”的，此时如果某个消费者在生产者发布消息时下线，重新上线之后，是无法接收该消息的，要解决该问题需要使用专业的消息队列
+
+
+
+
+****************************从海量Key里查询出某一个固定前缀的Key****************************
+A. 笨办法：KEYS [pattern] 注意key很多的话，这样做肯定会出问题，造成redis崩溃
+B. SCAN cursor [MATCH pattern] [COUNT count] 游标方式查找
+

@@ -18,6 +18,13 @@ NAT(Network Address Translation网络地址转换)
 	所以NAT技术出现了，NAT将局域网的每个设备通过同一个公网IP访问因特网。NAT还解决了IPv4地址不足的问题。
 
 
+安装VMWare常见问题：
+VM的问题 Unable to find the VXM binary
+	描述：运行虚拟机时出现：Unable to find the VMX binary 'I:\vmware-vmx.exe'
+	详情：https://blog.csdn.net/qq_44973159/article/details/104540160
+	解决：打开“控制面板\所有控制面板项\程序和功能”->找到“VMware Workstation”->重新安装，选择“修复”。
+
+
 克隆一个centOS7：
 	...
 

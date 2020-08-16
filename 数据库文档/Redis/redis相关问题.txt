@@ -26,7 +26,6 @@ redis其它数据结构：
 	教程：https://blog.csdn.net/Crazypokerk_/article/details/100600292
 
 
-
 非关系型数据库的优势，解决什么问题？
 	不用关心各种约束问题。
 
@@ -39,21 +38,22 @@ redis和memcached有什么区别？
 redis操作怎么保证原子性的？
 	答：redis单线程
 
-Redis单线程为什么能达到10W吞吐量？Redis的高并发和快速原因？
-	1、redis基于内存，内存的读写速度非常快；
-	2、redis是单线程，省去了很多上下文切换线程的时间；
-	3、redis采用多路复用技术，可以处理并发的连接。非阻塞IO内部实现epoll，采用了epoll+自己实现的简单的事件框架。epoll中的读、写、关闭、连接都转化成了事件，然后利用epoll的多路复用特性，绝不在IO上浪费一点时间。
 
-为什么Redis需要把所有数据放到内存中？
+问：Redis为什么能这么快？
+	1、redis基于内存，内存的读写速度非常快，省去了读取磁盘IO时间。
+	2、redis是单线程，省去了很多上下文切换和锁的竞争问题。
+	3、redis采用了多路复用技术，为非阻塞IO。
+	4、有专门设计的RESP协议。
+
+问：为什么Redis需要把所有数据放到内存中？
 	Redis为了达到最快的读写速度将数据都读到内存中，并通过异步的方式将数据写入磁盘。所以redis具有快速和数据持久化的特征。如果不将数据放在内存中，磁盘IO速度为严重影响redis的性能。在内存越来越便宜的今天，redis将会越来越受欢迎。
 	如果设置了最大使用的内存，则数据已有记录数达到内存限值后不能继续插入新值。
 
-
-基于内存为什么会快？
+问：基于内存为什么会快？
 	内存与CPU直接交换数据，所以内存越大，运行速度越快。
 	计算机处理数据的基本原理：硬盘数据<-->内存<-->CPU
 
-CPU、内存、磁盘关系？
+问：CPU、内存、磁盘关系？
 	CPU(Central Processing Unit)：中央处理器，作用是处理指令、执行操作、控制时间和处理数据。
 	内存和磁盘都是存储器，受CPU指挥。
 	计算机中所有的运算都由cpu完成，寄存器只是用于存储数据，不参与运算。
@@ -113,6 +113,9 @@ redis跳跃表问题？
 	跳跃表在redis中主要是有序表的一种底层表现。对于普通链表的查找不能使用二分法，需要从头一个个找。而对于跳跃表提供了类似二分法查找，先跳转到最大值，若小于则跳到中间。
 
 
+停止redis服务：
+	正确停止redis服务 应该基于连接命令 加再上 shutdown -> 否则数据持久化会出现问题
+	shutdowm关闭服务时，如果没有配置AOF，则会使用bgsave持久化数据
 
 redis的key设置？
 	由于业务复杂，key一般设置比较复杂
@@ -134,9 +137,6 @@ redis的key如何寻址？
 	方式二：使用scan指令
 		scan指令可以无阻塞的提取指定模式的key列表，但会有一定的重复，需在客户端去重，其整体所花费的时间比key指令长。
 
-问：怎么快速删除10w个key？
-	使用管道(redis pipeline)
-
 一个字符串类型的值能存储最大容量是多少？
 	512M
 
@@ -156,20 +156,42 @@ redis的key如何寻址？
 
 
 redis持久化的几种方式，优缺点是什么，怎么实现的，区别是什么？
-	两种：rdb、aof
+	两种：rdb(默认)、aof
 	区别：rdb存数据，aof存写操作命令
 	其他问题：
 		aof和rdb的优缺点，你在项目中使用的哪一个
-save和bgsave区别？
-	save：由于redis单线程，save会造成阻塞，在rdb文件创建完成之前不处理任何请求。
-	bgsave：会创建子进程，完成rdb文件的创建工作，父进程正常执行。
-		在执行bgsave期间，主线程会拒绝save和bgsave命令；bgrewriteaof命令会延迟到bgsave命令结束之后执行。
+
+
 redis的AOF如何缩减自身文件大小？
 	描述：随着aof文件越来越大，里面会有大部分是重复命令或可以合并的命令(100次incr=set key 100)
 	解决：执行bgrewriteaof命令对redis的AOF进行重写。
 	重写的好处：减少aof日志尺寸，减少内存占用，加快数据库恢复时间
 	从redis2.4开始，aof重写由redis自行触发，bgrewriteaof仅仅用于手动触发重写操作。
 	旧的aof文件在bgrewriteaof成功之前不会被修改，因此bgrewriteaof操作失败不会造成任何数据丢失。
+
+Redis服务器命令：
+	flushall 	#删除所有数据库的所有key
+	flushdb 	#删除当前数据库的所有key
+	save		#同步保存数据到磁盘
+
+
+redis数据备份与恢复：
+	save命令用于创建当前数据库的备份
+	若需要恢复数据，只需将备份文件(dump.rdb)移动到redis安装目录并启动服务即可。
+	获取redis目录可以使用config命令。
+
+save和bgsave区别？
+	save：由于redis单线程，save会造成阻塞，在rdb文件创建完成之前不处理任何请求。
+	bgsave：会创建子进程，完成rdb文件的创建工作，父进程正常执行。
+		在执行bgsave期间，主线程会拒绝save和bgsave命令；bgrewriteaof命令会延迟到bgsave命令结束之后执行。
+
+
+Redis性能测试：
+格式：
+	redis目录执行：redis-benchmark [option] [option value]
+测试：
+	> redis-benchmark -h 127.0.0.1 -p 6379 -c 100 -n 10000 #100个连接，10000q请求
+	> redis-benchmark -h 127.0.0.1 -p 6379 -q -d 100 #100个字节作为value值进行压测
 
 
 
@@ -284,14 +306,15 @@ redis过期策略及内存淘汰机制？redis的缓存失效策略？
 内存淘汰机制：
 	# maxmemory-policy volatile-lru //在redis.conf配置
 	--参数说明：
-	volatile-lru 	//在已设置过期时间的数据集中，移除最近最少使用的key
-	volatile-ttl 	//在已设置过期时间的数据集中，移除将要过期的key
-	volatile-random //在已设置过期时间的数据集中，随机移除一个key
+	volatile-lru 	//在已设置过期时间的数据集(server.db[i].expires)中，移除最近最少使用的key
+	volatile-ttl 	//在已设置过期时间的数据集(server.db[i].expires)中，移除将要过期的key
+	volatile-random //在已设置过期时间的数据集(server.db[i].expires)中，随机移除一个key
 
-	allkeys-lru 	//在数据集中，移除最近最少使用的key
-	allkeys-random 	//在数据集中，随机移除一个key
+	allkeys-lru 	//在数据集(server.db[i].dict)中，移除最近最少使用的key
+	allkeys-random 	//在数据集(server.db[i].dict)中，随机移除一个key
 
 	no-eviction		//内存不足时，写入报错
+LRU算法最为精典的实现，就是HashMap+Double LinkedList，时间复杂度为O(1)
 
 
 问：Redis回收使用的是什么算法？
@@ -300,13 +323,32 @@ redis过期策略及内存淘汰机制？redis的缓存失效策略？
 	一个客户端运行了新的命令，添加了新的数据。Redi检查内存使用情况，如果大于maxmemory的限制，则根据设定好的策略进行回收。
 
 
-redis事务
-	multi：标记一个事务块的开始。事务块内的多条命令会按照先后顺序被放进一个队列当中，最后由 EXEC 命令原子性(atomic)地执行。
-Redis事务相关的命令有哪几个？
-	MULTI、EXEC、DISCARD、WATCH
 
 
 redis管道技术：
+使用管道模式运行命令：
+	> cat data.txt | redis-cli --pipe
+	--data.txt文本内容如下：
+	SET Key0 Value0
+	SET Key1 Value1
+	...
+	SET KeyN ValueN
+
+	# 或者是 RESP协议内容 - 注意文件编码！！！
+
+	*8
+	$5
+	HMSET
+	$8
+	person:1
+	$2
+	id
+	$1
+	1
+实战：cat redis_commands.txt | redis-cli -h 192.168.127.130 -p 6379 [-a "password"] -n 0 --pipe
+问：怎么快速删除10w个key？
+	使用管道(redis pipeline)
+
 为什么会出现redis管道(pipeline)?
 	redis客户端与redis服务端通信采用cs模式，每次交互都是完整的请求/响应模式。
 	我们使用jedis或lettuce执行redis命令，每次都是建立socket连接，并等待返回。

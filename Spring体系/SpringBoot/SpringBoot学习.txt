@@ -224,7 +224,7 @@ NamedParameterJdbcTemplate
 	MapSqlParameterSource类
 
 
-切换多个外部配置文件：
+springboot项目打包 && 切换多个外部配置文件：
 	--使用spring.profiles.active 属性：项目可能存在开发环境、测试环境和生产环境，因此可以使用spring.profile.active进行切换
 	--1）根据运行环境自动读取不同的配置文件读取不同的配置文件
 	application.proerties：
@@ -242,6 +242,47 @@ NamedParameterJdbcTemplate
 	--3）另
 		1、通过maven命令“run as -> maven install”将项目打包成jar文件，文件在maven仓库repository中。
 		2、使用java命令指定配置文件：java –jar springboot02-0.0.1-SHAPSHOT.jar –spring.profiles.active=dev
+
+springboot项目打包成war形式：
+	详情：https://blog.csdn.net/qq_33591903/article/details/90715370
+--1）设置打包方式为war
+<packaging>war</packaging>
+
+--2）将SpringBoot内置的Tomcat在发布时剔除，provided表示该包只在编译和测试中使用，在发布时去除。
+PS:不推荐在spring-boot-starter-web直接将tomcat移除，否则需要添加servlet-api依赖。
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-tomcat</artifactId>
+	<scope>provided</scope>
+</dependency>
+
+--3）由于Springboot项目没有web.xml文件，因此我们需要在缺少web.xml文件的情况下构建war包，需添加配置
+<plugin>
+	<artifactId>maven-war-plugin</artifactId>
+	<version>2.6</version>
+	<configuration>
+		<!--如果想在没有web.xml文件的情况下构建WAR，请设置为false。-->
+		<failOnMissingWebXml>false</failOnMissingWebXml>
+	</configuration>
+</plugin>
+
+--4）启动类，继承SpringBootServletInitializer类，并重写configure方法
+@SpringBootApplication
+public class TMydataApplication extends SpringBootServletInitializer {
+
+	public static void main(String[] args) {
+		SpringApplication.run(TMydataApplication.class, args);
+	}
+
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+		return builder.sources(TMydataApplication.class);
+	}
+}
+
+--5）“maven package”打包项目，拿到war包
+	之后需要将war包分别放入不同的Tomcat的webapp中。
+
 
 
 json的日期格式化：

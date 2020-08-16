@@ -3,6 +3,9 @@
 使用slf4j:
 	使用门面模式的日志框架，有利于维护和各个类的日志处理方式统一。
 	实现方式统一使用Logback框架。
+配置文件(application.properties)：
+	logging.level.com.yjy=debug
+	logging.level.org.springframework=warn
 什么时候打日志？
 	1、碰到if-else或switch分支，在分支首行打印日志，用来确认进入哪个分支。
 	2、进入核心功能时，能通过日志看到整个流程
@@ -73,7 +76,7 @@
 	详情：https://mp.weixin.qq.com/s/aen2PIh0ut-BSHad-Bw7hg
 	通过@Value，@PropertySource，@Environment，@ConfigurationProperties来绑定变量。
 
-问：SpringBoot自动配置原理？
+问：SpringBoot自动装配原理？
 	@EnableAutoConfiguration, @Configuration, @ConditionalOnClass注解就是自动配置的核心。
 	首先它得是一个配置文件，其次根据类路径下是否有这个类去自动配置。
 

@@ -141,24 +141,24 @@ public class TreeTest {
 				stack2.push(right);
 				node = stack.peek().right;
 			}
-
 		}
 	}
 
 	// 层次遍历
+	// 实现：先将头节点放入Queue；判断queue是否有节点，若有则输出该节点值，并将左节点和右节点放入Queue（空节点不用处理）。循环上述操作即可按层次遍历所有节点
+	// 结构如下： 0 / \ 1 2 / \ /\ 3 4 5 6 /\ / 7 8 9
 	public static void levelOrder(TreeNode node) {
 		if (node == null)
 			return;
-		LinkedList<TreeNode> list = new LinkedList<TreeNode>();
+		LinkedList<TreeNode> list = new LinkedList<>(); // 仿照Queue
 		list.add(node);
-		TreeNode currentNode;
 		while (!list.isEmpty()) {
-			currentNode = list.poll();
-			System.out.print(currentNode.value + " ");
-			if (currentNode.left != null)
-				list.add(currentNode.left);
-			if (currentNode.right != null)
-				list.add(currentNode.right);
+			TreeNode treeNode = list.poll(); // 弹出第一个元素
+			System.out.print(treeNode.value + " ");
+			if (treeNode.left != null)
+				list.add(treeNode.left);
+			if (treeNode.right != null)
+				list.add(treeNode.right);
 		}
 	}
 }

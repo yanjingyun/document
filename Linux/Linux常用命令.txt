@@ -72,6 +72,30 @@ vim编辑文件：
 	free：空闲的内存
 
 
+Centos7修改IP地址：
+	前言：动态生成的ip地址不利于我们配置各种软件环境，因此修改为静态ip地址
+> cd  /etc/sysconfig/network-scripts/ #root用户进入网络配置文件network-script目录
+> ls # 找到“ifcfg-ens33”文件
+> vi ifcfg-ens33 #对配置进行修改
+	--1.将BOOTPROTO和ONBOOT属性
+	BOOTPROTO="static" #将dhcp改为static
+	ONBOOT="yes"  #将网卡设置为开机启用
+	--2.在底部添加内容
+	IPADDR=192.168.8.129  #静态IP
+	NETMASK=255.255.255.0 #子网掩码
+	GATEWAY=192.168.8.2   #默认网关（GATEWAY网关地址需要和虚拟机的网关地址一样）
+	DNS1=8.8.8.8 #设置主DNS（DNS解决设置静态ip后连接不上外网的问题）
+	DNS2=8.8.4.4 #设置备DNS
+> service network restart #重启网络服务
+相关问题：
+	设置静态ip地址后用xshell连接不上？
+		GATEWAY网关地址需要和虚拟机的网关地址一样。
+		查看虚拟机网关：虚拟机首页->最上方菜单的“编辑”->虚拟网络编辑器->NAT设置->网关IP
+	设置静态ip地址后连接不上外网？
+		设置DNS即可
+
+
+
 *************************************************
 jvm监控工具：
 jps：jvm进程状况工具
