@@ -1,0 +1,36 @@
+
+Oracle查询表/字段信息：
+	--共4张表：user_table\user_tab_columns\user_tab_comments\user_col_comments
+	select * from user_table; --获取当前用户拥有表
+	select * from user_tab_columns where column_name='USER_ID'; --根据字段名查询表信息
+	select * from user_tab_columns where table_name='T_USER'; --根据表名查询表信息
+	select * from user_tab_comments where comments like '%xx%'; --根据表注释查询表信息
+	select * from user_col_comnents where comments like '%xx%'; --根据字段注释获取表/列信息
+
+
+统计妇女总数、育龄妇女（年龄在15~49岁）：
+	select count(*) C1,
+		sum(case when floor(months_between(sysdate, t.csrq) / 12) between 15 and 49 then 1 else 0 end) C2
+	from V_PERSON t where t.xb='1';
+
+
+描述：查询迁入的人员信息。
+	描述：有个人先迁入，再迁出，那不算是迁入人口了。因此不能先查询迁入信息再关联人员信息，需要先查询迁移信息后再筛查最新的迁入记录，即最后一条记录必须是迁入记录。
+	select * from (
+	  select m.xhjdxzqh as division,
+	    p.*,
+	    m.bdlx,
+	    m.yhjdxzqh,
+	    row_number() over(partition by m.rkid order by m.bdrq desc) as rn
+	    from PM_HOUSEHOLD_MIGRATION m
+	     left join V_PERSON p on m.RKID = p.id
+	 ) m where rn = '1' 
+	 and (m.bdlx = '0' or (m.yhjdxzqh not like '4401%' and m.yhjdxzqh is not null)
+
+
+删除重复记录（留一条）:
+	--1.查询重复记录
+	select a.sec_wxuser_id, min(id) from t_person a group by a.sec_wxuser_id having count(*) > 1;
+	--删除重复记录
+	delete from t_person where (sec_wxuser_id, id) in (select a.sec_wxuser_id, min(id) from t_person a group by a.sec_wxuser_id having count(*) > 1)
+

@@ -5,6 +5,12 @@ IO模型：
 	分类：阻塞IO、非阻塞IO、IP多路复用
 	详情：https://github.com/h2pl/Java-Tutorial/blob/master/docs/java/network-programming/Java%E7%BD%91%E7%BB%9C%E4%B8%8ENIO%E6%80%BB%E7%BB%93.md
 
+相关概念：
+	阻塞、非阻塞（等待数据全部读取成功再返回，还是读取为空马上返回然后下次再读）
+	同步、异步（用户缓存主动去读取内核缓存，还是内核缓存读取磁盘成功后通知用户缓存）
+	NIO是同步非阻塞模型，也是IO多路复用基础。
+	Reactor模式基于同步IO，Proactor模式基于异步IO
+
 IO模型：
 	IO的各种流是阻塞的，这意味着当一个线程调用read或write方法时，该线程被阻塞，直到有一些数据被读取，或数据完全写入，该线程在此期间不能做其他事情。
 	所有IO都分为两个阶段：等待就绪和操作。例如：读函数分为等待系统可读和真正的读；写函数分为等待网卡可写和真正的写。
@@ -13,6 +19,13 @@ IO模型：
 		BIO，若TCP RecvBuffer里没有数据，函数会一直阻塞，直到收到数据，返回读到的数据。
 		NIO，若TCP RecvBuffer有数据，就把数据从网卡读到内存，并且返回给用户；反之则直接返回0，永远不会阻塞。
 		AIO，不但等待就绪是非阻塞的，就连数据从网卡到内存的过程也是异步的。
+
+4种IO模型：
+	同步阻塞IO(Blocking IO)：即传统的IO模型
+	同步非阻塞IO(Non-blocking IO)：默认创建的socket都是阻塞的，非阻塞IO要求socket被设置为Non-block。
+	IO多路复用(IO Nultiplexing)：即经典的Reactor设计模式，有时也称为异步阻塞IO，Java中的selector和Linux中的epoll都是这种模型
+	异步IO(Asynchronous IO)：即经典的Proactor设计模式，也称为异步非阻塞IO。
+
 
 
 BIO、NIO、AIO区别？
@@ -125,6 +138,35 @@ select和epoll区别？
 	Netty的解决方案：
 		对 Selector 的 select 操作周期进行统计，每完成一次空的 select 操作进行一次计数，若在某个周期内连续发生 N 次空轮询，则判断触发了 Epoll 死循环 Bug。
 		然后，Netty 重建 Selector 来解决。判断是否是其他线程发起的重建请求，若不是则将原 SocketChannel 从旧的 Selector 上取消注册，然后重新注册到新的 Selector 上，最后将原来的 Selector 关闭。
+
+
+
+
+
+
+
+
+*****************************************************
+Reactor设计模式
+概念：
+	反应器设计模式(Reactor pattern)是一种为处理并发服务请求，并将请求提交到一个或者多个服务处理程序的事件设计模式。
+	当客户端请求抵达后，服务处理程序使用多路分配策略，由一个非阻塞的线程来接收所有的请求，然后派发这些请求至相关的工作线程进行处理。 
+	对于Reactor模式，可以将其看做由两部分组成，一部分是由Boss组成，另一部分是由worker组成。Boss就像老板一样，主要是拉活儿、谈项目，一旦Boss接到活儿了，就下发给下面的work去处理。
+Reactor模式主要包含下面几部分内容：
+	1、初始事件分发器(Initialization Dispatcher)：用于管理Event Handler，定义注册、移除EventHandler等。它还作为Reactor模式的入口调用Synchronous Event Demultiplexer的select方法以阻塞等待事件返回，当阻塞等待返回时，根据事件发生的Handle将其分发给对应的Event Handler处理，即回调EventHandler中的handle_event()方法
+	2、同步（多路）事件分离器(Synchronous Event Demultiplexer)：无限循环等待新事件的到来，一旦发现有新的事件到来，就会通知初始事件分发器去调取特定的事件处理器。
+	3、系统处理程序(Handles)：操作系统中的句柄，是对资源在操作系统层面上的一种抽象，它可以是打开的文件、一个连接(Socket)、Timer等。由于Reactor模式一般使用在网络编程中，因而这里一般指Socket Handle，即一个网络连接（Connection，在Java NIO中的Channel）。这个Channel注册到Synchronous Event Demultiplexer中，以监听Handle中发生的事件，对ServerSocketChannnel可以是CONNECT事件，对SocketChannel可以是READ、WRITE、CLOSE事件等。
+	4、事件处理器(Event Handler)： 定义事件处理方法，以供Initialization Dispatcher回调使用。
+优点
+	1）响应快，不必为单个同步时间所阻塞，虽然Reactor本身依然是同步的；
+	2）编程相对简单，可以最大程度的避免复杂的多线程及同步问题，并且避免了多线程/进程的切换开销；
+	3）可扩展性，可以方便的通过增加Reactor实例个数来充分利用CPU资源；
+	4）可复用性，reactor框架本身与具体事件处理逻辑无关，具有很高的复用性；
+缺点
+	1）相比传统的简单模型，Reactor增加了一定的复杂性，因而有一定的门槛，并且不易于调试。
+	2）Reactor模式需要底层的Synchronous Event Demultiplexer支持，比如Java中的Selector支持，操作系统的select系统调用支持，如果要自己实现Synchronous Event Demultiplexer可能不会有那么高效。
+	3） Reactor模式在IO读写数据时还是在同一个线程中实现的，即使使用多个Reactor机制的情况下，那些共享一个Reactor的Channel如果出现一个长时间的数据读写，会影响这个Reactor中其他Channel的相应时间，比如在大文件传输时，IO操作就会影响其他Client的相应时间，因而对这种操作，使用传统的Thread-Per-Connection或许是一个更好的选择，或则此时使用Proactor模式。
+
 
 
 

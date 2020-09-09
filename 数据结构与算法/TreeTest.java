@@ -20,9 +20,9 @@ public class TreeTest {
 
 	public static void main(String[] args) {
 		TreeNode[] nodes = buildTree();
-		preOrder(nodes[0]);
-
+		
 		// 前序遍历
+		preOrder(nodes[0]);
 		System.out.println();
 		preOrder2(nodes[0]);
 		System.out.println();
@@ -41,6 +41,10 @@ public class TreeTest {
 		
 		// 层次遍历
 		levelOrder(nodes[0]);
+		System.out.println();
+		
+		// 树高度
+		System.out.println(maxDepth(nodes[0]));
 	}
 
 	/**
@@ -160,5 +164,11 @@ public class TreeTest {
 			if (treeNode.right != null)
 				list.add(treeNode.right);
 		}
+	}
+	
+	// 树高度
+	public static int maxDepth(TreeNode node) {
+		if (node == null) return 0;
+		return Math.max(maxDepth(node.left), maxDepth(node.right)) + 1;
 	}
 }

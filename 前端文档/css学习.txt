@@ -1,6 +1,34 @@
 
+
+颜色渐变css:
+	<div style="background-image: linear-gradient(45deg, #f43f3b, #ec008c);">颜色渐变</div>
+
+
+背景图片设置：
+body {
+	background:url(../images/background.jpg) no-repeat;
+	background-size: 100% 100%;
+	background-attachment:fixed; // 背景图固定不动，不跟随滚动条滚动
+}
+
+设置背景图：
+	描述：vue页面如果在子页面设置父页面的样式，当父页面跳转到其它子页面时，该样式还是会在的。
+	解决：可以在当前页面设置一个div，占满全屏，然后把背景图放里面。
+	<div class="chart-lib-bg">&nbsp;</div>
+	.chart-lib-bg {
+	  background: url(~@/assets/chart/chart-directory-bg.jpg);
+	  background-size: 100% 100%;
+	  position: fixed;
+	  width: 100%;
+	  height: 100%;
+	  top: -7px;
+	  z-index: -1;
+	}
+
+
+
 css中新增图标样式：
-.icon-print{
+.icon-print {
 	width:16px;
 	height:16px; 
 	background: url(../images/icon-print.png) no-repeat;

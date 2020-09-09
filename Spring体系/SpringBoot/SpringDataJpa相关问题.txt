@@ -1,5 +1,10 @@
 
 
+ JPA的更新字段的方法有两种：
+ 	1.通过设置主键进行save()保存（一定要先通过Repository获取实体对象，在此对象上进行更新操作）。
+ 	2.通过注解@Query实现复杂的sql语句。 在执行update或者delete方法时，必须加上注解@Modifying 和 @Transactional。
+
+
 JPA多对多查询报错：
 	描述：通过userId拿到user记录，进而拿到roles集合，但这样会报错。
 	错误信息: org.hibernate.LazyInitializationException: failed to lazily initialize a collection of role: com.yjy.sso.entity.SysUser.sysRoles, could not initialize proxy - no Session

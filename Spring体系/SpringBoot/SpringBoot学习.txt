@@ -284,6 +284,13 @@ public class TMydataApplication extends SpringBootServletInitializer {
 	之后需要将war包分别放入不同的Tomcat的webapp中。
 
 
+eclipse打包springboot项目：
+	项目右键 -> Run as -> Maven build -> 在goals中输入“clean package”->点击run
+	在控制台输出后“[INFO] BUILD SUCCESS”后，查看本项目的target包，会出现一个xxx.jar文件。
+	运行xxx.jar项目：java -jar xxx.jar
+	在浏览器输入http://localhost:8080能看到页面输出。
+
+
 
 json的日期格式化：
 	--1）在application.properties文件配置

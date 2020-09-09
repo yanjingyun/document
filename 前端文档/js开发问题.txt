@@ -1,3 +1,34 @@
+
+
+js位置：
+	document.documentElement.scrollTop	--滚动位置
+	document.getElementById(id).parentNode.offsetTop	--某元素距离顶部位置
+
+某元素滚动到顶部(有头部元素挡住了部分内容)：
+	jump(id) { //id表示滚动的元素id
+      this.currentBtnId = id
+      document.getElementById(id).parentNode.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth'
+      })
+      setTimeout(() => {
+        document.documentElement.scrollTop = document.getElementById(id).parentNode.offsetTop - 98
+      }, 300)
+    }
+
+
+快速导航按钮：
+	描述：页面上有很多个图表，我们一共快速导航按钮，点击按钮跳转到对应的图表中。按钮一行展示，若按钮超过一行则多余部分隐藏掉。该行末尾提供“左移”、“右移”按钮，用来实现导航按钮的滚动。
+	难点：html做左右滚动条挺难用的，而且滚动条需要隐藏，导航按钮通过“左移”、“右移”按钮来实现滚动，却无法控制移动多少像素
+	实现：一开始页面初始化n个导航按钮，点击“左右移”时将按钮上的内容移动（按钮不需要移动）！
+
+
+JS中怎么提取对象中需要的某些字段：
+	var arr = [{id: '11', name: 'testaa'}, {id: '22', name: 'testb', age: 23}];
+	var res1 = arr.map(({name}) => ({name})); //提取为[{name: 'testa'}, {name: 'testb'}]
+	var res2 = arr.map(item => item.name); //提取为["testa", "testb"]
+
+
 js知识库：！！
 	https://github.com/30-seconds/30-seconds-of-code
 	https://blog.csdn.net/helloxiaoliang/article/details/78909415 --js代码实战

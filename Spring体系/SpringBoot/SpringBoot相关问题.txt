@@ -6,6 +6,9 @@
 配置文件(application.properties)：
 	logging.level.com.yjy=debug
 	logging.level.org.springframework=warn
+问：SpringBoot支持哪些日志框架？
+	详情：https://mp.weixin.qq.com/s/OAyzUNIgBPkPVCy23gh-WA
+	SpringBoot支持Java Util Logging，Log4j2,Lockback作为日志框架。默认使用Logback日志框架。
 什么时候打日志？
 	1、碰到if-else或switch分支，在分支首行打印日志，用来确认进入哪个分支。
 	2、进入核心功能时，能通过日志看到整个流程
@@ -18,6 +21,7 @@
 		3、不要进行字符串拼接，这样会产生很多String对象，占用空间，影响性能。
 			反例：logger.debug("Processing trade with id: " + id + " and symbol:" + symbol);
 		4、使用[]进行参数变量隔离
+
 
 
 问：SpringBoot有什么优点？
@@ -49,6 +53,13 @@
 	它首先提供了一个自动化配置类(一般命名为XXXAutoConfiguration)，在该配置类中通过条件注解来决定一个配置是否生效，然后它还会提供一系列的默认配置，也允许开发者根据实际情况自定义相关配置，然后通过类型安全的属性注入将这些配置属性注入进来，新注入的属性会代替掉默认属性。
 	如你想使用jpa访问数据库，只需引入spring-boot-starter-data-jpa依赖项即可。
 	--自定义Starter实例：
+Starter的工作流程：
+	--自定义Starter：https://blog.csdn.net/wo541075754/article/details/102947915
+	-1）SpringBoot再启动时扫描项目所依赖的jar包，寻找包含spring.factories文件jar包；
+	-2）根据spring.factories配置加载AutoConfiguration类；
+	-3）根据@Conditional注解条件，进行自动配置并将Bean注入Spring容器。
+
+
 
 问：SpringBoot提供了哪些Starter内容？
 	spring-boot-starter-web 	//Web 和 RESTful 应用程序
@@ -80,10 +91,6 @@
 	@EnableAutoConfiguration, @Configuration, @ConditionalOnClass注解就是自动配置的核心。
 	首先它得是一个配置文件，其次根据类路径下是否有这个类去自动配置。
 
-问：SpringBoot支持哪些日志框架？
-	详情：https://mp.weixin.qq.com/s/OAyzUNIgBPkPVCy23gh-WA
-	SpringBoot支持Java Util Logging，Log4j2,Lockback作为日志框架。默认使用Logback日志框架。
-
 问：SpringBoot定义多套不同环境配置？如何配置特定环境？
 
 问：SpringBoot2.0有什么新特征？
@@ -109,14 +116,7 @@
 	对于servlet堆栈应用程序，spring-boot-starter-web包含spring-boot-starter-tomcat，也可以使用spring-boot-starter-jetty或spring-boot-starter-undertow替代。
 	对于反应栈应用程序，spring-boot-starter-webflux包括反应堆的Netty通过包括spring-boot-starter-reactor-netty，也可用其它替代。
 
-问：Thymeleaf项目添加通用JS代码？
-	描述：抽象出head部分的css和js文件封装成公共文件，具体页面仅需引入该公共文件即可。
-	实例：
-		--详情：https://blog.csdn.net/qq_27493017/article/details/85233351
-		--1.公共页面
-		<head th:fragment="commonHead(title)"> ... </head>
-		--2.具体页面
-		<head th:replace="head :: commonHead('验证公共静态资源的引入')"></head>
+
 
 问：什么是Spring Data？
 	Spring Data是Spring的一个子项目，支持NoSQL和关系数据存储。其主要目标是简化数据库访问。
@@ -132,20 +132,7 @@
 问：SpringBoot项目作为Java应用程序运行时，后台会发生什么？
 	！！！
 
-问：SpringBoot使用内存数据库H2？如何配合JPA使用？
-问：内存数据库Memcached、Redis、H2比较？
-	详情：http://www.360doc.com/content/14/0110/21/281812_344213831.shtml
-问：指定的数据库连接信息在哪里？它是如何知道自动连接至 H2 的？
-
 
 问：SpringBoot中的监视器是什么？
 	Actuator是SpringBoot启动框架中的重要功能之一，可帮助你访问生产环境中正在运行的应用程序的当前状态。
-
-
-Starter的工作流程：
-	--自定义Starter：https://blog.csdn.net/wo541075754/article/details/102947915
-	-1）SpringBoot再启动时扫描项目所依赖的jar包，寻找包含spring.factories文件jar包；
-	-2）根据spring.factories配置加载AutoConfiguration类；
-	-3）根据@Conditional注解条件，进行自动配置并将Bean注入Spring容器。
-
 

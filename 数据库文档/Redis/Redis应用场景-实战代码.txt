@@ -1,21 +1,79 @@
 
+****************************Redis应用场景****************************
+String-字符串
+	简单的缓存数据。如商品详情页，由于这部分数据不频繁变更，因此可以存缓存。
+	-缓存，限流，计数器，分布式锁，分布式session
+
+hash-哈希，key-value数据
+	hash类的数据结构，主要用来存放一些对象，把一些简单的对象给缓存起来，后续操作时可以直接仅修改这个对象的某个字段的值。
+	-存储用户信息，用户主页访问量，组合查询
+
+	在Mencached中，我们经常将一些结构化的信息打包成hashMap，序列化成一个字符串的值（一般是JSON格式）在客户端存储。修改其中某一项时，通常需要将字符串JSON取出来，修改某一项的值，在序列化成字符串JSON存储。缺点是：消耗必定是很大的，也不适用于一些可能并发操作的场合（如两个并发的操作都需要修改积分）。
+	redis的Hash结构可以使你在数据库中的update操作一样，只修改某一项属性值。存储、读取、修改用户属性。
+
+
+
+list-有序列表
+	基于list实现分页查询，类似微博那种往下拉不断分页(lrange命令)
+	简单消息队列，list头插入尾取出
+	-微博关注人时间轴列表，简单队列
+
+set-集合，自动去重
+	分布式系统将数据进行全局去重（单节点可以基于jvmSet进行去重）。
+	基于set进行交集、并集、差集等操作。如两个人的共同好友。
+	-赞，踩，标签，好友关系
+
+sorted set-有序集合
+	排行榜：
+	zadd board score username 	--将每个用户及对应分数写进去
+	zrevrange board 0 99		--获取排名前100的用户
+
+
+
+
+
 ****************************String - 缓存****************************
+Redis缓存对象分类：
+	--1、数据库中单条数据（key=表名+id）。如商品详情页。需要在更新时更新缓存，因此不适用频繁更新的数据。
+	--2、不分页、不实时（多表查询）的列表（key=方法名）。
+	--3、分页、不实时的列表：把分页结果放到一个map（key=分页标识、value=分页结果）存入list中（key=方法名），设定一定缓存时间expire，这样通过方法名lrange获取有分页列表的数据。
+
+
 // 1.Cacheable 注解
 // controller 调用 service 时自动判断有没有缓存，如果有就走redis缓存直接返回，如果没有则数据库然后自动放入redis中
 // 可以设置过期时间，KEY生成规则 （KEY生成规则基于 参数的toString方法）
 @Cacheable(value = "yearScore", key = "#yearScore")
 public List<YearScore> findBy (YearScore yearScore) {}
 
+
 // 2.手动用缓存
 if (redis.hasKey(???) { ... }
 redis.set(find from DB)...
 
 
+问：为什么要用redis而不用map/guava做缓存?
+	redis可以用几十个G内存来做缓存，Map不行，一般jvm也就分几个G内存，太大影响gc时间。
+
 ****************************String - 限流|计数器****************************
+
+计数器
+incr article:readcount:{文章id}
+get article:readcount:{文章id}
 
 
 
 ****************************String - 分布式锁（重点）****************************
+描述：在分布式系统上的某方法同一时间仅允许一条线程执行。比如订单库存量。若单点系统时可以使用synchronized，集群系统使用redis中的setnx和getset方法，对应redisTemplate的setIfAbsent和getAndSet方法，集群系统也可使用zk实现分布式锁，还可以用spring自带的分布式锁。
+
+描述：在redis里创建一个key算加锁，完成相关操作后删除该key算释放锁。
+加锁：set my:lock:类名:方法名 EX 30 NX //30秒后自动释放，其它线程尝试加速时会失败
+解锁：del my:lock:类名:方法名
+说明：set key value [EX seconds] [PX milliseconds] [NX|XX]
+	EX seconds:设置过期时间为seconds秒。执行 set key value EX seconds 等同于 setex key seconds value
+	PX milliseconds：设置过期时间为milliseconds毫秒。执行 set key value PX milliseconds 等同于 psetex key milliseconds value
+	NX:若key不存在时设置成功
+	XX:若key存在时才设置成功
+
 /***
  * 核心思路：
  *     分布式服务调用时setnx,返回1证明拿到，用完了删除，返回0就证明被锁，需等待
@@ -63,9 +121,71 @@ public String testRedisLock () {
         // 正确姿势 -> 使用Lua脚本,保证原子性
         String luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end";
         Object eval = jedis.eval(luaScript, Collections.singletonList(KEY), Collections.singletonList(RedisContextHolder.getValue()));
+        if (eval.toString() == 0) { // 释放锁失败 }
     }
     return "锁创建成功-业务处理成功";
 }
+
+说明：
+	加锁一定要用“set key nx px millisecond”命令，保证原子性。
+	value要具有唯一性，保证解锁时删除的是本线程的key。避免了这种情况：线程A获取到锁，过期时间为30s，此时过了35s后锁自动释放，A去释放锁，但此时可能线程B获取了锁，线程A就不能删除B的锁了。
+存在问题：
+	redis做分布式锁，若过期时间到了但业务程序还没处理完怎么办？
+		存在问题：若线程在30s内没有完成业务逻辑，其它线程可能会进入这段业务逻辑。
+		使用redisson。redisson有个看门狗的监控线程，若检测到key被劫持时会重置过期时间。
+	redis采用单机部署，会存在单点问题，若redis宕机则加锁就不行了。
+	redis采用主从模式部署，若master宕机，进行主从切换时可能出现锁丢失问题。
+	基于以上考虑，redis作者提出了一个RedLock算法。
+其它问题：
+	与zk实现分布式锁比较？
+
+疑问：
+	我：那为啥说主从切换时，reids分布式锁会丢失？不可用那肯定会报错吧，那这条事务执行就失败了啊
+	他：应该是你线程A已经加锁正在执行但是还未执行完成，redis不可用线程B就直接进入锁代码执行，相当于没有锁了吧
+	我：是啊。所以线程a在释放锁的时候发现不能释放锁就触发回滚事务啊。因为它没完成嘛
+	他：这就看你业务是怎么做的了
+	他：你这个分布式锁会丢失，业务的处理可能就跟你想的不一样。
+	他：而且主从切换不代表会报错，只是读请求被阻塞了。实在说报错就是超时时间设置过短报超时了，或者主从切换失败
+
+RedLock算法描述：
+	描述：若集群中存在5个master，系统A同时向5个master设置一个key，若超过3个设置成功，则认为加锁成功。
+	--假设redis部署模式是redis cluster，总共有5个master节点，通过以下步骤获取一把锁：
+	1）获取当前时间戳，单位是毫秒；
+	2）轮流尝试在每个mmaster节点上创建锁，过期时间设置较短，一般就几十毫秒；
+	3）尝试在大多数节点上建立一个锁，比如5个节点就要求是3个节点(n/2+1)；
+	4）客户端计算建立好锁的时间，如果建立锁的时间小于超时时间，就算建立成功了；
+	5）要是锁建立失败了，那么就依次删除这个锁；
+	6）只要别人建立了一把分布式锁，你就得不断轮询去尝试获取锁。
+	但是这样的这种算法还是颇具争议的，可能还会存在不少的问题，无法保证加锁的过程一定正确。
+
+***********************Redisson实现分布式锁***********************
+前言：
+	实现分布式锁除了Redis原生api实现之外，还可以使用开源框架：Redisson。
+	原生api的“set anylock unique_value nx px 30000”语句，如果超过了30s还没有完成业务逻辑时，key会过期，其它线程可能会获取到锁。这样第一个线程还没执行完逻辑，第二个线程进来了会出现线程安全问题。
+	redisson引入了watchdog概念，翻译为看门狗，它会在你获取锁之后，每隔10s帮你把key的超时时间重设为30s。
+	另外，redisson还提供了对redlock算法的支持。
+使用：
+	Config config = new Config();
+	config.useClusterServers()
+		.addNodeAddress("redis://192.168.31.101:7001")
+		.addNodeAddress("redis://192.168.31.101:7002")
+		.addNodeAddress("redis://192.168.31.101:7003")
+		.addNodeAddress("redis://192.168.31.102:7001")
+		.addNodeAddress("redis://192.168.31.102:7002")
+		.addNodeAddress("redis://192.168.31.102:7003");
+	RedissonClient redisson = Redisson.create(config);
+
+	RLock lock = redisson.getLock("anyLock");
+	lock.lock();
+	lock.unlock();
+
+说明：
+	需要通过它的api中的lock和unlock即可完成分布式锁。
+	1）redisson所有指令都通过lua脚本执行，redis支持lua脚本原子性执行；
+	2）redisson会在你获取锁之后，每隔10秒帮你把key的超时时间设为30s；
+	3）redisson的“看门狗”逻辑保证了没有死锁发生。（如果机器和看门狗都宕机了，其它线程照样能获取到锁）
+
+
 
 ****************************String - 分布式Session（重点）****************************
 首先明白为什么需要分布式session？
@@ -82,6 +202,14 @@ public String testRedisLock () {
 官方实现：
 	spring-session-data-redis
 	有一个内置拦截器，拦截request，session通过redis交互，普通使用代码依然是request.getSession....但是实际上这个session的值已经被该组件拦截，通过redis进行同步了
+
+集群时的session共享（nginx+tomcat负载均衡配置）:
+	描述：在使用Nginx+Tomcat实现负载均衡时，由于Nginx对不同的请求分发到某一个Tomcat，项目在运行时可能在不同的Tomcat容器里，因此session不同步或者丢失的问题。
+	spring session + redis实现session共享
+
+
+****************************分布式系统全局序列号****************************
+incrby orderId 1000 //redis批量生成序列号提升性能
 
 
 ****************************List简单队列-栈****************************
@@ -127,12 +255,33 @@ public class RedisQueue {
 }
 
 
+****************************List应用场景****************************
+Stack(栈) = lpush + lpop
+Queue(队列) = lpush + rpop
+Blocking MQ(阻塞队列) = lpush + Brpop
+
+微信公共号消息推送：
+aa关注了bb、cc这两个人。
+1、当bb发布消息msg1，则》lpush msg:aa msg1;
+2、当cc发布消息msg2，则》lpush msg:aa msg2;
+3、aa查看前五条最新消息》lrange msg:aa 0 5;
+
+****************************Hash应用场景****************************
+Hash电商购物车：
+备注：用户Id为key，商品id为field，商品数量为value
+1.添加商品》hset cart:userId goodsId goodsNum
+2.添加数量》hincrby cart:userId goodsId num
+3.商品总数》hlen cart:userId
+4.删除商品》hdel cart:userId goodsId
+5.获取购物车所有商品》hgetall cart:userId
+
+
 
 ****************************List 社交类APP - 好友列表****************************
 根据时间显示好友，多个好友列表，求交集，并集  显示共同好友等等...
 疑问：难道大厂真的用redis存这些数据吗？？？多大的量啊... 我个人认为实际是数据库存用户id，然后用算法去处理，更省空间
 
-
+共同关注->set集合
 
 ****************************Set 抽奖 | 好友关系（合，并，交集）****************************
 // 插入key 及用户id
@@ -147,6 +296,14 @@ srandmember cat:1
 // 随机抽取一人，并移除
 spop cat:1
 
+求交集(sinter)、并集(sunion)、差集(sdiff)：
+sadd aa t1 t2 t3
+sadd bb t2 t3 t4
+sinter aa bb #求交集，返回[t2, t3]
+sunion aa bb #求并集，返回[t1, t2, t3, t4]
+sdiff aa bb #求差集，返回[t1]
+
+
 
 ****************************Zset 排行榜****************************
 根据分数实现有序列表
@@ -155,9 +312,22 @@ spop cat:1
 --- 不用数据库目的是因为避免order by 进行全表扫描
 
 
+排行榜->sortedSet有序集合
+--1.设置初始化数据（zadd命令）
+zadd userGrade 80 user1
+zadd userGrade 80 user1
+--2.查看所有玩家分数，由低到高排列（zrange命令）
+zrange grade 0 -1 withscores
+--3.查看前三名玩家分数，由高到低排列（zrevrange命令）
+zrevrange grade 0 2 withscores
+--4.增减玩家分数（zincrby命令，正数为增、负数为减）
+zincrby grade -1 user1
+--移除某玩家（zrem命令）
 
 
-****************************异步队列****************************
+
+****************************异步队列/消息队列****************************
+不推荐，一般使用使用rabbitMq或Kafka中间件
 上文说到利用 redis-list 实现队列
 假设场景:A服务生产数据 - B服务消费数据，即可利用此种模型构造-生产消费者模型
 
@@ -170,9 +340,152 @@ spop cat:1
 缺点:消息的发布是无状态的，无法保证可达。对于发布者来说，消息是“即发即失”的，此时如果某个消费者在生产者发布消息时下线，重新上线之后，是无法接收该消息的，要解决该问题需要使用专业的消息队列
 
 
+redis实现异步队列？
+	list支持双端操作，一般使用list结构作为队列，rpush生产消息，lpop消费消息。当lpop没有消息时，要适当sleep一会再重试。
+	若不使用sleep，可以用blpop指令，在没有消息时它会阻塞直到消息到来。
+	问：生产一次，消费多次？
+		使用pub/sub主题订阅者模式，可以实现 1:N 的消息队列。
+		缺点是消费者下线，消息会丢失，得使用专业的消息队列如RocketMQ等。
 
 
 ****************************从海量Key里查询出某一个固定前缀的Key****************************
 A. 笨办法：KEYS [pattern] 注意key很多的话，这样做肯定会出问题，造成redis崩溃
 B. SCAN cursor [MATCH pattern] [COUNT count] 游标方式查找
+
+
+
+
+****************************Redis大批量数据插入(管道技术pipe)****************************
+问：reids如何做大量数据插入？
+	Redis2.6开始redis-cli支持一种新的被称之为pipe mode的新模式用于执行大量数据插入工作。
+
+链接：https://www.cnblogs.com/PatrickLiu/p/8548580.html
+####实战1：
+# 1、准备一个table
+create database  if not exists `test`;
+use `test`;
+CREATE TABLE `person` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) NOT NULL,
+  `age` varchar(200) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+# 2、插入七八万条数据(略)
+
+# 3、SQL查询，并将其转化为RESP协议命令(Linux版本：不要再window环境试)
+SELECT CONCAT(
+   "*8\r\n",
+   '$',LENGTH(redis_cmd),'\r\n',redis_cmd,'\r\n',
+   '$',LENGTH(redis_key),'\r\n',redis_key,'\r\n',
+   '$',LENGTH(hkey1),'\r\n',hkey1,'\r\n','$',LENGTH(hval1),'\r\n',hval1,'\r\n',
+   '$',LENGTH(hkey2),'\r\n',hkey2,'\r\n','$',LENGTH(hval2),'\r\n',hval2,'\r\n',
+   '$',LENGTH(hkey3),'\r\n',hkey3,'\r\n','$',LENGTH(hval3),'\r\n',hval3,'\r'
+)FROM(
+   SELECT 'HMSET' AS redis_cmd,
+   concat_ws(':','person', id) AS redis_key,
+   'id' AS hkey1, id AS hval1,
+   'name' AS hkey2, name AS hval2,
+   'age' AS hkey3, age AS hval3
+   From person
+)AS t
+
+# 4、如果是线上数据库+线上Linux -> 把sql存到order.sql，再执行
+mysql -uroot -p123456 test --default-character-set=utf8 --skip-column-names --raw < order.sql  
+|
+redis-cli -h 127.0.0.1 -p 6379 -a 123456 --pipe
+
+# 5、本地数据库+线上redis
+利用Navicat导出数据 -> data.txt，清理格式（导出来的数据里面各种 " 符号），全局替换即可
+> cat data.txt | redis-cli -h 127.0.0.1 -p 6379 -a 123456  --pipe
+
+81921条数据 一瞬间导入完成
+注： RESP协议要求，不要有莫名其妙的字符，注意文件类型是Unix编码类型！
+
+
+####实战2：
+# 1、编写data.txt内容如下：
+	SET Key0 Value0
+	SET Key1 Value1
+	...
+	SET KeyN ValueN
+
+	# 或者是 RESP协议内容 - 注意文件编码！！！
+
+	*8
+	$5
+	HMSET
+	$8
+	person:1
+	$2
+	id
+	$1
+	1
+
+# 2、执行命令
+> cat data.txt | redis-cli --pipe
+
+实战(远程redis服务端)：
+> cat redis_commands.txt | redis-cli -h 192.168.127.130 -p 6379 -a password --pipe
+
+
+****************************布隆过滤器(Redis 实现)****************************
+链接：https://blog.csdn.net/u013030276/article/details/88350641
+redis 4.X 以上 提供 布隆过滤器插件
+语法：[bf.add key options]
+语法：[bf.exists key options]
+注意: redis 布隆过滤器提供的是 最大内存512M，2亿数据，万分之一的误差率
+
+
+
+
+****************************性能分析-Redis慢查询分析****************************
+redis命令会放在redis内置队列中，然后主线程一个个执行，因此其中一个命令执行时间过长，会造成批量的阻塞。
+慢查询队列是先进先出的，因此新的值在满载时，旧的会出去。
+Redis 慢查询 -> 执行阶段耗时过长
+
+conf文件设置：
+slowlog-low-slower-than 10000 -> 10000微秒,10毫秒 (默认)
+
+slow-max-len 存放的最大条数
+
+慢查询导致原因: value 值过大，解决办法:数据分段（更细颗粒度存放数据）
+
+设置Redis slowlog（两种方式）：
+	方式1：通过配置redis.conf完成
+	方式2：运行时，使用CONFIG GET 和 CONFIG SET命令设置。
+
+命令：
+	slowlog get 获取慢查询记录
+	slowlog len 获取慢查询记录量
+
+
+
+****************************如何提高Redis处理效率？****************************
+描述：
+	基于jedis的批量操作pipelined.
+	pipelined 实际是封装过一层的指令集 ->  实际应用的还是单条指令，但是节省了网络传输开销（服务端到Redis环境的网络开销）
+
+--代码实现：
+Jedis jedis = new Jedis("127.0.0.1", 6379);
+Pipeline pipelined = jedis.pipelined();
+for (String key : keys) {
+    pipelined.del(key);
+}
+
+pipelined.sync();
+jedis.close();
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,39 +1,13 @@
-> info #查看redis使用情况和状态信息
-> ping #测试Redis的连通性
-> auth 123456 #授权密码
-> config set requirepass 123456 #设置密码
+
+详情redis文档笔记：
+链接：http://note.youdao.com/noteshare?id=69b1fd11c614d75cdcef2bde3ac9fbbc
+
 
 Redis的全称是什么？
-	Remote Dictionary Server。
-
-Redis数据类型:
-	1.String:字符串 [key-value]
-	2.Hash:散列 [key-field-value]
-	3.List:列表
-	4.Set:集合
-	5.Sorted Set:有序集合 [key-score-member]
-redis其它数据结构：
-	--1.HyperLogLog
-	用于统计UV数据（UniqueVisitor，独立访客），即统计同一个用户一天之内的访问请求，并且同一个用户的多次请求只能统计一次。因此可使用IP地址来区分用户。
-	用Set集合来存储，既能去重又能统计用户ID总数。但当网站数据量上千万时，就需要一个很大的set集合统计，这个非常浪费空间。
-	特点：
-		在输入元素的数量或者体积非常非常大时，计算基数所需的空间总是固定的、并且使很小的。
-		每个HyperLogLog键只需要花费12kb内存，就可以计算接近2^64个不同元素的基数。
-		HyperLogLog只会根据输入元素来计算基数，而不会存储输入元素本身，因此不能像集合那样返回输入的各个元素。
-
-	--2.位图(BitMap)
-	用于网站的DAU(Daily Active User,日活跃用户数量)
-	教程：https://blog.csdn.net/Crazypokerk_/article/details/100600292
-
+	Remote Dictionary Server，翻译为远程字典服务
 
 非关系型数据库的优势，解决什么问题？
 	不用关心各种约束问题。
-
-redis和memcached有什么区别？
-	数据类型：redis支持多种数据类型，memcached仅支持简单key/value数据类型。
-	数据持久化：redis支持rdb和aof两种。memcached不支持数据持久化
-	运行模型：redis使用单线程，而memcached使用多线程。redis使用单核，而memcached可利用多核。在处理小的文件时redis会比memcached有更高的效率，但是在100K以上时，memcached的效率就会更高一些。
-	集群：都可以集群，不过在100k以上的数据中，memcached性能要高于redis
 
 redis操作怎么保证原子性的？
 	答：redis单线程
@@ -86,59 +60,27 @@ redis为什么采用单线程？
 		可考虑多起几个Redis进程，Redis是key-value数据库，不是关系型数据库，数据之间没有约束。只要客户端分清key放在哪个Redis进程即可。
 
 
-redis线程模型：
-	文件事件处理器：redis基于Reactor模式开发了自己的网络事件处理器。其主要包括4部分：套接字(socket)、IO多路复用程序、文件事件分派器(dispatcher)、事件处理器
-	工作原理：
-		IO多路复用程序：负责监听多个套接字，并向文件事件分派器传送那些产生了事件的套接字。
-		文件事件分派器：接收IO多路复用程序传过来的套接字，并根据套接字产生的事件类型调用相应的事件处理器。
-	IO多路复用程序实现？
+1.1	缓存技术对比
+1.1.1	EhCached介绍
+Ehcache直接在jvm虚拟机中运行，速度快，效率高，适用于单体应用；Ehcache不适合分布式应用，其缓存数据无法在其它应用共享。
+Ehcache常用于单体项目中保存shiro登录用户的权限数据。
+1.1.2	memcached介绍
+Memcached只有String这一种类型类型。
+Memcached可以利用多核优势，单实例吞吐量极高，可以达到几十万QPS，适用于最大程度扛量。
+1.1.3	memcached与redis比较
+数据类型：redis支持多种数据类型，memcached仅支持简单key/value数据类型。
+数据持久化：redis支持rdb和aof两种。memcached不支持数据持久化
+模型：redis使用单线程，而memcached使用多线程。redis使用单核，而memcached可利用多核。在处理小的文件时redis会比memcached有更高的效率，但是在100K以上时，memcached的效率就会更高一些。
+redis只支持单线程，其性能受限于CPU性能，即取决于数据结构、数据大小、以及服务器硬件性能，其在日常环节中的QPS高峰约为1-2w。而memcached具有多核优势，其单实例的吞吐量极高，性能主要取决于存储的key及value的字节大小以及服务器硬件性能，其在日常环节中的QPS高峰约为4-6w。（读写性能qps）
 
-IO多路复用技术：
-	多路-指多个socket连接；复用-复用一个线程；
-	多路复用主要有三种技术：select、poll、epoll。epoll是最新的也是目前最好的多路复用技术。
-	多路复用技术可以让单个线程高效的处理多个连接请求（尽量减少网络IO的时间消耗），且Redis在内存中操作数据的速度非常快（内存内的操作不会成为这里的性能瓶颈）。
-	IO多路复用使用单线程来轮询描述符，将数据库的开、关、读、写都转换成事件，较少了线程切换时上下文的切换和竞争。
+总结：一昧的使用redis来进行数据缓存系统，并不是最佳的选择，如果项目根本就不需要复杂的数据结构呢？如果项目的数据只有一小部分使用了缓存，根本不需要使用持久化和备份呢？如果项目不需要在服务器之间进行数据同步呢？在诸如此类情况下，使用redis反而是增加项目成本。
 
-redis的hash算法用的是啥？
-	redis应该是使用一致性hash算法---MurmurHash3算法，具有低碰撞率优点，google改进的版本cityhash也是redis中用到的哈希算法。
-	现有的主流的大数据系统都是用的MurmurHash本身或者改进
-	NoSQL是非关系型数据库，因为不需要满足关系数据库数据一致性等复杂特性所以速度快；
+redis和memcached有什么区别？
+	数据类型：redis支持多种数据类型，memcached仅支持简单key/value数据类型。
+	数据持久化：redis支持rdb和aof两种。memcached不支持数据持久化
+	运行模型：redis使用单线程，而memcached使用多线程。redis使用单核，而memcached可利用多核。在处理小的文件时redis会比memcached有更高的效率，但是在100K以上时，memcached的效率就会更高一些。
+	集群：都可以集群，不过在100k以上的数据中，memcached性能要高于redis
 
-redis底层协议resp
-	redis客户端与redis-server交互通信，采用tcp请求/响应模型；
-	我们通过redis客户端执行命令(如set key value)，客户端遵循resp协议，将命令的协议串发送给redis-server执行，redis-server执行完后再同步返回结果。
-
-redis跳跃表问题？
-	详情：https://blog.csdn.net/idwtwt/article/details/80233859
-	跳跃表在redis中主要是有序表的一种底层表现。对于普通链表的查找不能使用二分法，需要从头一个个找。而对于跳跃表提供了类似二分法查找，先跳转到最大值，若小于则跳到中间。
-
-
-停止redis服务：
-	正确停止redis服务 应该基于连接命令 加再上 shutdown -> 否则数据持久化会出现问题
-	shutdowm关闭服务时，如果没有配置AOF，则会使用bgsave持久化数据
-
-redis的key设置？
-	由于业务复杂，key一般设置比较复杂
-	通常为“系统标识：模块名称：方法名称：参数”
-
-redis的key如何寻址？
-	类似于HashMap的寻址方式。
-
-问：一个Redis实例最多能存放多少的keys？
-	理论上Redis可以处理多达232的keys。
-	换句话说，Redis的存储极限是系统中的可用内存值。
-
-问：reids如何做大量数据插入？
-	Redis2.6开始redis-cli支持一种新的被称之为pipe mode的新模式用于执行大量数据插入工作。
-
-如何从10W个key中找到某个固定前缀开头的key？
-	方式一：使用keys指令，匹配固定前缀
-		redis是单线程的，keys指令会导致线程阻塞，线上服务会停顿，直到指令执行完毕后恢复
-	方式二：使用scan指令
-		scan指令可以无阻塞的提取指定模式的key列表，但会有一定的重复，需在客户端去重，其整体所花费的时间比key指令长。
-
-一个字符串类型的值能存储最大容量是多少？
-	512M
 
 
 不重启redis时修改配置实时生效？
@@ -146,13 +88,30 @@ redis的key如何寻址？
 	从Redis2.2开始，可以从AOF切换到RDB的快照持久性或其他方式而不需要重启Redis。
 	检索“config get *”命令获取更多配置信息。
 
-为什么要用redis而不用map/guava做缓存?
-	redis可以用几十个G内存来做缓存，Map不行，一般jvm也就分几个G内存，太大影响gc时间。
 
-问：Redis持久化数据和缓存怎么做扩容？
-	若Redis被当做缓存使用，使用一致性哈希实现动态扩容缩容。
-	若Redis当做一个持久化存储使用，必须使用固定的keys-to-nodes映射关系，节点的数量一旦确定不能变化。否则（即Redis节点需要动态变化的情况），必须使用可以在运行时进行数据再平衡的一套系统，而当前Redis集群可以做到这样。
+停止redis服务：
+	正确停止redis服务 应该基于连接命令 加再上 shutdown -> 否则数据持久化会出现问题
+	shutdowm关闭服务时，如果没有配置AOF，则会使用bgsave持久化数据
 
+问：redis的key设置？
+	由于业务复杂，key一般设置比较复杂
+	通常为“系统标识：模块名称：方法名称：参数”
+
+问：redis的key如何寻址？
+	类似于HashMap的寻址方式。
+
+问：一个Redis实例最多能存放多少的keys？
+	理论上Redis可以处理多达2^32的keys。
+	换句话说，Redis的存储极限是系统中的可用内存值。
+
+问：如何从10W个key中找到某个固定前缀开头的key？
+	方式一：使用keys指令，匹配固定前缀
+		redis是单线程的，keys指令会导致线程阻塞，线上服务会停顿，直到指令执行完毕后恢复
+	方式二：使用scan指令
+		scan指令可以无阻塞的提取指定模式的key列表，但会有一定的重复，需在客户端去重，其整体所花费的时间比key指令长。
+
+一个字符串类型的值能存储最大容量是多少？
+	512M
 
 
 redis持久化的几种方式，优缺点是什么，怎么实现的，区别是什么？
@@ -169,11 +128,6 @@ redis的AOF如何缩减自身文件大小？
 	从redis2.4开始，aof重写由redis自行触发，bgrewriteaof仅仅用于手动触发重写操作。
 	旧的aof文件在bgrewriteaof成功之前不会被修改，因此bgrewriteaof操作失败不会造成任何数据丢失。
 
-Redis服务器命令：
-	flushall 	#删除所有数据库的所有key
-	flushdb 	#删除当前数据库的所有key
-	save		#同步保存数据到磁盘
-
 
 redis数据备份与恢复：
 	save命令用于创建当前数据库的备份
@@ -182,7 +136,7 @@ redis数据备份与恢复：
 
 save和bgsave区别？
 	save：由于redis单线程，save会造成阻塞，在rdb文件创建完成之前不处理任何请求。
-	bgsave：会创建子进程，完成rdb文件的创建工作，父进程正常执行。
+	bgsave：会fork出子进程，用来创建rdb文件工作，父进程正常执行业务操作。
 		在执行bgsave期间，主线程会拒绝save和bgsave命令；bgrewriteaof命令会延迟到bgsave命令结束之后执行。
 
 
@@ -192,106 +146,6 @@ Redis性能测试：
 测试：
 	> redis-benchmark -h 127.0.0.1 -p 6379 -c 100 -n 10000 #100个连接，10000q请求
 	> redis-benchmark -h 127.0.0.1 -p 6379 -q -d 100 #100个字节作为value值进行压测
-
-
-
-5. Redis架构模式
-	1)单机版: 简单，内存容量有限、处理能力有限、无法高可用
-	2)主从复制:允许主多从，被复制的是主服务器master, 复制品是从服务器slave, slave只读
-		能缓解主服务器的读压力，无法分解写压力，无法高可用
-		[master和slave实例连接正常时，master会发送一连串的命令流来保持对slave的更新，以便于将自身数据集的改变复制给slave]
-	3)哨兵:Sentinel会不断地检查主服务器和从服务器是否运作正常，当一个主服务器不能正常工作时，哨兵会开始次自动故障迁移操作，它会将失效主服务器的其中一个从服务器升级为新的主服务器使得集群可以使用新主服务器代替失效服务器。
-	4)集群:使用哈希槽，集群的每个节点负责一部分hash槽，分散写压力，使用主从复制模式，主节点失效，会自动选举它的从节点为新主。
-		不能保证数据强致性
-
-
-redis的主从复制实现（旧版）？
-	分步骤：数据同步、命令同步
-	--数据同步
-	a.从节点连接主节点，发送sync命令（写缓存命令）；
-	b.主节点接收到sync命令后，开始执行bgsave命令生成rdb文件，并使用缓冲区记录此后执行的所有写命令。
-		附：bgsave命令用于后台异步保存当前数据库的数据到磁盘。redis fork出一个新子进程，原来redis进程（父进程）继续处理客户端请求，而子进程则负责将数据保存到磁盘，然后退出。
-	c.主节点bgsave执行完后，向所有从节点发送rdb文件。
-	d.从节点接收到rdb文件后丢弃所有旧数据，载入rdb文件的数据。
-	--命令同步
-	e.主节点rdb文件发送完后，开始向从服务器发送缓冲区的写命令。
-	f.从节点完成rdb数据载入后，开始接收命令请求，并执行来自主节点缓冲区的写命令。
-redis旧版主从复制可能出现问题？
-	若从节点完成了rdb文件的数据同步后，主节点因网络原因中断复制，从节点重新连接后会再次发送sync命令，再次进行rdb数据同步。
-redis新版主从复制实现？
-	Redis从2.8版本开始，使用psync命令代替sync命令来执行复制时的同步操作。
-	psync分为完整重同步（full resynchronization）和部分重同步（partial resynchronization）两种模式。
-	完整重同步：和sync的rdb数据同步一样
-	部分重同步：用于处理断线后重复制情况，主节点只将断线期间的写命令发送给从服务器执行。
-
-redis主从复制性能问题？
-	1、Master最好不要做任何持久化工作，如RDB和AOF；
-	2、若数据比较重要，某个Slave开启AOF备份数据，策略设置每秒同步一次；
-	3、为了主从复制的速度和连接的稳定性，Master和Slave最好在同一局域网内；
-	4、尽量避免在压力很大的主库上增加从库；
-	5、主从复制不要用图状结构，用单向链表结构更为稳定，即：Master <- Slave1 <- Slave2 <- Slave3…
-		这样的结构方便解决单点故障问题，实现Slave对Master的替换。如果Master挂了，可以立刻启用Slave1做Master，其他不变。
-
-
-说说Redis哈希槽的概念？
-	Redis集群没有使用一致性hash,而是引入了哈希槽的概念，Redis集群有16384个哈希槽，每个key通过CRC16校验后对16384取模来决定放置哪个槽，集群的每个节点负责一部分hash槽。
-
-
-Redis集群模式（主从模式、哨兵模式、Cluster 集群模式）
-redis集群模式实现？
-	有三种实现：twemproxy、codis、redis自带
-Redis集群如何选择数据库？
-	Redis集群目前无法做数据库选择，默认在0数据库。
-Redis集群最大节点个数是多少？
-	16384个。
-Redis集群之间是如何复制的？
-	异步复制
-Redis集群会有写操作丢失吗？为什么？
-	Redis并不能保证数据的强一致性，这意味这在实际中集群在特定的条件下可能会丢失写操作。
-Redis集群的主从复制模型是怎样的？
-	为了使在部分节点失败或者大部分节点无法通信的情况下集群仍然可用，所以集群使用了主从复制模型，每个节点都会有N-1个复制品.
-Redis集群方案什么情况下会导致整个集群不可用？
-	有A，B，C三个节点的集群,在没有复制模型的情况下,如果节点B失败了，那么整个集群就会以为缺少5501-11000这个范围的槽而不可用。
-Redis集群方案有几种？
-	有三种实现：twemproxy、codis、redis自带
-	--1、twemproxy。
-	类似于一个代理方式，使用方法和普通redis无任何区别，设置好它下属的多个redis实例后，使用时在本需要连接redis的地方改为连接twemproxy，它会以一个代理的身份接收请求并使用一致性hash算法，将请求转接到具体redis，将结果再返回twemproxy。
-	使用方式简便(相对redis只需修改连接端口)，对旧项目扩展的首选。
-	问题：twemproxy自身单端口实例的压力，使用一致性hash后，对redis节点数量改变时候的计算值的改变，数据无法自动移动到新的节点。
-	--2、codis
-	目前用的最多的集群方案，基本和twemproxy一致的效果，但它支持在节点数量改变情况下，旧节点数据可恢复到新hash节点。
-	--3、redis cluster3.0自带的集群
-	redis cluster3.0自带集群：在redis集群内置很多哈希槽，redis会根据节点数量大致将哈希槽平均分配到不同节点上。当放置一个key-value时，redis会对key进行哈希求值，然后除所有哈希槽求得余数，根据余数得到应放置在哪个节点上。
-	特点在于他的分布式算法不是一致性hash，而是hash槽的概念，以及自身支持节点设置从节点。具体看官方文档介绍。
-	--4、在业务代码层实现
-	将几个毫无关联的redis实例，在代码层，对key进行hash计算，然后去对应的redis实例操作数据。 
-	该方式对hash层代码要求比较高，考虑部分节点失效后的替代算法方案，数据震荡后的自动脚本恢复，实例的监控等。
-
-
-redis实现分布式锁？
-	在redis里创建一个key算加锁，完成相关操作后删除该key算释放锁。
-	加锁：set my:lock:类名:方法名 EX 30 NX //30秒后自动释放，其它线程尝试加速时会失败
-	解锁：del my:lock:类名:方法名
-	附：set语法》 set key value [EX seconds] [PX milliseconds] [NX|XX]
-		EX seconds:设置过期时间为seconds秒。执行 set key value EX seconds 等同于 setex key seconds value
-		PX milliseconds：设置过期时间为milliseconds毫秒。执行 set key value PX milliseconds 等同于 psetex key milliseconds value
-		NX:若key不存在时设置成功
-		XX:若key存在时才设置成功
-	其他问题：
-		redis做分布式锁，若过期时间到了但业务程序还没处理完？
-			使用redisson。redisson有个看门狗的监控线程，若检测到key被劫持时会重置过期时间。
-		redis分布式锁的实现原理？setNX啥的
-		redis分布式锁注意事项？30秒后值动释放
-		zk实现分布式锁比较？
-
-
-redis实现异步队列？
-	list支持双端操作，一般使用list结构作为队列，rpush生产消息，lpop消费消息。当lpop没有消息时，要适当sleep一会再重试。
-	若不使用sleep，可以用blpop指令，在没有消息时它会阻塞直到消息到来。
-	问：生产一次，消费多次？
-		使用pub/sub主题订阅者模式，可以实现 1:N 的消息队列。
-		缺点是消费者下线，消息会丢失，得使用专业的消息队列如RocketMQ等。
-
 
 
 问：Redis的内存用完了会发生什么？
@@ -323,64 +177,6 @@ LRU算法最为精典的实现，就是HashMap+Double LinkedList，时间复杂�
 	一个客户端运行了新的命令，添加了新的数据。Redi检查内存使用情况，如果大于maxmemory的限制，则根据设定好的策略进行回收。
 
 
-
-
-redis管道技术：
-使用管道模式运行命令：
-	> cat data.txt | redis-cli --pipe
-	--data.txt文本内容如下：
-	SET Key0 Value0
-	SET Key1 Value1
-	...
-	SET KeyN ValueN
-
-	# 或者是 RESP协议内容 - 注意文件编码！！！
-
-	*8
-	$5
-	HMSET
-	$8
-	person:1
-	$2
-	id
-	$1
-	1
-实战：cat redis_commands.txt | redis-cli -h 192.168.127.130 -p 6379 [-a "password"] -n 0 --pipe
-问：怎么快速删除10w个key？
-	使用管道(redis pipeline)
-
-为什么会出现redis管道(pipeline)?
-	redis客户端与redis服务端通信采用cs模式，每次交互都是完整的请求/响应模式。
-	我们使用jedis或lettuce执行redis命令，每次都是建立socket连接，并等待返回。
-
-	每个命令底层建立tcp连接的时间是省不掉的，当需要对一组kv进行批量操作时，这组命令的耗时=sum(建立连接时间+发送命令、返回结果)，随着批量操作的key越多，时间累加呈线性增长。这样便出现了像redis连接池的技术，如JedisPool。
-
-	当需要对一组kv进行批量操作时，JedisPool池子里的connection连接、极端情况都被用完了，怎么办？
-	--需要等待JedisPool池里有可复用的connection才能继续执行。若在指定的等待时间内没有等到idle空闲连接，就报异常了
-
-	如果能将多条命令“合并”到一起，进行一次网络IO，性能会提高不少吧。这就是今天的主角——Redis pipeline。
-
-redis管道原理？
-	当client使用pipeline发送命令时，redis-server必须将部分请求放到队列中（使用内存），执行完毕后一次性发送结果。
-	客户端将多个命令缓存起来，缓冲区满了就发送（将多条命令打包发送）；有点像“请求合并”。服务端接受一组命令集合，切分后逐个执行返回。
-redis管道作用？
-	一次请求/响应服务器能实现处理新的请求即使旧的请求还未被响应。这样就可以将多个命令发送到服务器，而不用等待回复，最后在一个步骤中读取该答复。
-
-redis管道(pipeline)与Redis事务(multi)
-	multi：标记一个事务块的开始。 事务块内的多条命令会按照先后顺序被放进一个队列当中，最后由 EXEC 命令原子性(atomic)地执行。
-	pipeline：客户端将执行的命令写入到缓冲中，最后由exec命令一次性发送给redis执行返回。
-
-	multi 是redis服务端一次性返回所有命令执行返回结果。
-	pipeline管道操作是需要客户端与服务端的支持，客户端将命令写入缓冲，最后再通过exec命令发送给服务端，服务端通过命令拆分，逐个执行返回结果。
-
-	--两者的区别：
-	pipeline选择客户端缓冲，multi选择服务端队列缓冲；
-	请求次数的不一致，multi需要每个命令都发送一次给服务端，pipeline最后一次性发送给服务端，请求次数相对于multi减少
-	multi/exec可以保证原子性，而pipeline不保证原子性
-
-
-
-
 redis分区：
 	分区是分割数据到多个Redis实例的处理过程，因此每个实例只保存key的一个子集。
 问：为什么要分区？
@@ -398,7 +194,6 @@ redis分区：
 		然而，有一种预分片的技术也可以较好的解决这个问题。
 
 
-
 Redis支持的Java客户端都有哪些？官方推荐用哪个？
 	Redisson、Jedis、lettuce等等，官方推荐使用Redisson。
 Redis和Redisson有什么关系？
@@ -409,73 +204,5 @@ Jedis与Redisson对比有什么优缺点？
 	Redisson的宗旨是促进使用者对Redis的关注分离，从而让使用者能够将精力更集中地放在处理业务逻辑上。
 
 
-
-
-
-
-
-
-
-
-
-什么是redis？
-redis相比mencached有哪些优势？
-redis支持哪几种数据类型？
-redis主要消耗什么物理资源？
-redis有哪些淘汰策略？
-一个字符串类型的值能存储最大容量是多少？ 512M
-为什么redis把所有数据放到内存中？
-redis支持的Java客户端都有哪些？官方推荐用哪个？
-redis和redisson有什么关系？
-jedis和redisson有什么关系？
-redis哈希槽的概念？
-redis集群的主从复制模型？
-redis集群会有写操作丢失吗？
-Redis集群之间是如何复制的？
-Redis集群最大节点个数是多少？
-Redis集群如何选择数据库？
-怎么测试Redis的连通性？
-Redis中的管道有什么用？
-怎么理解Redis事务？
-
-redis模拟session，除了redis你还考虑过别的吗？
-Redis用过哪些数据数据，以及Redis底层怎么实现？
-redis的数据结构 最常问hash是什么，sorted set怎么实现的？
-redis是怎么保证高可用的，主从复制实现？主从和集群怎么加在一起？redis集群怎么进行数据分配（hash槽）？
-redis集群如何搭建
-redis如何主从同步
-Redis缓存穿透，缓存雪崩
-Redis集群，高可用，原理
-redis有没有用过，常用的数据结构以及在业务中使用的场景，redis的hash怎么实现的，rehash过程讲一下和JavaHashMap的rehash有什么区别？redis cluster有没有了解过，怎么做到高可用的？redis的持久化机制，为啥不能用redis做专门的持久化数据库存储？
-
-redis 是什么？都有哪些使用场景？
-redis 和 memecache 有什么区别？
-redis 为什么是单线程的？什么是缓存穿透？怎么解决？
-redis 支持的数据类型有哪些？redis 支持的 java 客户端都有哪些？
-怎么保证缓存和数据库数据的一致性？
-redis 怎么实现分布式锁？redis 分布式锁有什么缺陷？
 redis 常见的性能问题有哪些？该如何解决？
-Redis的set的应用场合？
 Redis集群宕机如何处理，怎么样进行数据的迁移？
-Redis过期策略是怎么实现的呢？
-redis用过哪些数据结构，redis底层实现
-redis缓存穿透、缓存雪崩
-redis实现分布式锁
-redis的并发竞争问题如何解决
-redis持久化的几种方式？优缺点？
-redis的缓存失效策略
-redis集群、高可用、原理
-redis缓存分片，redis的数据淘汰策略
-为什么使用redis，优缺点是什么
-redis集群怎么进行数据分配？hash槽
-redis的主从复制实现
-redis的hash实现，sorted set怎么实现的？
-因为项目原因，问我redis是怎么保证高可用的，主从和集群怎么加到一起
-redis和mencached区别
-redis模拟session
-
-
-
-
-
-

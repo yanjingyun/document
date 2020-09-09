@@ -1,3 +1,8 @@
+
+文档：MySQL
+链接：http://note.youdao.com/noteshare?id=c0f40b21c99617e4680960ae696f4b27
+
+
 MySQL总结：
 	https://www.toutiao.com/i6781000221947068932
 

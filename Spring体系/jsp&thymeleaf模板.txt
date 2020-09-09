@@ -129,6 +129,16 @@ th:fragment模板布局
 	模板中，通常会包含一些公共部分，如页面、页脚、公共菜单等，thymeleaf通过使用th:fragment属性来定义被包含的模板片段。
 
 
+问：Thymeleaf项目添加通用JS代码？
+	描述：抽象出head部分的css和js文件封装成公共文件，具体页面仅需引入该公共文件即可。
+	实例：
+		--详情：https://blog.csdn.net/qq_27493017/article/details/85233351
+		--1.公共页面
+		<head th:fragment="commonHead(title)"> ... </head>
+		--2.具体页面
+		<head th:replace="head :: commonHead('验证公共静态资源的引入')"></head>
+
+
 接收Java参数:
 --1.js接收Java参数(使用“[[]]”)
 	http://localhost:9992/yfxx/question/form?id=45a95c8dbdb74bd8b672d76ab707b5ee

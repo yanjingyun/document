@@ -77,29 +77,20 @@ CentOS7安装：
 
 
 ****************************************************************
-安装JDK：
-1.卸载Linux自带的JDK：
-	> java -version	//查看系统现有的jdk
-	> rpm -qa|grep java //查看jdk的信息
-	> yum remove *openjdk* //卸载jdk
-2.从网上下载jdk
-	wget https://download.oracle.com/otn-pub/java/jdk/8u201-b09-demos/42970487e3af4f5aa5bca3f542482c60/jdk-8u201-linux-x64-demos.tar.gz
-3.解压
-	tar -zxvf jdk-8u171-linux-x64.tar.gz
-4.设置环境变量
-	> vim /etc/profile
-	在文件末尾追加：
-	JAVA_HOME=/opt/java/jdk1.8.0_171
-	JRE_HOME=$JAVA_HOME/jre
-	PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
-	CLASSPATH=:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib/dt.jar
-	export JAVA_HOME JRE_HOME PATH CLASSPATH
-5.最后启用新的配置
-	source /etc/profile
-6.检查新安装的jdk
-	java -version
-7.jdk自带命令查看GC情况
-	> jstat ...
+#安装jdk
+> wget http://dl.mycat.io/jdk-8u20-linux-x64.tar.gz #下载jdk
+> mkdir /usr/java
+> tar xf /jdk-8u20-linux-x64.tar.gz -C /usr/java/ #解压到/usr/java/目录下
+
+# 配置jdk环境
+> vim /etc/profile.d/java.sh #新建一个java.sh文件，并在文件中添加内容
+JAVA_HOME=/usr/java/jdk1.8.0_20
+PATH=$JAVA_HOME/bin:$PATH
+CLASSPATH=$JAVA_HOME/jre/lib/ext:$JAVA_HOME/lib/tools.jar
+export PATH JAVA_HOME CLASSPATH
+
+> source /etc/profile.d/java.sh   #使环境变量生效
+> java -version
 
 
 ****************************************************************
