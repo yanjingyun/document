@@ -140,14 +140,6 @@ save和bgsave区别？
 		在执行bgsave期间，主线程会拒绝save和bgsave命令；bgrewriteaof命令会延迟到bgsave命令结束之后执行。
 
 
-Redis性能测试：
-格式：
-	redis目录执行：redis-benchmark [option] [option value]
-测试：
-	> redis-benchmark -h 127.0.0.1 -p 6379 -c 100 -n 10000 #100个连接，10000q请求
-	> redis-benchmark -h 127.0.0.1 -p 6379 -q -d 100 #100个字节作为value值进行压测
-
-
 问：Redis的内存用完了会发生什么？
 	如果达到设置的上限，Redis的写命令会返回错误信息（但是读命令还可以正常返回。）或者你可以将Redis当缓存来使用配置淘汰机制，当Redis达到内存上限时会冲刷掉旧的内容。
 redis过期策略及内存淘汰机制？redis的缓存失效策略？
@@ -156,7 +148,7 @@ redis过期策略及内存淘汰机制？redis的缓存失效策略？
 	redis采用定期删除+惰性删除策略。
 	定期删除：指redis默认每隔10ms就随机抽取一些设置了过期时间的key，检查其是否过期，若过期就删除。不检查全部是为了避免redis卡死，部分未删除则根据惰性删除策略。
 	惰性删除：在你获取某个key时，redis会检查其是否过期，若过期则此时删除，并不会返回任何东西。
-	注：这样该删除的key可能还未删除，而导致redis内存越来越大，那么就该使用内存淘汰策略机制。
+	注：这样该删除的key可能还未删除，而导致redis内存越来越大，那么就会使用内存淘汰策略机制。
 内存淘汰机制：
 	# maxmemory-policy volatile-lru //在redis.conf配置
 	--参数说明：

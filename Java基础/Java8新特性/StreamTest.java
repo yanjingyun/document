@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -16,185 +17,57 @@ import java.util.stream.Stream;
 // 测试jdk1.8新特性：stream
 public class StreamTest {
 
-	static class User {
-		private String name;
-		private int grade;
-		private String type;
-		private Date birthday;
-
-		// 用户名&成绩
-		public User(String name, int grade) {
-			this.name = name;
-			this.grade = grade;
-		}
-
-		// 用户名&用户类型
-		public User(String name, String type) {
-			this.name = name;
-			this.type = type;
-		}
-
-		// 用户名&出生日期
-		public User(String name, Date birthday) {
-			this.name = name;
-			this.birthday = birthday;
-		}
-
-		// 用户名&出生日期&成绩
-		public User(String name, Date birthday, int grade) {
-			this.name = name;
-			this.birthday = birthday;
-			this.grade = grade;
-		}
-
-		public static int compareByBirthday(User a, User b) {
-			return a.getBirthday().compareTo(b.getBirthday());
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public int getGrade() {
-			return grade;
-		}
-
-		public void setGrade(int grade) {
-			this.grade = grade;
-		}
-
-		public String getType() {
-			return type;
-		}
-
-		public void setType(String type) {
-			this.type = type;
-		}
-
-		public Date getBirthday() {
-			return birthday;
-		}
-
-		public void setBirthday(Date birthday) {
-			this.birthday = birthday;
-		}
-
-		@Override
-		public String toString() {
-			return "User [name=" + name + ", grade=" + grade + ", type=" + type + ", birthday=" + birthday + "]";
-		}
-
-	}
-
-	static class Foo {
-		private Integer type;
-		private Integer num;
-
-		public Foo(Integer type, Integer num) {
-			this.type = type;
-			this.num = num;
-		}
-
-		public Integer getType() {
-			return type;
-		}
-
-		public void setType(Integer type) {
-			this.type = type;
-		}
-
-		public Integer getNum() {
-			return num;
-		}
-
-		public void setNum(Integer num) {
-			this.num = num;
-		}
-	}
-
-	public static class Person {
-		private Integer id;
-		private String name;
-		private Integer age;
-
-		public Person(Integer id, String name) {
-			this.id = id;
-			this.name = name;
-		}
-
-		public Person(Integer id, String name, Integer age) {
-			this.id = id;
-			this.name = name;
-			this.age = age;
-		}
-
-		public Integer getId() {
-			return id;
-		}
-
-		public void setId(Integer id) {
-			this.id = id;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public Integer getAge() {
-			return age;
-		}
-
-		public void setAge(Integer age) {
-			this.age = age;
-		}
-
-		@Override
-		public String toString() {
-			return "Person2 [id=" + id + ", name=" + name + ", age=" + age + "]";
-		}
-	}
-
 	public static void main(String[] args) {
 		StreamTest st = new StreamTest();
-		// 测试最大值、最小值、综合、排列和遍历、过滤
-		st.test1();
+//		// 测试最大值、最小值、综合、排列和遍历、过滤
+//		st.test1();
+//
+//		// 测试map相关
+//		st.testToMap(); // 测试collect() -> toMap
+//		st.testToCollection(); // 测试collect() -> toCollection
+//		st.testMapToInt(); // 测试mapToInt()
+//		st.testUserSort(); // 测试map()
+//		st.testUserSort2();
+//		st.testPersonMap();
+//		st.testPersonMap();
+//
+//		// Collectors元素聚合
+//		st.testCollectors(); // 最大值、最小值、求和、平均值
+//		// 映射：先对集合中的元素进行映射，然后再对映射的结果使用Collectors操作
+//		st.testCollection(); // 测试Collectors.mapping
+//
+//		// 分组：两种方式Collectors.groupingBy
+//		// 1）groupingBy(Function<? super T, ? extends K> classifier)
+//		// 参数是Function类型，Function返回值可以是要分组的条件，也可以是要分组的字段。返回的结果是Map，其中key的数据类型为Function体中计算类型，value是List<T>类型，为分组的结果
+//		// 2）partitioningBy 用于分成两组的情况
+//		st.testGroupingBy1();
+//		st.testPartitioningBy(); // 与 st.testGroupingBy1()效果一样
+//		st.testGroupingBy2();
+//		st.testGroupingBy3();
+//		st.testGroupingBy4();
+//
+//		// 测试reduce()
+//		st.testReduce1();
+//		st.testReduce2();
+//		st.testReduce3(); // 累计操作
+		
+		// Stream并行流：流可以并行执行，以增加大量输入元素的运行时性能
+		// 并行流ForkJoinPool通过静态ForkJoinPool.commonPool()方法使用公共可用的流，线程数取决于CPU核数
+		// ForkJoinPool commonPool = ForkJoinPool.commonPool();
+		// System.out.println(commonPool.getParallelism()); // 7
+		// 注：某些并行流操作reduce,collect需要额外的计算（组合操作），也要注意顺序，这时候并行流可能不适合
+		testParallelStream();
+	}
 
-		// 测试map相关
-		st.testToMap(); // 测试collect() -> toMap
-		st.testToCollection(); // 测试collect() -> toCollection
-		st.testMapToInt(); // 测试mapToInt()
-		st.testUserSort(); // 测试map()
-		st.testUserSort2();
-		st.testPersonMap();
-		st.testPersonMap();
-
-		// Collectors元素聚合
-		st.testCollectors(); // 最大值、最小值、求和、平均值
-		// 映射：先对集合中的元素进行映射，然后再对映射的结果使用Collectors操作
-		st.testCollection(); // 测试Collectors.mapping
-
-		// 分组：两种方式Collectors.groupingBy
-		// 1）groupingBy(Function<? super T, ? extends K> classifier)
-		// 参数是Function类型，Function返回值可以是要分组的条件，也可以是要分组的字段。返回的结果是Map，其中key的数据类型为Function体中计算类型，value是List<T>类型，为分组的结果
-		// 2）partitioningBy 用于分成两组的情况
-		st.testGroupingBy1();
-		st.testPartitioningBy(); // 与 st.testGroupingBy1()效果一样
-		st.testGroupingBy2();
-		st.testGroupingBy3();
-		st.testGroupingBy4();
-
-		// 测试reduce()
-		st.testReduce1();
-		st.testReduce2();
-		st.testReduce3(); // 累计操作
+	// 测试并行流
+	private static void testParallelStream() {
+		Arrays.asList("a1", "a2", "b1", "c2", "c1").parallelStream().filter(s -> {
+			System.out.format("filter: %s [%s]\n", s, Thread.currentThread().getName());
+			return true;
+		}).map(s -> {
+			System.out.format("map: %s [%s]\n", s, Thread.currentThread().getName());
+			return s.toUpperCase();
+		}).forEach(s -> System.out.format("forEach: %s [%s]\n", s, Thread.currentThread().getName()));
 	}
 
 	// 测试最大值、最小值、综合、排列和遍历、过滤
@@ -455,5 +328,151 @@ public class StreamTest {
 		// 解释：相当于result为 1，b为x+1，遍历数组每个元素+1后与result相乘
 		Integer sum = Stream.of(1, 3, 4).collect(Collectors.reducing(1, x -> x + 1, (result, b) -> result * b));
 		System.out.println("总和：" + sum);
+	}
+	
+	static class User {
+		private String name;
+		private int grade;
+		private String type;
+		private Date birthday;
+
+		// 用户名&成绩
+		public User(String name, int grade) {
+			this.name = name;
+			this.grade = grade;
+		}
+
+		// 用户名&用户类型
+		public User(String name, String type) {
+			this.name = name;
+			this.type = type;
+		}
+
+		// 用户名&出生日期
+		public User(String name, Date birthday) {
+			this.name = name;
+			this.birthday = birthday;
+		}
+
+		// 用户名&出生日期&成绩
+		public User(String name, Date birthday, int grade) {
+			this.name = name;
+			this.birthday = birthday;
+			this.grade = grade;
+		}
+
+		public static int compareByBirthday(User a, User b) {
+			return a.getBirthday().compareTo(b.getBirthday());
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public int getGrade() {
+			return grade;
+		}
+
+		public void setGrade(int grade) {
+			this.grade = grade;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public Date getBirthday() {
+			return birthday;
+		}
+
+		public void setBirthday(Date birthday) {
+			this.birthday = birthday;
+		}
+
+		@Override
+		public String toString() {
+			return "User [name=" + name + ", grade=" + grade + ", type=" + type + ", birthday=" + birthday + "]";
+		}
+
+	}
+
+	static class Foo {
+		private Integer type;
+		private Integer num;
+
+		public Foo(Integer type, Integer num) {
+			this.type = type;
+			this.num = num;
+		}
+
+		public Integer getType() {
+			return type;
+		}
+
+		public void setType(Integer type) {
+			this.type = type;
+		}
+
+		public Integer getNum() {
+			return num;
+		}
+
+		public void setNum(Integer num) {
+			this.num = num;
+		}
+	}
+
+	public static class Person {
+		private Integer id;
+		private String name;
+		private Integer age;
+
+		public Person(Integer id, String name) {
+			this.id = id;
+			this.name = name;
+		}
+
+		public Person(Integer id, String name, Integer age) {
+			this.id = id;
+			this.name = name;
+			this.age = age;
+		}
+
+		public Integer getId() {
+			return id;
+		}
+
+		public void setId(Integer id) {
+			this.id = id;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public Integer getAge() {
+			return age;
+		}
+
+		public void setAge(Integer age) {
+			this.age = age;
+		}
+
+		@Override
+		public String toString() {
+			return "Person2 [id=" + id + ", name=" + name + ", age=" + age + "]";
+		}
 	}
 }

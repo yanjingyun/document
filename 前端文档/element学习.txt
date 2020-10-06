@@ -1,0 +1,24 @@
+element整数校验：
+	<el-form-item label="整数A" prop="intA">
+		<el-input v-model="intA"></el-input>
+	</el-form-item>
+
+	<script>
+	  export default {
+	    data() {
+	      let checkInt = (rule, value, callback) => {
+	        if ((Number(value))&&(value)%1 === 0) {
+	          callback();
+	        }else {
+	          return callback(new Error('请输入整数！'));
+	        }
+	      };
+	      return {
+	        intA: null,
+	        rules: {
+	           intA: [{ validator: checkInt, trigger: 'blur' }],
+	        },
+	      };
+	    },
+	  }
+	</script>

@@ -10,6 +10,13 @@ vscode 格式化vue代码单引号变双引号:
 		}
 	}
 
+解决vscode任务栏图标异常：
+	详情：https://blog.csdn.net/lvdou1120101985/article/details/89509977
+	鼠标放在任务栏vscode图标上右键，选择倒数第三个菜单，（我这个是已经修改完后的效果了）：
+	然后会弹出“找不到快捷方式”的错误，然后你就可以选择正确的图标了，有两个位置可以选择：
+		1. 桌面上如果有正常的vscode图标，就选择这个；
+		2. 如果1找不到，可以在vscode的安装路径中找：
+
 
 
 ***************************PL/SQL*************
@@ -131,6 +138,12 @@ sublime快捷方式：
 	Ctrl+Shift+M 	选中当前括号内容，重复可选着括号本身
 	Ctrl+T			新开页面，Ctrl+W关闭页面，Ctrl+Tab切换页面	
 
+sublime解决中文乱码问题（新）：
+	https://www.cnblogs.com/pscly/p/12806614.html
+
+	#1.安装Package Control:
+		ctrl + shift + p ，输入 Package Control
+	#2.安装成功后，在“工具栏 -> Preferences -> Package Control” 输入 converToUTF8
 
 
 ***************************其它*************

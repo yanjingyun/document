@@ -34,7 +34,7 @@ sorted set-有序集合
 
 ****************************String - 缓存****************************
 Redis缓存对象分类：
-	--1、数据库中单条数据（key=表名+id）。如商品详情页。需要在更新时更新缓存，因此不适用频繁更新的数据。
+	--1、数据库中单条数据（key=表名+id）。如医生简介页、商品详情页。需要在更新时更新缓存，因此不适用频繁更新的数据。
 	--2、不分页、不实时（多表查询）的列表（key=方法名）。
 	--3、分页、不实时的列表：把分页结果放到一个map（key=分页标识、value=分页结果）存入list中（key=方法名），设定一定缓存时间expire，这样通过方法名lrange获取有分页列表的数据。
 
@@ -114,9 +114,7 @@ public String testRedisLock () {
         }
     } finally {
         // 解锁 -> 保证获取数据，判断一致以及删除数据三个操作是原子的， 因此如下写法是不符合的
-        /*if (RedisContextHolder.getValue() != null && jedis.get(KEY) != null && RedisContextHolder.getValue().equals(jedis.get(KEY))) {
-                jedis.del(KEY);
-            }*/
+        /*if (RedisContextHolder.getValue() != null && jedis.get(KEY) != null && RedisContextHolder.getValue().equals(jedis.get(KEY))) { jedis.del(KEY); }*/
 
         // 正确姿势 -> 使用Lua脚本,保证原子性
         String luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end";
@@ -212,10 +210,14 @@ RedLock算法描述：
 incrby orderId 1000 //redis批量生成序列号提升性能
 
 
-****************************List简单队列-栈****************************
-// 说白了利用redis - list数据结构 支持从左从右push，从左从右pop
-@Component
-public class RedisStack {
+****************************List应用场景****************************
+Stack(栈) = lpush + lpop
+Queue(队列) = lpush + rpop
+Blocking MQ(阻塞队列) = lpush + Brpop
+
+
+描述：Stack(栈) = lpush + lpop
+@Component public class RedisStack {
 
     @Resource
     Jedis jedis;
@@ -233,8 +235,8 @@ public class RedisStack {
     }
 }
 
-@Component
-public class RedisQueue {
+描述：Queue(队列) = lpush + rpop
+@Component public class RedisQueue {
 
     @Resource
     JedisPool jedisPool;
@@ -255,89 +257,99 @@ public class RedisQueue {
 }
 
 
-****************************List应用场景****************************
-Stack(栈) = lpush + lpop
-Queue(队列) = lpush + rpop
-Blocking MQ(阻塞队列) = lpush + Brpop
-
 微信公共号消息推送：
 aa关注了bb、cc这两个人。
 1、当bb发布消息msg1，则》lpush msg:aa msg1;
 2、当cc发布消息msg2，则》lpush msg:aa msg2;
 3、aa查看前五条最新消息》lrange msg:aa 0 5;
 
-****************************Hash应用场景****************************
+
+****************************Hash应用场景-购物车****************************
 Hash电商购物车：
-备注：用户Id为key，商品id为field，商品数量为value
-1.添加商品》hset cart:userId goodsId goodsNum
-2.添加数量》hincrby cart:userId goodsId num
-3.商品总数》hlen cart:userId
-4.删除商品》hdel cart:userId goodsId
-5.获取购物车所有商品》hgetall cart:userId
+	备注：用户Id为key，商品id为field，商品数量为value
+	1.添加商品》hset cart:userId goodsId goodsNum
+	2.添加数量》hincrby cart:userId goodsId num
+	3.商品总数》hlen cart:userId
+	4.删除商品》hdel cart:userId goodsId
+	5.获取购物车所有商品》hgetall cart:userId
+
+示例：
+	#添加多个商品
+	> hmset cart:user1 good1 2 good2 5 good3 3
+	#添加一个商品
+	> hset cart:user1 good4 1
+	#获取全部商品
+	> hgetall cart:user1
+	#给商品good4数量加1
+	> hincrby cart:user1 good4 1
+	> hgetall cart:user1 #发现good4数量变成2
+	# 删除商品good3
+	> hdel cart:user1 good3
+	> hgetall cart:user1 #发现good3被删除
+	# 重新设置good4数量
+	> hset cart:user1 good4 4
+	> hgetall cart:user1 #发现good4数量变成4
 
 
+****************************Set集合 - 抽奖 | 好友关系（合，并，交集）****************************
+抽奖->Set集合：
+	#插入用户
+	> sadd car:user 001 002 003 004 005 006
+	#查询抽奖人数
+	> scard car:user
+	# 随机抽取一人
+	> srandmember car:user
+	# 随机抽取一人，并移除
+	> spop car:user
 
-****************************List 社交类APP - 好友列表****************************
-根据时间显示好友，多个好友列表，求交集，并集  显示共同好友等等...
-疑问：难道大厂真的用redis存这些数据吗？？？多大的量啊... 我个人认为实际是数据库存用户id，然后用算法去处理，更省空间
 
-共同关注->set集合
-
-****************************Set 抽奖 | 好友关系（合，并，交集）****************************
-// 插入key 及用户id
-sadd cat:1 001 002 003 004 005 006
-
-// 返回抽奖参与人数
-scard cat:1
-
-// 随机抽取一个
-srandmember cat:1
-
-// 随机抽取一人，并移除
-spop cat:1
-
-求交集(sinter)、并集(sunion)、差集(sdiff)：
-sadd aa t1 t2 t3
-sadd bb t2 t3 t4
-sinter aa bb #求交集，返回[t2, t3]
-sunion aa bb #求并集，返回[t1, t2, t3, t4]
-sdiff aa bb #求差集，返回[t1]
+好友关系->set集合(求交集(sinter)、并集(sunion)、差集(sdiff))
+	> sadd aa t1 t2 t3
+	> sadd bb t2 t3 t4
+	> sinter aa bb #求交集，返回[t2, t3]
+	> sunion aa bb #求并集，返回[t1, t2, t3, t4]
+	> sdiff aa bb #求差集，返回[t1]
 
 
 
 ****************************Zset 排行榜****************************
 根据分数实现有序列表
 微博热搜：每点击一次 分数+1 即可
+---不用数据库目的是因为避免order by进行全表扫描
 
---- 不用数据库目的是因为避免order by 进行全表扫描
 
-
-排行榜->sortedSet有序集合
---1.设置初始化数据（zadd命令）
-zadd userGrade 80 user1
-zadd userGrade 80 user1
---2.查看所有玩家分数，由低到高排列（zrange命令）
-zrange grade 0 -1 withscores
---3.查看前三名玩家分数，由高到低排列（zrevrange命令）
-zrevrange grade 0 2 withscores
---4.增减玩家分数（zincrby命令，正数为增、负数为减）
-zincrby grade -1 user1
---移除某玩家（zrem命令）
+排行榜->Zset有序集合
+示例：
+	#录入用户分数
+	> zadd rank:user 80 user1
+	> zadd rank:user 85 user2
+	> zadd rank:user 83 user3
+	#查看所有玩家排名(zrange指令-从高到低)
+	> zrange rank:user 0 -1 withscores
+	#查看所有玩家排名(zrevrange指令-从低到高)
+	> zrevrange rank:user 0 -1 withscores
+	#user3玩家分数减1(zincrby指令-正数为增、负数为减)
+	> zincrby rank:user -1 user3
+	#移除user2玩家
+	> zrem rank:user user2
+	# 查看前三名玩家分数
+	> zrevrange rank:user 0 2 withscores
 
 
 
 ****************************异步队列/消息队列****************************
 不推荐，一般使用使用rabbitMq或Kafka中间件
-上文说到利用 redis-list 实现队列
-假设场景:A服务生产数据 - B服务消费数据，即可利用此种模型构造-生产消费者模型
+使用redis-list实现队列，假设场景：A服务生产数据 - B服务消费数据，即可利用此种模型构造-生产消费者模型
 
-1. 使用Redis中的List作为队列
-2.使用BLPOP key [key...] timeout  -> LPOP key [key ...] timeout:阻塞直到队列有消息或者超时
-（方案二：解决方案一中，拿数据的时，生产者尚未生产的情况）
+三种实现方案：
+方案1.使用Redis中的List作为队列
+	缺点：没有生产消息时，需要sleep下
+方案2.使用blpop key [key...] timeout  替换 lpop key [key ...] timeout:阻塞直到队列有消息或者超时
+	方案二：解决方案一中，拿数据的时，生产者尚未生产的情况
 
-3.pub/sub：主题订阅者模式
-基于reds的终极方案，上文有介绍，基于发布/订阅模式
-缺点:消息的发布是无状态的，无法保证可达。对于发布者来说，消息是“即发即失”的，此时如果某个消费者在生产者发布消息时下线，重新上线之后，是无法接收该消息的，要解决该问题需要使用专业的消息队列
+方案3.pub/sub：主题订阅者模式
+	基于reds的终极方案，上文有介绍，基于发布/订阅模式
+	缺点:消息的发布是无状态的，无法保证可达。对于发布者来说，消息是“即发即失”的，此时如果某个消费者在生产者发布消息时下线，重新上线之后，是无法接收该消息的，要解决该问题需要使用专业的消息队列
 
 
 redis实现异步队列？
@@ -351,82 +363,6 @@ redis实现异步队列？
 ****************************从海量Key里查询出某一个固定前缀的Key****************************
 A. 笨办法：KEYS [pattern] 注意key很多的话，这样做肯定会出问题，造成redis崩溃
 B. SCAN cursor [MATCH pattern] [COUNT count] 游标方式查找
-
-
-
-
-****************************Redis大批量数据插入(管道技术pipe)****************************
-问：reids如何做大量数据插入？
-	Redis2.6开始redis-cli支持一种新的被称之为pipe mode的新模式用于执行大量数据插入工作。
-
-链接：https://www.cnblogs.com/PatrickLiu/p/8548580.html
-####实战1：
-# 1、准备一个table
-create database  if not exists `test`;
-use `test`;
-CREATE TABLE `person` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(200) NOT NULL,
-  `age` varchar(200) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
-# 2、插入七八万条数据(略)
-
-# 3、SQL查询，并将其转化为RESP协议命令(Linux版本：不要再window环境试)
-SELECT CONCAT(
-   "*8\r\n",
-   '$',LENGTH(redis_cmd),'\r\n',redis_cmd,'\r\n',
-   '$',LENGTH(redis_key),'\r\n',redis_key,'\r\n',
-   '$',LENGTH(hkey1),'\r\n',hkey1,'\r\n','$',LENGTH(hval1),'\r\n',hval1,'\r\n',
-   '$',LENGTH(hkey2),'\r\n',hkey2,'\r\n','$',LENGTH(hval2),'\r\n',hval2,'\r\n',
-   '$',LENGTH(hkey3),'\r\n',hkey3,'\r\n','$',LENGTH(hval3),'\r\n',hval3,'\r'
-)FROM(
-   SELECT 'HMSET' AS redis_cmd,
-   concat_ws(':','person', id) AS redis_key,
-   'id' AS hkey1, id AS hval1,
-   'name' AS hkey2, name AS hval2,
-   'age' AS hkey3, age AS hval3
-   From person
-)AS t
-
-# 4、如果是线上数据库+线上Linux -> 把sql存到order.sql，再执行
-mysql -uroot -p123456 test --default-character-set=utf8 --skip-column-names --raw < order.sql  
-|
-redis-cli -h 127.0.0.1 -p 6379 -a 123456 --pipe
-
-# 5、本地数据库+线上redis
-利用Navicat导出数据 -> data.txt，清理格式（导出来的数据里面各种 " 符号），全局替换即可
-> cat data.txt | redis-cli -h 127.0.0.1 -p 6379 -a 123456  --pipe
-
-81921条数据 一瞬间导入完成
-注： RESP协议要求，不要有莫名其妙的字符，注意文件类型是Unix编码类型！
-
-
-####实战2：
-# 1、编写data.txt内容如下：
-	SET Key0 Value0
-	SET Key1 Value1
-	...
-	SET KeyN ValueN
-
-	# 或者是 RESP协议内容 - 注意文件编码！！！
-
-	*8
-	$5
-	HMSET
-	$8
-	person:1
-	$2
-	id
-	$1
-	1
-
-# 2、执行命令
-> cat data.txt | redis-cli --pipe
-
-实战(远程redis服务端)：
-> cat redis_commands.txt | redis-cli -h 192.168.127.130 -p 6379 -a password --pipe
 
 
 ****************************布隆过滤器(Redis 实现)****************************
@@ -461,7 +397,11 @@ slow-max-len 存放的最大条数
 
 
 
-****************************如何提高Redis处理效率？****************************
+****************************Redis大批量数据插入(管道技术pipe)****************************
+链接：https://www.cnblogs.com/PatrickLiu/p/8548580.html
+问：reids如何做大量数据插入？
+	Redis2.6开始redis-cli支持一种新的被称之为pipe mode的新模式用于执行大量数据插入工作。
+
 描述：
 	基于jedis的批量操作pipelined.
 	pipelined 实际是封装过一层的指令集 ->  实际应用的还是单条指令，但是节省了网络传输开销（服务端到Redis环境的网络开销）
@@ -477,15 +417,70 @@ pipelined.sync();
 jedis.close();
 
 
+####实战1：
+# 1、准备一个table
+create database  if not exists `test`;
+use `test`;
+CREATE TABLE `person` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) NOT NULL,
+  `age` varchar(200) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+# 2、插入七八万条数据(略)
+
+# 3、SQL查询，并将其转化为RESP协议命令(Linux版本：不要在window环境试)
+SELECT CONCAT(
+   "*8\r\n",
+   '$',LENGTH(redis_cmd),'\r\n',redis_cmd,'\r\n',
+   '$',LENGTH(redis_key),'\r\n',redis_key,'\r\n',
+   '$',LENGTH(hkey1),'\r\n',hkey1,'\r\n','$',LENGTH(hval1),'\r\n',hval1,'\r\n',
+   '$',LENGTH(hkey2),'\r\n',hkey2,'\r\n','$',LENGTH(hval2),'\r\n',hval2,'\r\n',
+   '$',LENGTH(hkey3),'\r\n',hkey3,'\r\n','$',LENGTH(hval3),'\r\n',hval3,'\r'
+)FROM(
+   SELECT 'HMSET' AS redis_cmd,
+   concat_ws(':','person', id) AS redis_key,
+   'id' AS hkey1, id AS hval1,
+   'name' AS hkey2, name AS hval2,
+   'age' AS hkey3, age AS hval3
+   From person
+)AS t
+
+# 4、如果是线上数据库+线上Linux -> 把sql存到order.sql，再执行
+mysql -uroot -p123456 test --default-character-set=utf8 --skip-column-names --raw < order.sql  
+|
+redis-cli -h 127.0.0.1 -p 6379 -a 123456 --pipe
+
+# 5、本地数据库+线上redis
+利用Navicat导出数据 -> data.txt，清理格式（导出来的数据里面各种 " 符号），全局替换即可
+> cat data.txt | redis-cli -h 127.0.0.1 -p 6379 -a 123456  --pipe
+
+81921条数据 一瞬间导入完成
+注：RESP协议要求，不要有莫名其妙的字符，注意文件类型是Unix编码类型！
 
 
+####实战2：
+# 1、编写data.txt内容如下：
+	--两种格式： SET "key1" "value1" 和 SET key1 value1 都支持
+	SET "key4" "value4"
+	SET "key5" "value5"
+	SET "key6" "value6"
 
+	# 或者是 RESP协议内容 - 注意文件编码！！！
+	*8
+	$5
+	HMSET
+	$8
+	person:1
+	$2
+	id
+	$1
+	1
 
+# 2、执行命令
+> cat data.txt | /usr/local/redis/bin/redis-cli --pipe
 
-
-
-
-
-
-
+实战(远程redis服务端)：
+> cat redis_commands.txt | redis-cli -h 192.168.127.130 -p 6379 -a password --pipe
 

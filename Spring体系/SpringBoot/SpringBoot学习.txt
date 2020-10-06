@@ -285,11 +285,23 @@ public class TMydataApplication extends SpringBootServletInitializer {
 
 
 eclipse打包springboot项目：
+	前提：添加maven插件
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
 	项目右键 -> Run as -> Maven build -> 在goals中输入“clean package”->点击run
 	在控制台输出后“[INFO] BUILD SUCCESS”后，查看本项目的target包，会出现一个xxx.jar文件。
-	运行xxx.jar项目：java -jar xxx.jar
+	运行xxx.jar项目：java -jar xxx.jar &
 	在浏览器输入http://localhost:8080能看到页面输出。
 
+
+http://192.126.231.128:8080/whiletrue/test
 
 
 json的日期格式化：

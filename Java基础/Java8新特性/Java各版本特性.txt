@@ -74,14 +74,16 @@
 lambda表达式
 
 stream流
+	stream的并行操作原理？stream并行的线程池从哪里来的？
+		并行流ForkJoinPool通过静态ForkJoinPool.commonPool()方法使用公共可用的流，线程数取决于CPU核数
 
 方法引用：
 	概念：只需要使用方法的名字，而具体调用交给函数式接口（需要和Lambda表达式配合使用）
 	分类：
-		1、构造器方法引用，调用默认构造器。格式为Class::new
-		2、静态方法引用。格式为Class::static_method
-		3、类普通方法引用，方法不能带参数。格式为Class::method
-		4、实例方法引用。格式为instance::method
+		--方法引用，一般通过双冒号::来表示
+		1）静态方法引用，通过类名::静态方法名，如 Integer::parseInt
+		2）实例方法引用，通过实例对象::实例方法，如 str::substring
+		3）构造方法引用，通过类名::new，如 User::new
 	实例1：
 		List<Integer> list = Arrays.asList(1, 2, 3, 4);
 		list.forEach(i -> System.out.print(i));

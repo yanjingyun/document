@@ -1,0 +1,391 @@
+
+
+
+大屏展现组件图：
+  http://datav.jiaminghi.com/
+  http://www.dengguobi.com/
+
+
+title添加图片：
+  import titleBarPng from '@/assets/chart/large_15.png'
+  var option = {
+	...
+	title: [{
+	  text: '{a|年龄中位数\n}{g|" "\n}{b|' + data[0].C1 + '岁}',
+      top: '10%',
+      left: '15%',
+      textStyle: {
+        lineHeight: 16,
+        rich: {
+          a: {
+            fontSize: vm.$echarts.$fontSize(0.16),
+            fontWeight: 'bolder',
+            color: '#FFF'
+          },
+          g: {
+            height: 3,
+            width: 80,
+            backgroundColor: {
+              image: titleBarPng
+            }
+          },
+          b: {
+            fontSize: vm.$echarts.$fontSize(0.20),
+            align: 'center',
+            fontWeight: 'bolder',
+            color: '#FFFF00'
+          }
+        }
+      }
+	}]
+  }
+
+
+
+自定义颜色：
+  Math.floor(Math.random()*0xffffff).toString(16)
+
+饼图 label换行居中：
+  var seriesObj = [{
+    type: 'pie',
+    clockWise: false,
+    radius: [50, 80],
+    hoverAnimation: false,
+    label: {
+      show: true,
+      position: 'outside',
+      color: '#ddd',
+      formatter: function(item) {
+        return item.name ? (item.name + '\n{white|占比' + item.data.C2 + '%}') : ''
+      },
+      rich: {
+        white: {
+          color: '#ddd',
+          align: 'center',
+          padding: [3, 0]
+        }
+      }
+    },
+    labelLine: {
+      length: 10,
+      length2: 10,
+      show: true,
+      color: '#00ffff'
+    },
+    data: seriesData
+  }]
+
+title rich设置：
+    title: [{
+      text: '{a|境外人员数量:}{b|(' + data[1][0].C1 + '人)}',
+      textStyle: {
+        rich: {
+          a: {
+            fontSize: vm.$echarts.$fontSize(0.14),
+            fontWeight: 'bolder',
+            color: '#FFF'
+          },
+          b: {
+            fontSize: vm.$echarts.$fontSize(0.14),
+            fontWeight: 'bolder',
+            color: '#02B5C4'
+          }
+        }
+      },
+      left: '5%'
+    }],
+
+柱状图颜色渐变：
+  itemStyle: {
+    normal: {
+      color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+        offset: 0,
+        color: '#A9A9A9' // 0% 处的颜色
+      }, {
+        offset: 1,
+        color: 'rgba(0,77,167,1)' // 100% 处的颜色
+      }], false),
+      barBorderRadius: [30, 30, 30, 30],
+      shadowColor: 'rgba(0,160,221,1)',
+      shadowBlur: 4
+    }
+  },
+
+
+
+规定坐标显示：
+  在series中添加name和encode属性；
+  如:
+    series: [
+      {
+        name: '育龄妇女占比',
+        type: 'line',
+        yAxisIndex: 1,
+        encode: {
+          x: 'ITEM_NAME',
+          y: 'C4'
+        }
+      }
+    ]
+
+grid和legend重合问题：
+  grid: [{
+    top: '20%', // 解决与legend重合问题
+    left: 30,
+    right: '26%' //右边显示文本框，需要留点空余位置
+  }],
+
+指定y轴：
+  series: [{
+    type: 'bar'
+  },
+  {
+    type: 'line',
+    yAxisIndex: 1
+  }]
+
+指定坐标：
+  series: [{
+    type: 'bar',
+    encode: {
+      x: 'ITEM_NAME',
+      y: 'C1'
+    }
+  }]
+  
+
+y轴虚线：
+  splitLine: {
+    lineStyle: {
+      type: 'dashed'
+    }
+  }
+
+
+给右边图加小标题：
+  描述：左右边各有一个图表，右边的图表需要添加小标题
+  title: {
+    text: '性别比构成',
+    left: '85%',
+    top: '30%',
+    textStyle: {
+      fontSize: 18
+    }
+  },
+
+
+显示两个图：
+  grid: [{right: '40%'}, {left: '60%'}]
+
+tooltip 可在具体的series中配置。
+  详情：https://www.echartsjs.com/zh/option.html#series-line.tooltip
+  显示两个图时，第二个图需要这样设置。series: [..., {tooltip: {trigger: 'item'}}]
+
+
+tooltip --鼠标移上去显示提示信息
+	tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+            type: 'cross',
+            crossStyle: {
+                color: '#999'
+            }
+        }
+    }
+
+dataset 数据集
+实例：
+var option = {
+  tooltip: {
+    trigger: 'axis'
+  },
+  legend: {},
+  dataset: {
+    dimensions: [{
+      name: 'ITEM_NAME',
+      displayName: '行政区划'
+    },
+    {
+      name: 'C1',
+      displayName: '育龄妇女',
+      x_unit: '人'
+    },
+    {
+      name: 'C3',
+      displayName: '非育龄妇女',
+      x_unit: '人'
+    },
+    {
+      name: 'C4',
+      displayName: '育龄妇女占比',
+      x_unit: '%'
+    }
+    ],
+    source: [
+      { 'ITEM_NAME': '广州市本级', 'C1': 5, 'C2': 11, 'C3': 6, 'C4': 50 },
+      { 'ITEM_NAME': '荔湾区', 'C1': 6, 'C2': 20, 'C3': 12, 'C4': 92 },
+      { 'ITEM_NAME': '越秀区', 'C1': 2, 'C2': 12, 'C3': 8, 'C4': 85 }
+    ]
+  },
+  xAxis: {
+    type: 'category',
+    axisLabel: {
+      interval: 0,
+      rotate: -25
+    }
+  },
+  yAxis: [{
+    type: 'value',
+    name: '单位(人)'
+  }, {
+    type: 'value',
+    name: '单位(%)'
+  }],
+  series: [
+    { type: 'bar' },
+    { type: 'bar' },
+    {
+      type: 'line',
+      yAxisIndex: 1
+    }
+  ],
+  color: ['#ff7f50', '#87cefa', '#da70d6', '#32cd32', '#ff6347', '#6495ed', '#ba55d3', '#32cd32']
+}
+
+
+echart中timeline使用（配合dataset）：
+	export function getChartOption(vm, data) {
+	  var timelineData = data[1].map(item => item.ITEM_CODE2)
+	  var myData = []
+	  data[0].forEach(element => {
+	    for (let i = 0; i < timelineData.length; i++) {
+	      if (element.ITEM_CODE2 === timelineData[i]) {
+	        if (!myData[i]) {
+	          myData[i] = []
+	        }
+	        myData[i].push(element)
+	      }
+	    }
+	  })
+
+	  var titleData = data[2][1]
+
+	  var optionsArr = []
+	  timelineData.forEach((element, index) => {
+	    optionsArr.push({ dataset: { source: myData[index] }})
+	  })
+	  console.log('optionsArr:', optionsArr)
+	  var option = {
+	    baseOption: {
+	      timeline: {
+	        axisType: 'category',
+	        autoPlay: true,
+	        playInterval: 2000,
+	        data: timelineData
+	      },
+	      title: [{
+	        text: titleData.ITEM_NAME1 + '数据:',
+	        textStyle: {
+	          color: '#000',
+	          fontSize: vm.$echarts.$fontSize(0.18),
+	          fontWeight: 'bolder'
+	        },
+	        left: '86%',
+	        top: '16%'
+	      }, {
+	        text: '占位',
+	        backgroundColor: '#B6A2DE',
+	        borderRadius: [5, 5, 5, 5],
+	        textStyle: {
+	          color: '#B6A2DE',
+	          fontSize: vm.$echarts.$fontSize(0.13)
+	        },
+	        left: '87%',
+	        top: '22%'
+	      }, {
+	        text: titleData.C1 + '(人)',
+	        textStyle: {
+	          color: '#B6A2DE',
+	          fontSize: vm.$echarts.$fontSize(0.20),
+	          fontWeight: 'bolder'
+	        },
+	        left: '90%',
+	        top: '22%'
+	      }],
+	      tooltip: {
+	        trigger: 'axis',
+	        axisPointer: {
+	          type: 'shadow'
+	        },
+	        formatter: function(params, ticket, callback) {
+	          return vm.$echarts.$getSeriesText(params, option.baseOption.dataset.dimensions)
+	        },
+	        textStyle: {
+	          align: 'left'
+	        }
+	      },
+	      legend: {},
+	      grid: [{
+	        right: '17%',
+	        bottom: '80px'
+	      }],
+	      xAxis: {
+	        type: 'category',
+	        axisLabel: {
+	          interval: 0,
+	          rotate: -25
+	        }
+	      },
+	      yAxis: [{
+	        type: 'value',
+	        name: '单位(人)',
+	        splitLine: {
+	          show: false
+	        },
+	        minInterval: 1
+	      },
+	      {
+	        type: 'value',
+	        name: '单位(%)',
+	        splitLine: {
+	          show: false
+	        }
+	      }],
+	      dataset: {
+	        dimensions: [{
+	          name: 'ITEM_NAME1',
+	          displayName: '行政区划'
+	        },
+	        {
+	          name: 'C1',
+	          displayName: '白天聚集人数',
+	          x_unit: '人'
+	        },
+	        {
+	          name: 'C2',
+	          displayName: '日常驻人口数',
+	          x_unit: '人'
+	        },
+	        {
+	          name: 'C3',
+	          displayName: '夜晚聚集人数',
+	          x_unit: '人'
+	        },
+	        {
+	          name: 'C4',
+	          displayName: '夜常驻人口数',
+	          x_unit: '人'
+	        }],
+	        source: myData[0]
+	      },
+	      series: [
+	        { type: 'bar' },
+	        { type: 'bar' },
+	        { type: 'bar' },
+	        { type: 'bar' }
+	      ]
+	    },
+	    options: optionsArr
+	  }
+	  return option
+	}

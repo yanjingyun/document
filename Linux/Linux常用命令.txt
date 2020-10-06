@@ -259,6 +259,7 @@ grep命令
 	-C:后跟一个数字，例如-C2打印符合要求的行以及上下各两行
 	-r:会把目录下面所有的文件全部遍历
 实例：
+	> grep -500 'Exception' ./springboot.log #查看日志的有Exception关键字的前后500行内容
 	> grep -n 'root' 1.txt		#打印包含root的行，并输出行号
 	> grep -n -v 'root' 1.txt 	#打印不包含root的行，并输出行号
 	> grep '[0-9]' 1.txt	#打印包含数字的行

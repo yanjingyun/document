@@ -18,8 +18,10 @@ SQL优化：
 		where子句：从右到左，但条件的顺序对SQL性能没有影响。一般把能使结果最少的条件放在最右边。
 	4.使用表的别名
 	5.用exists替代in，用not exists替代not in，因为not in对子查询中的表执行一个全表遍历
-	如：把a表中存在但在b表中不存在的数据插入的b表中
+		如：把a表中存在但在b表中不存在的数据插入的b表中
 		insert into b select * from a where not exists (select * from b where id=a.id)
+		--a表有id和name两个字段，name可能有重复，如何去掉这些重复记录
+		delete from a where id not in (select min(id) from a group by name)
 	6.用union all替换union
 	7.避免在索引列上使用(is null 或 is not null)，不能用null做索引，任何包含null值的列都将不会被包含在索引中。 
 

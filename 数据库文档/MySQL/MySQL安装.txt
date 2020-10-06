@@ -41,6 +41,10 @@
 	> mysql -u root -p #使用root的临时密码登录
 	> alter user 'root'@'localhost' identified by 'root' #修改root密码
 
+5.设置开机自启
+	> 进入MySQL的bin目录(D:\devs\mysql-8.0.15-winx64\bin)
+	> mysqld -nt --install
+
 
 执行 mysqld --initialize 报错：
 	报错信息为：
