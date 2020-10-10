@@ -53,6 +53,7 @@ com.yjy.test08_dead_lock //测试死锁
 
 
 com.yjy.test09_countdownlatch //测试CountDownLatch同步类
+	CountDownLatchDemo //有5000个任务需要处理，我们可以分5个子任务
 	com.yjy.test02_communication.CountDownLatchDemo //教练训练运动员，教练需要等待所有运动员就位才开始
 	Customer_Waiter_OrderDishes //顾客点菜
 		张三、李四、王五约好一起去吃饭，等到所有人都到齐了才让服务员上菜；若有一名顾客迟迟未到，饭店都打烊了，因此服务员不能一直等，会设置等待时间。
