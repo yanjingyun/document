@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Test02 {
 	public static void main(String[] args) {
-		test1(); // synchronized方式
+		test1(); // synchronized方式（错误）
 		test2(); // AtomicInteger方式
 	}
 

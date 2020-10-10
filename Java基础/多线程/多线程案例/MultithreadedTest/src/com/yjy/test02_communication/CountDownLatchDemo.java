@@ -1,6 +1,8 @@
 package com.yjy.test02_communication;
 
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 教练训练运动员，教练需要等待所有运动员就位才开始
@@ -10,7 +12,7 @@ public class CountDownLatchDemo {
 	/**
 	 * 运动员方法，由运动员线程调用
 	 */
-	static class Racer extends Thread {
+	static class Racer implements Runnable {
 		private CountDownLatch countDownLatch;
 		public Racer(CountDownLatch countDownLatch) {
 			this.countDownLatch = countDownLatch;
@@ -19,12 +21,15 @@ public class CountDownLatchDemo {
 		public void run() {
 			String name = Thread.currentThread().getName();
 			System.out.println(name + "正在准备...");
+			int sleepTime = 0;
 			try {
-				Thread.sleep(1000);
+				Random random = new Random();
+				sleepTime = random.nextInt(2000) + 1000;
+				Thread.sleep(sleepTime);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			System.out.println(name + "准备完毕，countDownLatch减1...");
+			System.out.println(name + "准备完毕，准备时间为" + sleepTime + "ms");
 			countDownLatch.countDown();
 		}
 	}
@@ -32,7 +37,7 @@ public class CountDownLatchDemo {
 	/**
 	 * 教练方法，由运动员线程调用
 	 */
-	static class Coach extends Thread {
+	static class Coach implements Runnable {
 		
 		private CountDownLatch countDownLatch;
 		public Coach(CountDownLatch countDownLatch) {
@@ -44,29 +49,28 @@ public class CountDownLatchDemo {
 			String name = Thread.currentThread().getName();
 			System.out.println(name + "等待所有运动员准备...");
 			try {
-				countDownLatch.await();
+				// 方式1：一直等待直到所有返回
+//				countDownLatch.await(); 
+				
+				// 方式2：等待2秒，超时则直接返回flase
+				boolean flag = countDownLatch.await(2, TimeUnit.SECONDS); //
+				if (flag) {
+					System.out.println("所有运动员已就绪，" + name + "开始训练！");
+				} else {
+					System.out.println("有运动员的准备时间超过2秒，教练不耐烦了！");
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
-			}
-			System.out.println("所有运动员已就绪，" + name + "开始训练！");
+			} 
 		}
 	}
 	
 	public static void main(String[] args) {
 		CountDownLatch countDownLatch = new CountDownLatch(3); //设置等待的运动员3个
-		Racer racer1 = new Racer(countDownLatch);
-		racer1.setName("运动员1");
-		racer1.start();
-		Racer racer2 = new Racer(countDownLatch);
-		racer2.setName("运动员1");
-		racer2.start();
-		Racer racer3 = new Racer(countDownLatch);
-		racer3.setName("运动员1");
-		racer3.start();
-
-		Coach coach = new Coach(countDownLatch);
-		coach.setName("教练");
-		coach.start();
+		new Thread(new Coach(countDownLatch), "教练").start();
+		
+		new Thread(new Racer(countDownLatch), "运动员1").start();
+		new Thread(new Racer(countDownLatch), "运动员2").start();
+		new Thread(new Racer(countDownLatch), "运动员3").start();
 	}
-	
 }

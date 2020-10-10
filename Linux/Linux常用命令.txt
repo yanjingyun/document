@@ -163,39 +163,10 @@ visualvm是一款很不错的gui调试工具，可以远程登录主机以便访
 
 
 ****************************实战****************************
-cpu飙升:找出最耗cpu的线程并定位代码 || 查看占用CPU最高的进程
-	描述：在线上有时候某个时刻，可能会出现应用某个时刻突然cpu飙升的问题。对此我们应该熟悉一些指令，快速排查对应代码。
-	> top #1.找到最耗cpu的进程PID
-	> top -H -p  pid #2.通过pid得到该进程最耗cpu的线程
-	> printf "%x\n" 2012 #3.得到线程id为2012其对应的十六进制7dc
-	4.过滤指定线程，打印堆栈信息
-		--打印进程堆栈，并通过线程id，过滤得到线程堆栈信息
-		语法：jstack pid | grep threadPid
-		例如：jstack 15325 | grep 7dc -C5 --color
 
 
-查看耗cpu的线程：
-	top -查看最耗费cpu的进程
-	top -H -p pid #查看具体的线程信息
-	jstack pid | grep -A 10 [线程的16进制]
 
-线程死锁
-	描述：比如说我们现在已经有一个线程死锁的程序，导致某些操作waiting中
-	1.查找Java进程：top
-	2.查看Java进程的线程快照信息：
-		--从输出信息可以看到，有一个线程死锁发生，并且指出了那行代码出现的。如此可以快速排查问题
-		jstack -l pid
 
-Java死锁排查：
-	详情：https://www.cnblogs.com/aflyun/p/9194104.html
-	1.运行死锁程序
-	2.命令窗口使用ps+jstack
-	> ps -ef | grep java #获取pid，即Java进程ID
-	> jstack -l pid #查看线程，能发现死锁
-	> JConsole #打开图形化监控工具
-	> jvisualvm #打开图形化监控工具
-
-线上发送频繁full gc如何处理? CPU 使用率过高怎么办?
 
 Thread dump文件如何分析？
 	dump文件用途、生成、分析

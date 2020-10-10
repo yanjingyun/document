@@ -5,10 +5,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Lock_Condition_Demo {
-	static class SignalThread extends Thread {
+	static class SignalRunnable implements Runnable {
 		private final Lock lock;
 		private final Condition newCondition;
-		public SignalThread(Lock lock, Condition newCondition) {
+		public SignalRunnable(Lock lock, Condition newCondition) {
 			this.lock = lock;
 			this.newCondition = newCondition;
 		}
@@ -31,10 +31,10 @@ public class Lock_Condition_Demo {
 		}
 	}
 
-	static class AwaitThread extends Thread {
+	static class AwaitRunnable implements Runnable {
 		private final Lock lock;
 		private final Condition newCondition;
-		public AwaitThread(Lock lock, Condition newCondition) {
+		public AwaitRunnable(Lock lock, Condition newCondition) {
 			this.lock = lock;
 			this.newCondition = newCondition;
 		}
@@ -57,9 +57,7 @@ public class Lock_Condition_Demo {
 	public static void main(String[] args) {
 		Lock lock = new ReentrantLock();
 		Condition newCondition = lock.newCondition();
-		AwaitThread t1 = new AwaitThread(lock, newCondition);
-		SignalThread t2 = new SignalThread(lock, newCondition);
-		t1.start();
-		t2.start();
+		new Thread(new AwaitRunnable(lock, newCondition)).start();
+		new Thread(new SignalRunnable(lock, newCondition)).start();
 	}
 }

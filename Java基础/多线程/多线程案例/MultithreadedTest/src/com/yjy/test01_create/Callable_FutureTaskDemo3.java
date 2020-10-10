@@ -19,12 +19,12 @@ public class Callable_FutureTaskDemo3 {
 		
 		@Override
 		public Integer call() throws Exception {
-			System.out.println(Thread.currentThread().getName() + "开始计算：begin=" + begin + "，end=" + end);
+			System.out.println(Thread.currentThread().getName() + "开始计算：" + begin + "+" + end + "=?");
 			int sum = 0;
 			for (int i = begin; i <= end; i++) {
 				sum += i;
 			}
-			System.out.println(Thread.currentThread().getName() + "结束计算：begin=" + begin + "，end=" + end);
+			System.out.println(Thread.currentThread().getName() + "结束计算：" + begin + "+" + end + "=?");
 			return sum;
 		}
 	}

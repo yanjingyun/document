@@ -227,7 +227,17 @@ Socket套接字：
 	内存映射文件首先将外存上的文件映射到内存中的一块连续区域，被当成一个字节数组进行处理，读写操作直接对内存进行操作，而后再将内存区域重新映射到外存文件，这就节省了中间频繁的对外存进行读写的时间，大大降低了读写时间。
 
 
-
+常见异常类：
+	1.MissingServletRequestParameterException：缺少参数子类。
+	2.HttpMessageNotReadableException：参数解析失败。
+	3.MethodArgumentNotValidException：当对用@Valid注释的参数进行验证失败时，将引发异常。
+	4.BindException：参数绑定错误并且是致命错误的时候。
+	5.ConstraintViolationException：违反约束条件。
+	6.ValidationException：基础异常中所有bean验证异常的问题。
+	7.NoHandlerFoundException：默认情况下，当DispatcherServlet找不到请求的处理程序时，它将发送404响应。但是，如果将其属性“ throwExceptionIfNoHandlerFound” *设置为 true，则会引发此异常，并且可以使用配置的HandlerExceptionResolver进行处理。
+	8.HttpRequestMethodNotSupportedException：不支持的请求方式
+	9.HttpMediaTypeNotSupportedException：当客户端发布、放置或请求处理程序不支持的类型。
+	10.DuplicateKeyException：当试图插入或更新数据导致违反主键或惟一约束时引发异常。
 
 
 

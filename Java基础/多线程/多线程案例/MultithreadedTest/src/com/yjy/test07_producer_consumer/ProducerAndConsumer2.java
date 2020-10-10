@@ -8,15 +8,6 @@ import java.util.concurrent.BlockingQueue;
  */
 public class ProducerAndConsumer2 {
 
-	// 定义阻塞队列大小
-	private static final int maxSize = 5;
-
-	public static void main(String[] args) {
-		ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(maxSize);
-		new Thread(new Productor(queue)).start();
-		new Thread(new Customer(queue)).start();
-	}
-
 	static class Productor implements Runnable {
 		private BlockingQueue<Integer> queue;
 		private int count = 1;
@@ -58,5 +49,12 @@ public class ProducerAndConsumer2 {
 				}
 			}
 		}
+	}
+	
+	public static void main(String[] args) {
+		int maxSize = 5; // 定义阻塞队列大小
+		ArrayBlockingQueue<Integer> queue = new ArrayBlockingQueue<Integer>(maxSize);
+		new Thread(new Productor(queue)).start();
+		new Thread(new Customer(queue)).start();
 	}
 }

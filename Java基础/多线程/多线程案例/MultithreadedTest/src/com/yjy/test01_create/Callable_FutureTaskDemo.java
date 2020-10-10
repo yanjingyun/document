@@ -21,9 +21,14 @@ public class Callable_FutureTaskDemo {
 			}
 		});
 		
-		ExecutorService service = Executors.newFixedThreadPool(1);
-		service.submit(futureTask);
+		// 创建线程方式执行任务
+//		Thread thread = new Thread(futureTask);
+//		thread.start();
+//		System.out.println("结果为：" + futureTask.get());
 		
+		// 线程池方式执行任务
+		ExecutorService service = Executors.newFixedThreadPool(1);
+		service.execute(futureTask);
 		System.out.println("结果为：" + futureTask.get());
 	}
 }

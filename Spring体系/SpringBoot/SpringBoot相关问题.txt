@@ -102,6 +102,9 @@ Starter的工作流程：
 	在添加了该插件之后，当运行“mvn package”进行打包时，会打包成一个可以直接运行的JAR文件，使用"java -jar xx.jar"命令就可以直接运行
 	附：Linux环境下“java -jar xx.jar”运行SpringBoot项目，按下“ctrl+c”或关闭终端窗口程序就会被终止，可通过“java -jar xx.jar &”让程序在后台保持运行不被关闭。
 
+	# 指定jvm参数
+	> java -Xms800m -Xmx800m -XX:PermSize=256m -XX:MaxPermSize=512m -XX:MaxNewSize=512m -jar 你的jar包
+
 问：SpringBoot自动重装我的应用程序？
 	使用spring-boot-devtools依赖，启动后(Run as)调整controller方法的参数会自动重新加载该类。
 	如Controller类中getUser()在调整成getUser(Integer id)时无需重新启动，新增一个方法时也无需重新启动项目。

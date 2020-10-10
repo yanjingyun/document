@@ -18,7 +18,7 @@ public class SubAndThreadLocalTest {
 			public void run() {
 				t1.set("父线程私有变量");
 				System.out.println("父线程" + Thread.currentThread().getName() + ":" + t1.get());
-				new Thread(new Runnable() {
+				new Thread(new Runnable() { // 创建子线程
 					@Override
 					public void run() {
 						System.out.println("子线程" + Thread.currentThread().getName() + ":" + t1.get());
@@ -27,6 +27,5 @@ public class SubAndThreadLocalTest {
 				}).start();
 			}
 		}).start();
-
 	}
 }

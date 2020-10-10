@@ -8,27 +8,20 @@ import java.util.concurrent.BlockingQueue;
  * 模拟多个生产者和多个消费者：ArrayBlockingQueue实现
  */
 public class ProducerAndConsumer {
-	
-	public static void main(String[] args) {
-		BlockingQueue<Integer> messageQueue = new ArrayBlockingQueue<Integer>(10);
-		// 模拟一个生成者和两个消费者
-		new Thread(new Producer(messageQueue)).start();
-		new Thread(new Consumer(messageQueue)).start();
-		new Thread(new Consumer(messageQueue)).start();
-	}
 
 	static class Producer implements Runnable {
 		private BlockingQueue<Integer> messageQueue;
+
 		public Producer(BlockingQueue<Integer> messageQueue) {
 			this.messageQueue = messageQueue;
 		}
-		
+
 		@Override
 		public void run() {
-			while(true) {
+			while (true) {
 				try {
 					Thread.sleep(500);
-					int n = new Random().nextInt(10)+1;
+					int n = new Random().nextInt(10) + 1;
 					System.out.println(Thread.currentThread().getName() + "生产产品数：" + n);
 					messageQueue.put(n);
 				} catch (InterruptedException e) {
@@ -37,16 +30,17 @@ public class ProducerAndConsumer {
 			}
 		}
 	}
-	
+
 	static class Consumer implements Runnable {
 		private BlockingQueue<Integer> messageQueue;
+
 		public Consumer(BlockingQueue<Integer> messageQueue) {
 			this.messageQueue = messageQueue;
 		}
-		
+
 		@Override
 		public void run() {
-			while(true) {
+			while (true) {
 				try {
 					if (!messageQueue.isEmpty()) {
 						Thread.sleep(500);
@@ -58,5 +52,13 @@ public class ProducerAndConsumer {
 				}
 			}
 		}
+	}
+
+	public static void main(String[] args) {
+		BlockingQueue<Integer> messageQueue = new ArrayBlockingQueue<Integer>(10);
+		// 模拟一个生成者和两个消费者
+		new Thread(new Producer(messageQueue)).start();
+		new Thread(new Consumer(messageQueue)).start();
+		new Thread(new Consumer(messageQueue)).start();
 	}
 }

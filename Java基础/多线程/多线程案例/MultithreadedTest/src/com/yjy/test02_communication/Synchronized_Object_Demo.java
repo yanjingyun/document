@@ -1,10 +1,10 @@
 package com.yjy.test02_communication;
 
 public class Synchronized_Object_Demo {
-	static class NotifyThread extends Thread {
+	static class NotifyRunnable implements Runnable {
 		private final Object lock;
 
-		public NotifyThread(Object lock) {
+		public NotifyRunnable(Object lock) {
 			this.lock = lock;
 		}
 
@@ -23,10 +23,10 @@ public class Synchronized_Object_Demo {
 		}
 	}
 
-	static class WaitThread extends Thread {
+	static class WaitRunnable implements Runnable {
 		private final Object lock;
 
-		public WaitThread(Object lock) {
+		public WaitRunnable(Object lock) {
 			this.lock = lock;
 		}
 
@@ -46,9 +46,7 @@ public class Synchronized_Object_Demo {
 
 	public static void main(String[] args) {
 		Object lock = new Object();
-		WaitThread t1 = new WaitThread(lock);
-		NotifyThread t2 = new NotifyThread(lock);
-		t1.start();
-		t2.start();
+		new Thread(new WaitRunnable(lock), "线程1").start();
+		new Thread(new NotifyRunnable(lock), "线程2").start();
 	}
 }
