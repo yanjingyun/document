@@ -1,13 +1,16 @@
-package com.yjy.test_nio;
+package com.yjy.test01_bio;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class QQServer {
-
+/**
+ * Serverç«¯
+ */
+public class BioServer {
 	static byte[] bytes = new byte[1024];
+
 	public static void main(String[] args) {
 		ServerSocket serverSocket = null;
 		try {
@@ -15,12 +18,13 @@ public class QQServer {
 			serverSocket.bind(new InetSocketAddress(8080));
 
 			while (true) {
-				// ×èÈû µÈ´ıÁ¬½Ó
+				// é˜»å¡ ç­‰å¾…è¿æ¥
 				Socket socket = serverSocket.accept();
-				// ×èÈû read¶ÁÁË¶àÉÙ×Ö½Ú
+				System.out.println("è·å–å®¢æˆ·ç«¯è¿æ¥");
+				// é˜»å¡ readè¯»äº†å¤šå°‘å­—èŠ‚
 				socket.getInputStream().read(bytes);
 				String content = new String(bytes);
-				System.out.println(content);
+				System.out.println("ä»æœåŠ¡ç«¯è¯»å–å†…å®¹ï¼š" + content);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

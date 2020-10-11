@@ -1,0 +1,114 @@
+*****************************************************
+Reactor设计模式
+概念：
+	反应器设计模式(Reactor pattern)是一种为处理并发服务请求，并将请求提交到一个或者多个服务处理程序的事件设计模式。
+	当客户端请求抵达后，服务处理程序使用多路分配策略，由一个非阻塞的线程来接收所有的请求，然后派发这些请求至相关的工作线程进行处理。 
+	对于Reactor模式，可以将其看做由两部分组成，一部分是由Boss组成，另一部分是由worker组成。Boss就像老板一样，主要是拉活儿、谈项目，一旦Boss接到活儿了，就下发给下面的work去处理。
+Reactor模式主要包含下面几部分内容：
+	1、初始事件分发器(Initialization Dispatcher)：用于管理Event Handler，定义注册、移除EventHandler等。它还作为Reactor模式的入口调用Synchronous Event Demultiplexer的select方法以阻塞等待事件返回，当阻塞等待返回时，根据事件发生的Handle将其分发给对应的Event Handler处理，即回调EventHandler中的handle_event()方法
+	2、同步（多路）事件分离器(Synchronous Event Demultiplexer)：无限循环等待新事件的到来，一旦发现有新的事件到来，就会通知初始事件分发器去调取特定的事件处理器。
+	3、系统处理程序(Handles)：操作系统中的句柄，是对资源在操作系统层面上的一种抽象，它可以是打开的文件、一个连接(Socket)、Timer等。由于Reactor模式一般使用在网络编程中，因而这里一般指Socket Handle，即一个网络连接（Connection，在Java NIO中的Channel）。这个Channel注册到Synchronous Event Demultiplexer中，以监听Handle中发生的事件，对ServerSocketChannnel可以是CONNECT事件，对SocketChannel可以是READ、WRITE、CLOSE事件等。
+	4、事件处理器(Event Handler)： 定义事件处理方法，以供Initialization Dispatcher回调使用。
+优点
+	1）响应快，不必为单个同步时间所阻塞，虽然Reactor本身依然是同步的；
+	2）编程相对简单，可以最大程度的避免复杂的多线程及同步问题，并且避免了多线程/进程的切换开销；
+	3）可扩展性，可以方便的通过增加Reactor实例个数来充分利用CPU资源；
+	4）可复用性，reactor框架本身与具体事件处理逻辑无关，具有很高的复用性；
+缺点
+	1）相比传统的简单模型，Reactor增加了一定的复杂性，因而有一定的门槛，并且不易于调试。
+	2）Reactor模式需要底层的Synchronous Event Demultiplexer支持，比如Java中的Selector支持，操作系统的select系统调用支持，如果要自己实现Synchronous Event Demultiplexer可能不会有那么高效。
+	3） Reactor模式在IO读写数据时还是在同一个线程中实现的，即使使用多个Reactor机制的情况下，那些共享一个Reactor的Channel如果出现一个长时间的数据读写，会影响这个Reactor中其他Channel的相应时间，比如在大文件传输时，IO操作就会影响其他Client的相应时间，因而对这种操作，使用传统的Thread-Per-Connection或许是一个更好的选择，或则此时使用Proactor模式。
+
+
+
+
+*****************************************************
+Socket编程：
+	socket是操作系统提供的网络编程接口，它封装了对于tcp/ip协议栈的支持，用于进程间的通信。
+	Java提供net包用于socket编程，同时支持想InetAddress、URL等工具类，ServerSocket用于服务端接收tcp请求，Socket用于客户端的请求处理和发送。
+
+TCP/UDP客户端、服务端的线程模型：
+	TCP的客户端和服务端的线程模型：客户端一般使用单线程模型，当有数据到来时启动线程读取，需要写入数据时开启线程进行数据写入。服务端一般使用多线程模型，一个线程负责接收tcp连接请求，每当接收到请求后开启一个线程处理它的读写事件。
+	
+	UDP的客户端和服务端的线程模型：UDP的客户端和服务端比较简单，由于UDP数据包长度是确定的，只需要写入一个固定的缓存和读取一个固定的缓存空间即可。一般使用DatagramPacket包装一个udp数据包，使用DatagramSocket发送。
+
+1、BIO实现Socket通信(有两处阻塞)：
+public class QQServer {
+	static byte[] bytes = new byte[1024];
+	public static void main(String[] args) {
+		ServerSocket serverSocket = null;
+		try {
+			serverSocket = new ServerSocket();
+			serverSocket.bind(new InetSocketAddress(8080));
+
+			while (true) {
+				// 阻塞 等待连接
+				Socket socket = serverSocket.accept();
+				// 阻塞 read读了多少字节 等待用户输入
+				int read = socket.getInputStream().read(bytes);
+				String content = new String(bytes);
+				System.out.println(content);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				serverSocket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
+2、NIO实现Socket通信(处理BIO的两处阻塞)：
+public class QQServerNio {
+	static byte[] bytes = new byte[1024];
+	static List<SocketChannel> list = new ArrayList<>();
+	static ByteBuffer byteBuffer = ByteBuffer.allocate(512);
+	public static void main(String[] args) throws InterruptedException {
+		try {
+			// listener
+			ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+			serverSocketChannel.bind(new InetSocketAddress(8080));
+
+			while (true) {
+				// 阻塞
+				SocketChannel socketChannel = serverSocketChannel.accept();
+				if (socketChannel == null) {
+					Thread.sleep(1000);
+					System.out.println("no connect...");
+					
+					for (SocketChannel client : list) {
+						int k = client.read(byteBuffer);
+						if (k > 0) {
+							byteBuffer.flip();
+							System.out.println(byteBuffer.toString());
+						}
+					}
+				} else {
+					socketChannel.configureBlocking(false);
+					list.add(socketChannel);
+					for (SocketChannel client : list) {
+						int k = client.read(byteBuffer);
+						if (k > 0) {
+							byteBuffer.flip();
+							System.out.println(byteBuffer.toString());
+						}
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
+
+
+大文件读写操作
+	//以空间换取时间。将文件部分或全部映射到内存后进行读写，速度将提高很多。
+	MappedByteBuffer buffer = new RandomAccessFile(filePath); 
+	内存映射文件首先将外存上的文件映射到内存中的一块连续区域，被当成一个字节数组进行处理，读写操作直接对内存进行操作，而后再将内存区域重新映射到外存文件，这就节省了中间频繁的对外存进行读写的时间，大大降低了读写时间。
+
+
+
+

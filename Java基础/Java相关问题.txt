@@ -25,8 +25,6 @@ ASCII值：空格->32 0->48 A->65 a->97
 
 包装类：“==”运算在遇到算术运算时才会自动拆箱，equals()方法不处理数据转型。
 
-黑客能拿到token，怎么防止篡改用户数据？答：过期时间、二次验证、签名。
-
 char[] ch = str.toCharArray();  //将字符串对象中字符转换为一个字符数组
 
 判断是否为空：Assert.notNull(urlPath, "URL path must not be null");
@@ -155,22 +153,9 @@ Java上转型对象：
 	-3）可以将上转型对象强制转换成子类对象
 
 
-对象序列化：
-	参见《Java学习.docx》
-
-
 生成8位不重复的字符串：
 	// 属于commons-lang包的类
 	String randomNumeric = RandomStringUtils.random(8, "abcdefghijklmnopqrstuvwxyz1234567890");
-
-常用工具类(属于commons-lang包的类)：
--1）处理bean对象(BeanUtils)
--2）设置属性(PropertyUtils)
-	--需要自定义工具类，这样就不用在调用方法处捕获抛出的异常
-	// org.apache.commons.beanutils.PropertyUtils
-	User user = new User();
-	PropertyUtils.setProperty(user, "name", "1234"); //field的类型要与value的类型一致！！
-	PropertyUtils.setProperty(user, "birthday", Date.valueOf("1992-04-04"));
 
 
 String.format()方法使用：
@@ -189,7 +174,7 @@ Object类中的方法：
 	hashcode/equal/wait/notify/nofityall/getclass/tostring/finalize
 引申点：
 	wait和sleep区别
-	hashcode存在哪儿（对象头里）
+	hashcode存在哪儿（对象头的Mark Word里）
 
 
 Object的hashCode()和equals()介绍
@@ -202,29 +187,10 @@ Object的hashCode()和equals()介绍
 	--问：为什么要重写hashCode()和equals()方法？
 	在定义类时，希望两对象的某些属性相同时就认为它们是相同的，因此需要重写equals方法。
 	重写需要遵循上面的两个原则，我们重写了equals()方法，也要重写hashCode()方法。
-	很多类都重写了这两个方法,例如String类，包装类。
+	很多类都重写了这两个方法，例如String类，包装类。
 	
 	--针对数据大且快速对比
 	先hashCode()，如果hashCode()相同，再用equal()验证，如果hashCode()都不同，则肯定不同，这样对比的效率就很高了。
-
-
-
-Socket通信编程：
-	-1）服务器创建TCP连接对象
-		ServerSocket server = new ServerSocket(端口号);
-	-2）服务器创建通信的Socket对象
-		Socket s = server.accept();
-	-3）客户端创建通信Socket对象
-		Socket socket = new Socket(服务端ip地址, 端口号)；
-Socket套接字：
-	就是源Ip地址，目标IP地址，源端口号和目标端口号的组合
-
-
-
-大文件读写操作
-	//以空间换取时间。将文件部分或全部映射到内存后进行读写，速度将提高很多。
-	MappedByteBuffer buffer = new RandomAccessFile(filePath); 
-	内存映射文件首先将外存上的文件映射到内存中的一块连续区域，被当成一个字节数组进行处理，读写操作直接对内存进行操作，而后再将内存区域重新映射到外存文件，这就节省了中间频繁的对外存进行读写的时间，大大降低了读写时间。
 
 
 常见异常类：
