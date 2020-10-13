@@ -1,13 +1,31 @@
-AQS原理：
-	1、有一个state变量，初始值为0，假设当前线程为A,每当A获取一次锁，status++. 释放一次，status–-.锁会记录当前持有的线程。
-	2、当A线程拥有锁的时候，status>0. B线程尝试获取锁的时候会对这个status有一个CAS(0,1)的操作，尝试几次失败后就挂起线程，进入一个等待队列。
-	3、如果A线程恰好释放，–-status==0, A线程会去唤醒等待队列中第一个线程，即刚刚进入等待队列的B线程，B线程被唤醒之后回去检查这个status的值，尝试CAS(0,1),而如果这时恰好C线程也尝试去争抢这把锁。
-非公平锁实现：
-	C直接尝试对这个status CAS(0,1)操作，并成功改变了status的值，B线程获取锁失败，再次挂起，这就是非公平锁，B在C之前尝试获取锁，而最终是C抢到了锁。
-公平锁实现：
-	C发现有线程在等待队列，直接将自己进入等待队列并挂起,B获取锁。
+AQS（AbstractQueuedSynchronizer，队列同步器）：
+概述：
+	思路：线程首先会尝试获取锁，若失败则将该线程及等待状态等信息包装成一个Node节点加入到同步队列SyncQueue里。当锁被释放时，唤醒下一个节点尝试获取锁。
+	
+	AQS定义了对双向队列所有的操作，而只开放了tryLock和tryRelease方法给开发者使用，开发者可以根据自己的实现重写tryLock和tryRelease方法，以实现自己的并发功能。
+
+	AQS就是整个Java并发包的核心了，ReentrantLock、CountDownLatch、Semaphore等等都用到了它。
+
+	AQS中采用了LockSupport.park(thread)来挂起线程，用unpark来唤醒线程。
 
 
+结构：
+	三个参数：state、head、tail。state表示同步器状态，head指向队列头节点，tail指向队列尾节点。
+	队列存放Node节点，Node节点是AQS管理的等待队列的节点元素，除head节点外，其它每个节点代表一个正在等待线程的队列。
+	Node参数：prev、next、thread、waitStatus
+	waitStatus有三种值：
+		1表示节点已经取消，即线程可能已经中断，不需要再等待获取锁，在后续代码会中处理跳过waitStatus为1的节点；
+		-1表示当前节点的后置节点代表的线程需要被挂起；
+		-2表示当前线程正在等待的是Condition锁。
+
+基于AQS的锁原理：
+	1、有一个state变量，初始值为0，线程A尝试获取锁并成功，获取一次锁则status++，释放则status–-，锁会记录当前持有的线程。
+	2、当A线程拥有锁的时候(status>0)，B线程尝试获取锁时会对这个status有一个CAS(0,1)的操作，尝试几次失败后就挂起线程，进入一个等待队列。
+	3、如果A线程恰好释放，–-status==0, A线程会去唤醒等待队列中第一个线程，即刚刚进入等待队列的B线程，B线程被唤醒之后回去检查这个status的值，尝试CAS(0,1),而如果这时恰好C线程也尝试去争抢这把锁，有两种情况：
+	1）非公平锁实现：
+		线程A唤醒线程B时，若此时有线程C也在尝试对state进行CAS(0, 1)操作，会与等待队列中的线程B进行抢夺，谁抢到就算谁的。
+	2）公平锁实现：
+		C发现有线程在等待队列，直接将自己进入等待队列并挂起,B获取锁。
 
 AQS(AbstractQueueSynchronizer，队列同步器)概念：
 	它提供了一个FIFO队列，内部维护的是一个FIFO的双向链表。每个Node其实是由线程封装，当线程争抢锁失败后会封装成Node加入到ASQ队列中去。
@@ -37,8 +55,24 @@ AQS的两种功能：
 	release(int arg)：独占式释放同步状态；
 	releaseShared(int arg)：共享式释放同步状态；
 
+state在不同类中含义可能不太一样，如：
+	ReentrantLock中表示AQS的锁是否已被占用，0表示未占用，>=1表示已占用，当大于1时表示被同一线程多次重入锁。
+	CountDownLatch中表示计数器剩余次数，当达到0时唤醒等待线程。
+	Semaphore中表示AQS还可以被获取锁的次数，获取一次就减1，当到达0时，尝试获取的线程将会阻塞。
+
+
+ReentrantLock
+底层：
+	ReentrantLock里面有FairSync和NonfairSync（默认）这两个内部类，它们通过继承AbstractQueuedSynchronizer来实现两种同步互斥方案：公平锁和非公平锁。
+	ReentrantLock中lock和unlock操作，都由FairSync和NonfairSync实际完成。
+使用：
+	ReentrantLock lock = new ReentrantLock();
+	lock.lock(); // 加锁
+	... // 处理逻辑
+	lock.unlock(); // 解锁
+
 
 问：读写锁的实现方式？
-	描述：读写锁有一个读锁和一个写锁，而AQS只提供了一个状态信号量（state），我们要如何通过对一个信号量同时实现读锁和写锁？
+	描述：读写锁有一个读锁和一个写锁，而AQS只提供了一个状态信号量state，我们要如何通过对一个信号量同时实现读锁和写锁？
 	解决：这一点我们可以参考二进制实现；state是int型，而在java中int型的长度是32位；通过将state（int32位）字段分成高16位与低16位，其中高16位表示读锁个数，低16位表示写锁个数
 	了解：int类型是4个字节，一个字节是8位，4*8=32。标准的ASCII码是0~127(7位)，扩展的ASCII码是0~255(8位)

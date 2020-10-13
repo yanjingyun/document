@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -24,12 +25,15 @@ public class NioDemo {
 	public static void main(String[] args) throws Exception {
 		testBuffer(); // 测试缓存Buffer
 		testChannel(); // 测试通道Channel
-		
+
 		// 使用NIO的WatchService监控文件系统变化
 		testWatchService();
-		
+
 		// 利用NIO来遍历文件，基于事件驱动的方式遍历文件
 		testFileVisitor();
+		
+		// 使用MappedByteBuffer进行大文件读写
+		testMappedByteBuffer();
 	}
 
 	// 测试Buffer
@@ -154,5 +158,33 @@ public class NioDemo {
 			}
 		};
 		Files.walkFileTree(Paths.get("D:\\TestTest"), visitor);
+	}
+
+	/**
+	 * 大文件读写操作测试
+	 * 方式1测试：927744，Read time :16ms，Write time :9ms
+	 * 方式2测试：927744，Read time :1ms，Write time :9ms
+	 */
+	private static void testMappedByteBuffer() throws IOException {
+		ByteBuffer byteBuf = ByteBuffer.allocate(1024 * 14 * 1024);
+		byte[] bbb = new byte[14 * 1024 * 1024];
+		FileInputStream fis = new FileInputStream("E:\\ruanjian\\VMware安装包\\CentOS-7-x86_64-Minimal-1804.iso");
+		FileOutputStream fos = new FileOutputStream("E:\\ruanjian\\VMware安装包\\outFile2.txt");
+		FileChannel fc = fis.getChannel();
+		long timeStar = System.currentTimeMillis();// 得到当前的时间
+//		fc.read(byteBuf);// 方式1：读取文件
+		MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size()); //方式2：读取文件	
+		System.out.println("文件大小" + (fc.size() / 1024));
+		long timeEnd = System.currentTimeMillis();// 得到当前的时间
+		System.out.println("Read time :" + (timeEnd - timeStar) + "ms");
+		timeStar = System.currentTimeMillis();
+		fos.write(bbb);// 2.写入
+		// mbb.flip();
+		timeEnd = System.currentTimeMillis();
+		System.out.println("Write time :" + (timeEnd - timeStar) + "ms");
+		fos.flush();
+		
+		fc.close();
+		fis.close();
 	}
 }
