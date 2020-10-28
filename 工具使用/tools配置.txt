@@ -143,7 +143,14 @@ sublime解决中文乱码问题（新）：
 
 	#1.安装Package Control:
 		ctrl + shift + p ，输入 Package Control
+		ctrl + Shift + p 输入install选中Install Package回车就可以安装插件
 	#2.安装成功后，在“工具栏 -> Preferences -> Package Control” 输入 converToUTF8
+
+
+# ctrl+alt+up 快捷键无效
+	原因：可能是“英特尔显卡控制面板”的快捷键影响到了，需要关闭这些软件
+	如何打开英特尔® 显卡控制面板？
+		从 Windows 开始菜单中，搜索英特尔® 图形控制面板。双击英特尔® 图形控制面板图标。
 
 
 ***************************其它*************

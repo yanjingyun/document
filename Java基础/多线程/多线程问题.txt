@@ -2,3 +2,34 @@ volatile和atomic的区别？
 	atomic更多的是提供原子性操作，volatile不保证原子性。
 atomic底层是如何实现的？
 	通过CAS来判断旧值是否与原来的地址的相等，若相等则能设置为新值。
+
+
+整个java.util.concurrent包，按功能划分为：
+	-1）juc-locks锁框架
+	-2）juc-atomic原子类框架
+	-3）juc-sync 同步器框架
+	-4）juc-collections 集合框架
+	-5）juc-scheduling 调度框架
+	-6）juc-fj Fock/Join框架
+
+juc-atomic原子类：
+	JDK1.5之后，引入了java.util.concurrent.atomic工具包，该包提供了许多Java原始/引用类型的映射类，如Atomicinteger、AtomicLong、AtomicBoolean。这些类可以通过一种“无锁算法”，线程安全地操作Integer、Long、Boolean等原始类型。
+
+无锁算法：
+	其底层就是通过Unsafe类实现的一种比较并交换的算法，大致的结构如下：
+	boolean compareAndSet(expectedValue, updateValue);
+	当希望修改的值与expectedValue相同时，则尝试将值更新为updateValue，更新成功返回true，否则返回false。
+
+
+
+juc-sync同步器：
+	-1）倒数计数器（CountDownLatch）
+	作用：CountDownLatch非常实用，我们常常将一个比较大的任务进行拆分，然后开启多个线程来执行，等所有线程都执行完后，再往下执行其它操作；其内部实现了AQS框架。
+	-2）循环栅栏（CyclicBarrier）
+	作用：构造时设定等待线程数，当所有线程都到达栅栏后，栅栏放行；其内部通过ReentrantLock和Condition实现同步。
+	-3）信号量（Semaphore）
+	作用：类似于“令牌”，用于控制共享资源的访问数量；其内部实现了AQS框架。
+	-4）交换器（Exchanger）
+	作用：类似于双向栅栏，用于线程之间的配对和数据交换；其内部根据并发情况有“单槽交换”和“多槽交换”之分。
+	-5）多阶段栅栏（Phaser）
+	作用：相当于CyclicBarrier的升级版，可用于分阶段任务的并发控制执行；其内部比较复杂，支持树形结构，以减少并发带来的竞争。

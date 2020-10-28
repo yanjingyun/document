@@ -35,11 +35,12 @@
 	> d:
 	> cd D:\Program Files\mysql-8.0.15-winx64\bin
 	> mysqld --initialize --console #初始化MySQL，在data目录生成一些数据文件，得到root的临时密码
+		root@localhost: ajlag>w>m2aV
 		root@localhost: %0kgs2!&trkT
 	> mysqld --install #生成MySQL服务		
 	> net start MySQL 	#启动MySQL服务
 	> mysql -u root -p #使用root的临时密码登录
-	> alter user 'root'@'localhost' identified by 'root' #修改root密码
+	> alter user 'root'@'localhost' identified by 'root'; #修改root密码
 
 5.设置开机自启
 	> 进入MySQL的bin目录(D:\devs\mysql-8.0.15-winx64\bin)
