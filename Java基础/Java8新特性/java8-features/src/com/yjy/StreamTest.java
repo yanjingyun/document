@@ -9,68 +9,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.junit.Test;
+
 // 测试jdk1.8新特性：stream
 public class StreamTest {
-
-	public static void main(String[] args) {
-		StreamTest st = new StreamTest();
-//		// 测试最大值、最小值、综合、排列和遍历、过滤
-//		st.test1();
-//
-//		// 测试map相关
-//		st.testToMap(); // 测试collect() -> toMap
-//		st.testToCollection(); // 测试collect() -> toCollection
-//		st.testMapToInt(); // 测试mapToInt()
-//		st.testUserSort(); // 测试map()
-//		st.testUserSort2();
-//		st.testPersonMap();
-//		st.testPersonMap();
-//
-//		// Collectors元素聚合
-//		st.testCollectors(); // 最大值、最小值、求和、平均值
-//		// 映射：先对集合中的元素进行映射，然后再对映射的结果使用Collectors操作
-//		st.testCollection(); // 测试Collectors.mapping
-//
-//		// 分组：两种方式Collectors.groupingBy
-//		// 1）groupingBy(Function<? super T, ? extends K> classifier)
-//		// 参数是Function类型，Function返回值可以是要分组的条件，也可以是要分组的字段。返回的结果是Map，其中key的数据类型为Function体中计算类型，value是List<T>类型，为分组的结果
-//		// 2）partitioningBy 用于分成两组的情况
-//		st.testGroupingBy1();
-//		st.testPartitioningBy(); // 与 st.testGroupingBy1()效果一样
-//		st.testGroupingBy2();
-//		st.testGroupingBy3();
-//		st.testGroupingBy4();
-//
-//		// 测试reduce()
-//		st.testReduce1();
-//		st.testReduce2();
-//		st.testReduce3(); // 累计操作
-		
-		// Stream并行流：流可以并行执行，以增加大量输入元素的运行时性能
-		// 并行流ForkJoinPool通过静态ForkJoinPool.commonPool()方法使用公共可用的流，线程数取决于CPU核数
-		// ForkJoinPool commonPool = ForkJoinPool.commonPool();
-		// System.out.println(commonPool.getParallelism()); // 7
-		// 注：某些并行流操作reduce,collect需要额外的计算（组合操作），也要注意顺序，这时候并行流可能不适合
-		testParallelStream();
-	}
-
-	// 测试并行流
-	private static void testParallelStream() {
-		Arrays.asList("a1", "a2", "b1", "c2", "c1").parallelStream().filter(s -> {
-			System.out.format("filter: %s [%s]\n", s, Thread.currentThread().getName());
-			return true;
-		}).map(s -> {
-			System.out.format("map: %s [%s]\n", s, Thread.currentThread().getName());
-			return s.toUpperCase();
-		}).forEach(s -> System.out.format("forEach: %s [%s]\n", s, Thread.currentThread().getName()));
-	}
-
+	
 	// 测试最大值、最小值、综合、排列和遍历、过滤
+	@Test
 	public void test1() {
 		List<Integer> list = Arrays.asList(2, 3, 5, 8, 6);
 		list.stream().min(Integer::compareTo).ifPresent(System.out::println); // 最小值
@@ -80,24 +29,26 @@ public class StreamTest {
 		System.out.println();
 		list.stream().filter(e -> e > 3 && e < 8).forEach(e -> System.out.print(e + " ")); // 过滤和遍历
 		System.out.println();
-
 	}
-
+	
 	// 测试collect() -> toMap
+	@Test
 	public void testToMap() {
 		Map<String, String> map = Stream.of(1, 2, 3, 4, 5).map(i -> i * 10)
 				.collect(Collectors.toMap(key -> "key" + key, value -> "value:" + value));
 		System.out.println(map);
 	}
-
+	
 	// 测试collect() -> toCollection
-	private void testToCollection() {
+	@Test
+	public void testToCollection() {
 		TreeSet<Integer> treeSet = Stream.of(3, 2, 5, 3, 4).collect(Collectors.toCollection(TreeSet::new));
 		System.out.println(treeSet);
 	}
-
+	
 	// 测试mapToInt()
-	private void testMapToInt() {
+	@Test
+	public void testMapToInt() {
 		List<User> list = new ArrayList<>();
 		list.add(new User("testAA1", 23));
 		list.add(new User("testAA2", 43));
@@ -108,7 +59,8 @@ public class StreamTest {
 		int sum = list.stream().mapToInt(User::getGrade).reduce(0, (a, b) -> a + b);
 		System.out.println("团队总成绩：" + sum);
 	}
-
+	
+	@Test
 	public void testPersonMap() {
 		List<Person> personList = Arrays.asList(new Person(1, "testAA1"), new Person(2, "testAA1"),
 				new Person(3, "testAA1"));
@@ -120,7 +72,8 @@ public class StreamTest {
 				.collect(Collectors.toMap(Person::getId, Person::getName));
 		System.out.println(personnameMap.get(1));
 	}
-
+	
+	@Test
 	public void testPersonMap2() {
 		List<Person> list = new ArrayList<>();
 		list.add(new Person(1, "TestAA1", 23));
@@ -183,13 +136,13 @@ public class StreamTest {
 		String name = list.stream().sorted(Comparator.comparing(x -> x.getAge())).findFirst().get().getName();
 		System.out.println(name);
 	}
-
 	public char charAt(String x) {
 		return x.charAt(0);
 	}
-
+	
 	// 测试User排列
-	private void testUserSort() {
+	@Test
+	public void testUserSort() {
 		// 需求：1、成绩小于60的人 2、按照出生日期排序 3、获取姓名
 		List<User> list = new ArrayList<>();
 		list.add(new User("aa", Date.valueOf("2019-05-05"), 65));
@@ -201,8 +154,9 @@ public class StreamTest {
 				.map(User::getName).collect(Collectors.toList());
 		System.out.println(collect);
 	}
-
-	private void testUserSort2() {
+	
+	@Test
+	public void testUserSort2() {
 		User[] userArray = { new User("testAA1", Date.valueOf("2018-05-11")),
 				new User("testAA2", Date.valueOf("2018-05-02")), new User("testAA3", Date.valueOf("2018-05-03")),
 				new User("testAA4", Date.valueOf("2018-05-05")), new User("testAA5", Date.valueOf("2018-05-05")) };
@@ -212,21 +166,24 @@ public class StreamTest {
 		Arrays.sort(userArray, User::compareByBirthday); // 方式三：静态方法引用
 		System.out.println(Arrays.asList(userArray));
 	}
-
-	private void testGroupingBy1() {
+	
+	@Test
+	public void testGroupingBy1() {
 		List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 		// 奇偶数分组：奇数分一组，偶数分一组 {false=[1, 3, 5, 7, 9], true=[2, 4, 6, 8, 10]}
 		Map<Boolean, List<Integer>> result = list.stream().collect(Collectors.groupingBy(item -> item % 2 == 0));
 		System.out.println(result);
 	}
 
-	private void testPartitioningBy() {
+	@Test
+	public void testPartitioningBy() {
 		List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 		Map<Boolean, List<Integer>> result = list.stream().collect(Collectors.partitioningBy(i -> i % 2 == 0));
 		System.out.println(result);
 	}
 
-	private void testGroupingBy2() {
+	@Test
+	public void testGroupingBy2() {
 		List<User> list = new ArrayList<>();
 		list.add(new User("testAA1", 23));
 		list.add(new User("testAA2", 25));
@@ -235,9 +192,10 @@ public class StreamTest {
 		Map<Integer, List<User>> map = list.stream().collect(Collectors.groupingBy(User::getGrade));
 		System.out.println(map);
 	}
-
+	
 	// 分组并对分组中的数据统计
-	private void testGroupingBy3() {
+	@Test
+	public void testGroupingBy3() {
 		List<Foo> list = new ArrayList<>(4);
 		list.add(new Foo(1, 2));
 		list.add(new Foo(2, 23));
@@ -253,9 +211,10 @@ public class StreamTest {
 		System.out.println(statistics2.getMin());
 		System.out.println(statistics2.getCount());
 	}
-
+	
 	// 按照用户类型分类
-	private void testGroupingBy4() {
+	@Test
+	public void testGroupingBy4() {
 		List<User> list = new ArrayList<>();
 		list.add(new User("testAA1", "01"));
 		list.add(new User("testAA2", "02"));
@@ -266,7 +225,8 @@ public class StreamTest {
 		System.out.println(map);
 	}
 
-	private void testCollectors() {
+	@Test
+	public void testCollectors() {
 		List<Integer> list = Arrays.asList(1, 2, 3);
 		Integer maxValue = list.stream()
 				.collect(Collectors.collectingAndThen(Collectors.maxBy((a, b) -> a - b), Optional::get)); // 最大值，结果为3
@@ -277,12 +237,14 @@ public class StreamTest {
 		System.out.println(maxValue + " " + minValue + " " + sumValue + " " + avg);
 	}
 
-	private void testCollection() {
+	@Test
+	public void testCollection() {
 		String collect = Stream.of("a", "b", "c")
 				.collect(Collectors.mapping(x -> x.toUpperCase(), Collectors.joining(","))); // 结果为A,B,C
 		System.out.println(collect);
 	}
-
+	
+	@Test
 	public void testReduce1() {
 		int[] arr = { 1, 2, 3, 4 };
 
@@ -311,8 +273,9 @@ public class StreamTest {
 		Integer reduce = list.stream().reduce(5, (result, x) -> result + x, (result, b) -> result * b);
 		System.out.println(reduce);
 	}
-
-	private void testReduce2() {
+	
+	@Test
+	public void testReduce2() {
 		List<User> list = new ArrayList<>();
 		list.add(new User("testAA1", 23));
 		list.add(new User("testAA2", 43));
@@ -324,11 +287,12 @@ public class StreamTest {
 		System.out.println("团队总成绩：" + sum);
 	}
 
-	private void testReduce3() {
+	public void testReduce3() {
 		// 解释：相当于result为 1，b为x+1，遍历数组每个元素+1后与result相乘
 		Integer sum = Stream.of(1, 3, 4).collect(Collectors.reducing(1, x -> x + 1, (result, b) -> result * b));
 		System.out.println("总和：" + sum);
 	}
+	
 	
 	static class User {
 		private String name;
