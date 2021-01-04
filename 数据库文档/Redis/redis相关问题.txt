@@ -1,4 +1,25 @@
 
+
+## 查看内存使用情况(info)
+	[root@localhost bin]# redis-cli
+	127.0.0.1:6379> info
+
+	# Clients
+	connected_clients:1 #查看客户端连接数
+	client_recent_max_input_buffer:2
+	client_recent_max_output_buffer:0
+	blocked_clients:0
+
+	# Memory
+	used_memory:832784 # Redis分配的内存总量 
+	used_memory_human:813.27K 
+	used_memory_rss:1896448 # Redis分配的内存总量(包括内存碎片) 
+	used_memory_peak:832760  
+	used_memory_peak_human:813.24K #Redis所用内存的高峰值
+
+
+
+
 详情redis文档笔记：
 链接：http://note.youdao.com/noteshare?id=69b1fd11c614d75cdcef2bde3ac9fbbc
 
