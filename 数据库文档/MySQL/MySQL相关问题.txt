@@ -1,29 +1,3 @@
-
-文档：MySQL
-链接：http://note.youdao.com/noteshare?id=c0f40b21c99617e4680960ae696f4b27
-
-
-数据库相关
-	1.常见的数据库优化手段
-		log同步刷盘改异步刷盘
-		集群的话强双写改异步同步
-		针对sql优化（explain慢sql）
-		添加索引
-	2.索引的优缺点，什么字段上建立索引
-		优点：查的快，支持range
-		缺点：大部分查询实际需要回表，索引建立会额外消耗内存和磁盘，对开发者的sql也有要求
-		字段：区分度大的字段
-	3.数据库连接池。
-	4.durid的常用配置。
-
-MySQL总结：
-	https://www.toutiao.com/i6781000221947068932
-
-
-mysql中如果指定类型为int，会默认采用有符号类型，数值范围为-2的32次方到2的31次方-1。如果将int类型设置为自增主键，当自增到int类型最大值会出现什么情况呢？
-	答案是一直都是2147483647（int类型最大值），所以就会导致主键冲突！
-
-
 show databases; --查看所有数据库
 show databases like xx; --模糊查看数据库
 use databaseName; --使用databaseName数据库
@@ -161,16 +135,3 @@ MySQL事务的4大特性、4种隔离级别及解决的问题，MySQL默认是�
 MySQL锁，行锁，表锁 ，什么时候发生锁，怎么锁，原理
 数据库优化，最左原则啊，水平分表，垂直分表
 MySQL都有什么锁，死锁判定原理和具体场景，死锁怎么解决？select时怎么加排它锁？
-
-
-
-压测工具MySQLSlap
-1.自动生成sql测试
-mysqlslap -a-to-generate sql -root -root #自动生成sql并执行测试性能
-mysqlslap --auto-generate-sql --concurrency= 100 -uroot -proot #模拟100个客户端执行sql
-mysqlslap --auto-generate-sql --concurrency= 100 --interations=3 -uroot -proot #模拟100个客户端执行sql.执行3轮
-2.存储引擎测试
-# 模拟100个客户端执行sql.执行3轮，innodb的处理性能
---engine=innodb：mysqlslap --auto-generate-sql --concurrency=100 --interations=3 -- engine-innodb -uroot -proot
-# 模拟100个客户端执行sql.执行3轮，myisam的处理性能
---engine=myisam：mysqlslap --auto-generate-sql --concurrency=100 --interations=3 --engine-innodb -uroot -proot
