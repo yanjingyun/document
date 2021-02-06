@@ -1,45 +1,43 @@
-·´Éä»úÖÆÖĞµÄÀà°üÀ¨£º
-	java.lang.Class //Àà
-	java.lang.reflect.Constructor //¹¹ÔìÆ÷
-	java.lang.reflect.Field //ÊôĞÔ
-	java.lang.reflect.Method //·½·¨
-	java.lang.reflect.Modifier //ĞŞÊÎ·û
+åå°„æœºåˆ¶ä¸­çš„ç±»åŒ…æ‹¬ï¼š
+	java.lang.Class //ç±»
+	java.lang.reflect.Constructor //æ„é€ å™¨
+	java.lang.reflect.Field //å±æ€§
+	java.lang.reflect.Method //æ–¹æ³•
+	java.lang.reflect.Modifier //ä¿®é¥°ç¬¦
 
-»ñÈ¡Class·½Ê½£º
-	Class c1 = Class.forName("com.yjy.User"); //·½·¨Ò»
-	Class c2 = User.class; //·½·¨¶ş
-	Class c3 = (new User()).getClass(); //·½·¨Èı£¬c3ÊÇÔËĞĞÊ±Àà
+è·å–Classæ–¹å¼ï¼š
+	Class c1 = Class.forName("com.yjy.User"); //æ–¹æ³•ä¸€
+	Class c2 = User.class; //æ–¹æ³•äºŒ
+	Class c3 = (new User()).getClass(); //æ–¹æ³•ä¸‰ï¼Œc3æ˜¯è¿è¡Œæ—¶ç±»
 
-³£ÓÃapi£º
-Ò»¡¢»ñÈ¡Àà¡¢¸¸ÀàºÍ½Ó¿Ú£º
-	ÀàĞÎÊ½ÎªClass£¬·ºĞÍĞÎÊ½ÎªClass<T>
-	1¡¢clazz.getName()£º·µ»ØÀàµÄÃû×Ö£¬°üÀ¨°üÃû¡£±ÈÈç£ºcom.test.User
-	2¡¢clazz.getSimpleName()£º·µ»ØÀàÃû³Æ¼ò³Æ£¬²»°üÀ¨°üÃû¡£±ÈÈç£ºUser
-	3¡¢clazz.getSuperclass()£º»ñÈ¡Ä³ÀàµÄ¸¸Àà¡£ÓÉÓÚ±àÒë²Á³ı£¬Ã»ÓĞÏÔÊ¾·ºĞÍ²ÎÊı£¡
-	4¡¢clazz.getGenericSuperclass()£º»ñµÃ´øÓĞ·ºĞÍµÄ¸¸Àà£¡£¡
-	5¡¢clazz.getInterfaces()£º»ñÈ¡Ä³ÀàÊµÏÖµÄ½Ó¿Ú
-	6¡¢clazz.newInstance()£º¿ìËÙµØ´´½¨Ò»¸öÀàµÄÊµÀı
-	×¢ÒâgetSuperclass()ºÍgetGenericSuperclass()·½·¨µÄÇø±ğ£¡
-¶ş¡¢»ñÈ¡ÊôĞÔ£º
-	clazz.getFields():»ñÈ¡¡°Àà¼°¸¸Àà¡±ÖĞÉùÃ÷µÄpublicµÄÊôĞÔ£¬µ«²»ÄÜ·ÃÎÊË½ÓĞÊôĞÔ£»
-	clazz.getDeclaredFields():·ÃÎÊ¡°±¾Àà¡±ÖĞËùÓĞµÄÊôĞÔ£¨Óëprivate/protected/publicÎŞ¹Ø£©£¬µ«²»ÄÜ·ÃÎÊ¸¸ÀàÊôĞÔ¡£
+å¸¸ç”¨apiï¼š
+ä¸€ã€è·å–ç±»ã€çˆ¶ç±»å’Œæ¥å£ï¼š
+	ç±»å½¢å¼ä¸ºClassï¼Œæ³›å‹å½¢å¼ä¸ºClass<T>
+	1ã€clazz.getName()ï¼šè¿”å›ç±»çš„åå­—ï¼ŒåŒ…æ‹¬åŒ…åã€‚æ¯”å¦‚ï¼šcom.test.User
+	2ã€clazz.getSimpleName()ï¼šè¿”å›ç±»åç§°ç®€ç§°ï¼Œä¸åŒ…æ‹¬åŒ…åã€‚æ¯”å¦‚ï¼šUser
+	3ã€clazz.getSuperclass()ï¼šè·å–æŸç±»çš„çˆ¶ç±»ã€‚ç”±äºç¼–è¯‘æ“¦é™¤ï¼Œæ²¡æœ‰æ˜¾ç¤ºæ³›å‹å‚æ•°ï¼
+	4ã€clazz.getGenericSuperclass()ï¼šè·å¾—å¸¦æœ‰æ³›å‹çš„çˆ¶ç±»ï¼ï¼
+	5ã€clazz.getInterfaces()ï¼šè·å–æŸç±»å®ç°çš„æ¥å£
+	6ã€clazz.newInstance()ï¼šå¿«é€Ÿåœ°åˆ›å»ºä¸€ä¸ªç±»çš„å®ä¾‹
+	æ³¨æ„getSuperclass()å’ŒgetGenericSuperclass()æ–¹æ³•çš„åŒºåˆ«ï¼
+äºŒã€è·å–å±æ€§ï¼š
+	clazz.getFields():è·å–â€œç±»åŠçˆ¶ç±»â€ä¸­å£°æ˜çš„publicçš„å±æ€§ï¼Œä½†ä¸èƒ½è®¿é—®ç§æœ‰å±æ€§ï¼›
+	clazz.getDeclaredFields():è®¿é—®â€œæœ¬ç±»â€ä¸­æ‰€æœ‰çš„å±æ€§ï¼ˆä¸private/protected/publicæ— å…³ï¼‰ï¼Œä½†ä¸èƒ½è®¿é—®çˆ¶ç±»å±æ€§ã€‚
 	
-	Field stuNoField = clazz.getDeclaredField("stuNo"); //»ñÈ¡ÌØ¶¨×Ö¶Î
+	Field stuNoField = clazz.getDeclaredField("stuNo"); //è·å–ç‰¹å®šå­—æ®µ
 	stuNoField.setAccessible(true);
 	stuNoField.set(student, 23);
 	
-	field.isAnnotationPresent(MyFilter.class) //¸Ã×Ö¶ÎfieldÊÇ·ñÓĞMyFilter×¢½â
-	MyAnnotation annotation = field.getAnnotation(MyAnnotation.class); //»ñÈ¡¸ÃfieldÉÏµÄMyAnnotation×¢½â
-Èı¡¢»ñÈ¡·½·¨£º
-	clazz.getMethods():·ÃÎÊ¡°Àà¼°¸¸Àà¡±ÖĞÉùÃ÷ÎªpublicµÄ·½·¨£¬µ«²»ÄÜ·ÃÎÊË½ÓĞ·½·¨£¡
-	clazz.getDeclaredMethods()£º·ÃÎÊ¡°±¾Àà¡±ÖĞËùÓĞµÄ·½·¨£¨Óëprivate£¬protected£¬publicÎŞ¹Ø£©£¬µ«²»ÄÜ·ÃÎÊ¸¸ÀàµÄ·½·¨¡£
+	field.isAnnotationPresent(MyFilter.class) //è¯¥å­—æ®µfieldæ˜¯å¦æœ‰MyFilteræ³¨è§£
+	MyAnnotation annotation = field.getAnnotation(MyAnnotation.class); //è·å–è¯¥fieldä¸Šçš„MyAnnotationæ³¨è§£
+ä¸‰ã€è·å–æ–¹æ³•ï¼š
+	clazz.getMethods():è®¿é—®â€œç±»åŠçˆ¶ç±»â€ä¸­å£°æ˜ä¸ºpublicçš„æ–¹æ³•ï¼Œä½†ä¸èƒ½è®¿é—®ç§æœ‰æ–¹æ³•ï¼
+	clazz.getDeclaredMethods()ï¼šè®¿é—®â€œæœ¬ç±»â€ä¸­æ‰€æœ‰çš„æ–¹æ³•ï¼ˆä¸privateï¼Œprotectedï¼Œpublicæ— å…³ï¼‰ï¼Œä½†ä¸èƒ½è®¿é—®çˆ¶ç±»çš„æ–¹æ³•ã€‚
 	
-	Method declaredMethod = clazz.getDeclaredMethod("setStuNo", Integer.class); //ÌØ¶¨·½·¨
+	Method declaredMethod = clazz.getDeclaredMethod("setStuNo", Integer.class); //ç‰¹å®šæ–¹æ³•
 	declaredMethod.invoke(student, 123);
-ËÄ¡¢»ñÈ¡¹¹ÔìÆ÷£º
-	clazz.getConstructors():·ÃÎÊ¡°Àà¼°¸¸Àà¡±ÖĞÉùÃ÷ÎªpublicµÄ¹¹Ôìº¯Êı¡£
-	clazz.getDeclaredConstructors()£º·ÃÎÊ¡°±¾Àà¡±ÖĞËùÓĞµÄ¹¹Ôìº¯Êı,Óëpublic,private,protectÎŞ¹Ø¡£
-	clazz.getConstructor(new Class[]{String.class}); //»ñÈ¡ÌØ¶¨Àà¹¹ÔìÆ÷
-
-
+å››ã€è·å–æ„é€ å™¨ï¼š
+	clazz.getConstructors():è®¿é—®â€œç±»åŠçˆ¶ç±»â€ä¸­å£°æ˜ä¸ºpublicçš„æ„é€ å‡½æ•°ã€‚
+	clazz.getDeclaredConstructors()ï¼šè®¿é—®â€œæœ¬ç±»â€ä¸­æ‰€æœ‰çš„æ„é€ å‡½æ•°,ä¸public,private,protectæ— å…³ã€‚
+	clazz.getConstructor(new Class[]{String.class}); //è·å–ç‰¹å®šç±»æ„é€ å™¨
 

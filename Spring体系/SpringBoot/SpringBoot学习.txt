@@ -393,6 +393,18 @@ springboot项目如何进行远程调试
 
 
 
-CommandLineRunner类：
-	springboot启动时执行任务CommandLineRunner。
+CommandLineRunner && ApplicationRunner类：
+    开发场景：需要在容器启动时执行一些内容。比如读取配置文件、数据库连接信息之类的。
+    SpringBoot给我们提供了CommandLineRunner和ApplicationRunner，它们的执行时机为容器启动完成时。
 	描述：平常开发中有可能需要实现在项目启动后执行的功能，SpringBoot提供的一种简单的实现方案就是添加一个model并实现CommandLineRunner接口，实现功能的代码放在实现的run方法中
+    --示例：
+    @Component
+    public class JDDRunner implements ApplicationRunner {
+        @Override
+        public void run(ApplicationArguments args) throws Exception {
+            System.out.println(args);
+            System.out.println("这个是测试ApplicationRunner接口");
+        }
+    }
+
+

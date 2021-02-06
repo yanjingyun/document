@@ -1,0 +1,80 @@
+策略模式：
+示例：计算器实现
+原始写法：
+public class Caculate { //违反设计模式原则的做法
+	public int add(int a, int b) { //加法
+		return a + b;
+	}
+
+	public int sub(int a, int b) { // 减法
+		return a - b;
+	}
+}
+缺点：我们往后的扩展想想，如果随着我们的算法不断增加，如乘法、除法、次方、开方等等，那么这个计算器类就得不断的改啊改啊，每次升级算法我们都要把机器给拆开然后更改类代码，这岂不是作死？
+
+标准写法：
+--我们来换个思路，先思考一下，既然不能把算法给写死在这里面，那一定要把这个算法给抽象一下，把实现细节从这个类里抽离出来，独立出来成为n个策略，就当下来讲我们一共有俩个策略，一个是加法策略，一个是减法策略，他们实现的都是同一个算法接口，接收参数为操作数a，以及被操作数b。
+public interface Strategy { //算法标准
+	public int calculate(int a, int b); //操作数，被操作数
+}
+public class Addition implements Strategy{
+    @Override
+    public int calculate(int a, int b) {//加数与被加数
+        return a + b;//这里我们做加法运算
+    }
+}
+public class Subtraction implements Strategy{
+    @Override
+    public int calculate(int a, int b) {//减数与被减数
+        return a - b;//这里我们做减法运算
+    }
+}
+
+public class Calculator {//计算器类
+	private Strategy strategy;//拥有某种算法策略
+
+	public void setStrategy(Strategy strategy) {//接入算法策略
+		this.strategy = strategy;
+	}
+
+	public int getResult(int a, int b){
+		return this.strategy.calculate(a, b);//返回具体策略的结果
+	}
+}
+
+public class Client { //使用
+	public static void main(String[] args) {
+		Calculator calculator = new Calculator();//实例化计算器
+		calculator.setStrategy(new Addition());//接入加法实现
+		int result = calculator.getResult(1, 1);//计算！
+		System.out.println(result);//得到的是加法结果2
+
+		calculator.setStrategy(new Subtraction());//再次接入减法实现
+		result = calculator.getResult(1, 1);//计算！
+		System.out.println(result);//得到的是减法结果0
+	}
+}
+说明：注释已经写得非常明白了，相信大家都看懂了吧。那么我们这个计算器可以说是具有算法策略扩展性的，以后要有新的算法是不需要再更改任何现有代码的，只需要新写一个算法比如乘法Multiplication，并实现calculate方法，接下来要做的只是组装上去便可以使用了。
+
+
+
+
+
+装饰器模式：
+	描述：允许一个现有的对象添加新的功能，但又不改变其结构。创建一个装饰类，用来包装原有的类，并在保持类方法完整的前提下，提供额外的功能。
+	测试用例：女孩子化妆，需要打粉底、涂口红等多个步骤等；画图形，可能颜色、形状都不一样，能随意组装；
+	应用场景：new BufferedReader(new InputStreamReader(new FileInputStream(filePath)));
+	特征：这些对象好像是俄罗斯套娃一样层层包裹，层层装饰，每套一层就会多出一些功能，我们更加可以自由搭配，实现不同的组合功能
+
+
+
+
+
+
+
+
+
+
+
+
+
