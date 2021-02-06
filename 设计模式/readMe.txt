@@ -1,7 +1,7 @@
 
 
 
-com.yjy.responsibilityChain //测试责任链
+com.yjy.responsibilityChain // 测试责任链
 	v1版本：无设计模式完成 员工、经理、CEO的审批流程
 	v2版本：使用责任链实现
 
@@ -12,7 +12,18 @@ com.yjy.responsibilityChain2 // 测试责任链
 	v2版本：和建造者模式联用
 		在Handler类添加一个Builder静态内部类，用于处理v1版本手动指定顺序的问题。
 
+com.yjy.responsibilityChain3 // 测试责任链（跟responsibilityChain2一样）
+	使用责任链编写用户登录一系列校验
+	方式1：责任链模式
+	方式2：构造者模式+责任链模式
 
+
+com.yjy.builderTest // 建造者模式
+	测试煎饼果子，根据自己的喜好让老板加鸡蛋、加生菜、加里脊、加火腿、加辣椒等。
+	
+建造者模式概念：
+	模式定义：将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示
+	注意：与工厂模式的区别是，建造者模式更加关注与零件装配的顺序
 
 
 
