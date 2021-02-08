@@ -1,4 +1,4 @@
-package com.yjy.responsibilityChain3;
+package com.yjy.responsibilityChain3.v3;
 
 public class Client {
     public static void main(String[] args) {
@@ -17,23 +17,23 @@ public class Client {
 
         System.out.println(">>>>>>>>测试1：全部通过");
         LoginUser user1 = new LoginUser("TestAA", "123", "admin", "admin");
-        handler.doHandler(user1);
+        handler.handle(user1);
 
         System.out.println(">>>>>>>>测试2：用户名为空");
         LoginUser user2 = new LoginUser("", "123", "admin", "admin");
-        handler.doHandler(user2);
+        handler.handle(user2);
 
         System.out.println(">>>>>>>>测试3：密码不正确");
         LoginUser user3 = new LoginUser("TestAA", "12345", "admin", "admin");
-        handler.doHandler(user3);
+        handler.handle(user3);
 
         System.out.println(">>>>>>>>测试4：角色不允许访问");
         LoginUser user4 = new LoginUser("TestAA", "123", "user", "user");
-        handler.doHandler(user4);
+        handler.handle(user4);
 
         System.out.println(">>>>>>>>测试5：权限不允许访问");
         LoginUser user5 = new LoginUser("TestAA", "123", "admin", "user");
-        handler.doHandler(user5);
+        handler.handle(user5);
 
     }
 }

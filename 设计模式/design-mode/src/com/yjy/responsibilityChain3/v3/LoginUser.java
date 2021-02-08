@@ -1,4 +1,4 @@
-package com.yjy.responsibilityChain3;
+package com.yjy.responsibilityChain3.v3;
 
 public class LoginUser {
     private String loginName;

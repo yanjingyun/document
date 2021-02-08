@@ -1,4 +1,4 @@
-package com.yjy.responsibilityChain3;
+package com.yjy.responsibilityChain3.v1;
 
 public class VerifyPermissionHanlder extends Handler {
     @Override

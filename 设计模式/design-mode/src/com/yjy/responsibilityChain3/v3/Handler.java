@@ -1,4 +1,4 @@
-package com.yjy.responsibilityChain3;
+package com.yjy.responsibilityChain3.v3;
 
 public abstract class Handler {
     protected Handler next;
@@ -7,13 +7,19 @@ public abstract class Handler {
         this.next = handler;
     }
 
-    public abstract void doHandler(LoginUser loginUser);
-
-    protected void doNextHandler(LoginUser loginUser) {
-        if (next != null) {
-            next.doHandler(loginUser);
+    public void handle(LoginUser loginUser) {
+        Handler curentHandler = this;
+        try {
+            do {
+                curentHandler.doHandler(loginUser);
+                curentHandler = curentHandler.next;
+            } while (curentHandler != null);
+        } catch (Exception e) {
+            System.out.println("校验不通过：" + e.getMessage());
         }
     }
+
+    public abstract void doHandler(LoginUser loginUser);
 
     public static class Builder {
         private Handler header;
