@@ -2,7 +2,7 @@ package com.yjy.responsibilityChain3.v3;
 
 public class VerifyAccountHandler extends Handler {
     @Override
-    public void doHandler(LoginUser loginUser) {
+    protected void doHandler(LoginUser loginUser) {
         if (loginUser.getLoginName() == null || "".equals(loginUser.getLoginName())) {
             throw new RuntimeException("用户名不能为空");
         }

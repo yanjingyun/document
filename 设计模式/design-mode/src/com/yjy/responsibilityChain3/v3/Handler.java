@@ -19,7 +19,7 @@ public abstract class Handler {
         }
     }
 
-    public abstract void doHandler(LoginUser loginUser);
+    protected abstract void doHandler(LoginUser loginUser);
 
     public static class Builder {
         private Handler header;
