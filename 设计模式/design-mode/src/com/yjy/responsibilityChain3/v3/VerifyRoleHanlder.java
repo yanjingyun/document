@@ -1,6 +1,6 @@
 package com.yjy.responsibilityChain3.v3;
 
-public class VerifyRoleHanlder extends Handler {
+public class VerifyRoleHanlder extends AbstractHandler {
     @Override
     protected void doHandler(LoginUser loginUser) {
         if (!"admin".equals(loginUser.getRoleName())) {

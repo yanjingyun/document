@@ -1,6 +1,6 @@
 package com.yjy.responsibilityChain3.v3;
 
-public class VerifyPermissionHanlder extends Handler {
+public class VerifyPermissionHanlder extends AbstractHandler {
     @Override
     protected void doHandler(LoginUser loginUser) {
         if (!"admin".equals(loginUser.getPermission())) {

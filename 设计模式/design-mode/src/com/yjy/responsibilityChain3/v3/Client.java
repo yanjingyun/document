@@ -10,7 +10,7 @@ public class Client {
 //        verifyRoleHanlder.next(verifyPermissionHanlder);
 
         // 方式2：建造者模式+责任链模式
-        Handler handler = new Handler.Builder()
+        AbstractHandler handler = new AbstractHandler.Builder()
                 .add(new VerifyAccountHandler())
                 .add(new VerifyRoleHanlder())
                 .add(new VerifyPermissionHanlder()).build();

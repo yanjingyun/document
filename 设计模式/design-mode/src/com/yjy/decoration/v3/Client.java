@@ -8,7 +8,7 @@ import com.yjy.decoration.v3.size.SmallShapeDecorator;
 
 import java.io.FileNotFoundException;
 
-public class DecoratorPatternDemo {
+public class Client {
 
     public static void main(String[] args) throws FileNotFoundException {
         System.out.println(">>>>>>>>>>>>>>>>>>>>>未使用装饰器>>>>>>>>>>>>>>>>>>>>>");

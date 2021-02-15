@@ -7,8 +7,13 @@ public class Test {
                 .addChine()
                 .addCracknel()
                 .addEgg()
-                .builder();
-        System.out.println(pancake.name);
-        System.out.println("总价：" + pancake.price + "元");
+                .build();
+        System.out.printf("名称:%s%n 总价:%s元%n", pancake.name, pancake.price);
+
+        Pancake pancake2 = new Pancake.Builder()
+                .addEgg()
+                .build();
+        System.out.println();
+        System.out.printf("名称:%s%n 总价:%s元%n", pancake2.name, pancake2.price);
     }
 }

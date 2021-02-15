@@ -61,7 +61,7 @@ public class Pancake {
             return this;
         }
 
-        public Pancake builder() {
+        public Pancake build() {
             return pancake;
         }
     }
