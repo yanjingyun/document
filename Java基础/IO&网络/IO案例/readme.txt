@@ -29,3 +29,7 @@ com.yjy.test02_nio_server_client_v2 //NIO实现Socket通信(处理BIO的两处�
 	启动服务端后，再启动客户端，从客户端输入对应信息，服务端接收到request并处理完成后返回response数据
 
 
+NIO：
+	只要一个Selector就可以监听注册到其上的所有Channel，通过轮询准备好的Channel实现单线程处理多客户端请求
+
+

@@ -2,6 +2,7 @@ package com.yjy.test02_nio_server_client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -22,30 +23,32 @@ public class NioServer {
 	private Selector selector; // 多路复用器
 
 	public static void main(String[] args) throws IOException {
-		int port = 8080;
-		NioServer server = new NioServer(port);
+		NioServer server = new NioServer(8080);
 		server.listen();
 	}
 
 	public NioServer(int port) throws IOException {
-		selector = Selector.open(); // 打开多路复用器selector
-
-		ServerSocketChannel channel = ServerSocketChannel.open(); // 打开服务器套接字通道(channel)
-		channel.configureBlocking(false); // 配置通道为非阻塞的状态
-		channel.socket().bind(new InetSocketAddress(port)); // 获取通道关联的服务器socket，并绑定地址和端口
-		channel.register(selector, SelectionKey.OP_ACCEPT); // 将通道channel在多路复用器selector上注册为接收操作，等待连接
-		System.out.println("NioServer Start, port=" + port);
+		// 初始化多路复用器Selector
+		selector = Selector.open();
+		// 初始化服务器套接字通道ServerSocketChannel
+		ServerSocketChannel channel = ServerSocketChannel.open();
+		// 通道设置为非阻塞模式
+		channel.configureBlocking(false);
+		// 获取该通道的服务器套接字ServerSocket，并绑定ip、port，设置backlog
+		// backlog指队列的容量，提供了容量限制的功能，避免太多客户端占用太多服务器资源。ServerSocketChannel有一个队列，存放没有来得及处理的客户端,服务器每次accept，就会从队列中去一个元素。
+		channel.socket().bind(new InetSocketAddress(port), 1024);
+		// 1、将该通道注册到Selector上，并监听accept事件（就是客户端的connect请求），等待连接
+		channel.register(selector, SelectionKey.OP_ACCEPT);
+		System.out.println("server初始化完成！");
 	}
 
 	// 监听
 	private void listen() throws IOException {
 		while (true) {
-			// 选择一组键，它们对应的通道已经准备好IO操作了
-			// 阻塞，只有在选择了至少一个通道、调用此选择器的wakeup方法或中断当前线程（以最先出现的方式）之后，它才返回
-			selector.select(1000); // 最大阻塞时间1s
-			// 获取多路复用器的事件值SelectionKey，并存放在迭代器中
-			Set<SelectionKey> selectionKeys = selector.selectedKeys();
-			Iterator<SelectionKey> iterator = selectionKeys.iterator();
+			// 多路复用器开始工作（轮询），选择已就绪的通道，等待某通道准备就绪时最多阻塞1s，若超时则返回
+			selector.select(1000);
+			// 获取所有已就绪的事件SelectionKey
+			Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
 			while (iterator.hasNext()) {
 				SelectionKey selectionKey = iterator.next();
 				iterator.remove();
@@ -59,39 +62,46 @@ public class NioServer {
 		if (!key.isValid()) // 判断所传selectionKey值是否可用
 			return;
 
-		if (key.isAcceptable()) { // key值为OP_ACCEPT,，在判断是否为接收操作
-			ServerSocketChannel ssc = (ServerSocketChannel) key.channel();// 获取key值所对应的channel
+		if (key.isAcceptable()) {
+			// 获取key值所对应的通道（服务器通道）
+			ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
+			// 执行阻塞方法获取客户端通道（等待客户端资源）
 			SocketChannel sc = ssc.accept();
+			// 通道设置为非阻塞模式
 			sc.configureBlocking(false); // 设置为接收非阻塞通道
-			sc.register(selector, SelectionKey.OP_READ);// 并把这个通道注册为OP_READ
-		}
-
-		if (key.isReadable()) { // key值是否为OP_READ,通过上面的注册后，经过轮询后就会是此操作
-			SocketChannel sc = (SocketChannel) key.channel();// 获取key对应的channel
-			ByteBuffer readbuf = ByteBuffer.allocate(1024);
-			int count = sc.read(readbuf);// 从channel中读取byte数据并存放readbuf
+			// 将该通道注册到多路复用器Selector上，并设置为可读状态
+			sc.register(selector, SelectionKey.OP_READ);
+		} else if (key.isReadable()) { // 读取数据
+			// 获取key值所对应的通道（客户端通道）
+			SocketChannel sc = (SocketChannel) key.channel();
+			ByteBuffer readBuffer = ByteBuffer.allocate(1024);
+			int count = sc.read(readBuffer);// 从channel中读取byte数据并存放readbuf
 			if (count > 0) {
-				readbuf.flip(); // 检测时候为完整的内容,若不是则返回完整的
-				byte[] bytes = new byte[readbuf.remaining()];
-				readbuf.get(bytes);
-				String readStr = new String(bytes, "UTF-8");// 把读取的数据转换成string
-				System.out.println("服务器接受到命令：" + readStr);
-				dowrite(sc, readStr);// 获取到当前时间后，就需要把当前时间的字符串发送出去
+				// 反转缓冲区（复位）
+				readBuffer.flip();
+				byte[] bytes = new byte[readBuffer.remaining()];
+				// 接收缓冲区数据
+				readBuffer.get(bytes);
+				String body = new String(bytes).trim();
+				System.out.println("服务器接收消息：" + body);
+
+				// 给客户端回写消息
+				doWrite(sc, body);
 			} else if (count < 0) {
+				// 对端链路关闭
 				key.cancel();
 				sc.close();
 			}
 		}
 	}
-
-	/** 服务器的业务操作，将当前时间写到通道内 */
-	private void dowrite(SocketChannel sc, String readStr) throws IOException {
-		String sendStr = LocalDateTime.now().toString();
-		System.out.println(String.format("服务器接收到内容：%s，并发送内容：%s", readStr, sendStr));
-		byte[] bytes = sendStr.getBytes(); // 将当前时间序列化
-		ByteBuffer writebuf = ByteBuffer.allocate(bytes.length);
-		writebuf.put(bytes);// 将序列化的内容写入分配的内存
-		writebuf.flip();
-		sc.write(writebuf); // 将此内容写入通道
+	
+	private void doWrite(SocketChannel sc, String body) throws IOException {
+		String sendStr = String.format("服务器接收【%s】时间为%s", body, LocalDateTime.now().toString());
+		System.out.printf("服务器接收到内容：%s，并发送内容：%s %n", body, sendStr);
+		byte[] bytes = sendStr.getBytes();
+		ByteBuffer writeBuffer = ByteBuffer.allocate(bytes.length);
+		writeBuffer.put(bytes);// 将序列化的内容写入分配的内存
+		writeBuffer.flip();
+		sc.write(writeBuffer); // 将此内容写入通道
 	}
 }

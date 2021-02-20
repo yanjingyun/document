@@ -15,19 +15,25 @@ public class NioClient {
 	private static int flag = 0;
 
 	public static void main(String[] args) throws Exception {
-		int port = 8080;
-		Selector selector = Selector.open(); // 打开多路复用器
-		SocketChannel channel = SocketChannel.open(); // 打开socketchannel
-		channel.configureBlocking(false); // 设置为非阻塞方式
-		channel.connect(new InetSocketAddress("localhost", port));
-		channel.register(selector, SelectionKey.OP_CONNECT); // 将通道注册为OP_CONNECT操作
-		System.out.println("NioClient start, port：" + port);
+		// 打开多路复用器
+		Selector selector = Selector.open();
+		// 打开通道socketchannel
+		SocketChannel channel = SocketChannel.open();
+		// 该通道设置为非阻塞方式
+		channel.configureBlocking(false);
+		// 通过ip、port连接到服务器
+		channel.connect(new InetSocketAddress("localhost", 8080));
+		// 向多路复用器注册，并设置为可读事件
+		channel.register(selector, SelectionKey.OP_CONNECT);
+		System.out.println("client初始化完成！");
 
 		while (true) {
+			// 模拟逻辑处理时间
 			Thread.sleep(1000);
 
 			// 选择一组键，其相应的通道已为 I/O 操作准备就绪。 此方法执行处于阻塞模式的选择操作。
-			selector.select();
+			// 阻塞等待1s，若超时则返回
+			selector.select(1000);
 			// 获取多路复用器的事件值SelectionKey，并存放在迭代器中
 			Set<SelectionKey> selectionKeys = selector.selectedKeys();
 			for (SelectionKey selectionKey : selectionKeys) {
