@@ -49,18 +49,31 @@ public class NioServer {
 			selector.select(1000);
 			// 获取所有已就绪的事件SelectionKey
 			Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
+			SelectionKey selectionKey;
 			while (iterator.hasNext()) {
-				SelectionKey selectionKey = iterator.next();
-				iterator.remove();
-				handleKey(selectionKey); // 处理请求
+				selectionKey = iterator.next();
+				iterator.remove(); // 移除已处理
+				try {
+					// 处理请求
+					handleKey(selectionKey);
+				} catch (Exception e) {
+					e.printStackTrace();
+					// 将抛出异常的客户端从服务器中剔除！！！
+					if (selectionKey != null) {
+						selectionKey.cancel();
+						if (selectionKey.channel() != null) {
+							selectionKey.channel().close();
+						}
+					}
+				}
 			}
 		}
 	}
 
 	// 处理请求
 	private void handleKey(SelectionKey key) throws IOException {
-		if (!key.isValid()) // 判断所传selectionKey值是否可用
-			return;
+		// 判断所传selectionKey值是否可用
+		if (!key.isValid()) return;
 
 		if (key.isAcceptable()) {
 			// 获取key值所对应的通道（服务器通道）
@@ -69,6 +82,7 @@ public class NioServer {
 			SocketChannel sc = ssc.accept();
 			// 通道设置为非阻塞模式
 			sc.configureBlocking(false); // 设置为接收非阻塞通道
+
 			// 将该通道注册到多路复用器Selector上，并设置为可读状态
 			sc.register(selector, SelectionKey.OP_READ);
 		} else if (key.isReadable()) { // 读取数据
@@ -96,10 +110,10 @@ public class NioServer {
 	}
 	
 	private void doWrite(SocketChannel sc, String body) throws IOException {
+		ByteBuffer writeBuffer = ByteBuffer.allocate(1024);
 		String sendStr = String.format("服务器接收【%s】时间为%s", body, LocalDateTime.now().toString());
 		System.out.printf("服务器接收到内容：%s，并发送内容：%s %n", body, sendStr);
 		byte[] bytes = sendStr.getBytes();
-		ByteBuffer writeBuffer = ByteBuffer.allocate(bytes.length);
 		writeBuffer.put(bytes);// 将序列化的内容写入分配的内存
 		writeBuffer.flip();
 		sc.write(writeBuffer); // 将此内容写入通道

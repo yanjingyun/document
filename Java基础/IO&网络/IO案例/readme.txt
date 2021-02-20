@@ -23,13 +23,10 @@ com.yjy.test02_nio //测试NIO相关概念
 		描述：内存映射文件首先将外存上的文件映射到内存中的一块连续区域，被当成一个字节数组进行处理，读写操作直接对内存进行操作，而后再将内存区域重新映射到外存文件，这就节省了中间频繁的对外存进行读写的时间，大大降低了读写时间。
 
 
-com.yjy.test02_nio_server_client //NIO实现Socket通信(处理BIO的两处阻塞)
 
-com.yjy.test02_nio_server_client_v2 //NIO实现Socket通信(处理BIO的两处阻塞)
-	启动服务端后，再启动客户端，从客户端输入对应信息，服务端接收到request并处理完成后返回response数据
-
-
-NIO：
-	只要一个Selector就可以监听注册到其上的所有Channel，通过轮询准备好的Channel实现单线程处理多客户端请求
-
+>>>NIO好处：只要一个Selector就可以监听注册到其上的所有Channel，通过轮询准备好的Channel实现单线程处理多客户端请求
+com.yjy.test02_nio_server_client // NIO实现Socket通信(处理BIO的两处阻塞)
+	测试：
+		启动服务端，再连续启动两个客户端，三个服务都能正常运行；
+		过一段时间关闭某个客户端，能看到服务端会抛出一个异常，但还是能正常运行的。
 
