@@ -12,7 +12,7 @@ public class Client {
         ServiceB serviceB = new ServiceB(registerCenter);
         serviceB.callA();
 
-        System.out.println(">>> 测试3：ServiceA注册到注册中心，并调用ServiceB服务");
+        System.out.println(">>> 测试3：ServiceA重新调用ServiceB服务");
         serviceA.callB();
     }
 }

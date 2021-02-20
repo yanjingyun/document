@@ -10,10 +10,10 @@ public class RegisterCenter {
         map.put(service.getClass().getSimpleName(), service);
     }
 
-    public void call(String serviceName) {
-        AbstractService service = map.get(serviceName);
+    public void call(Class clazz) {
+        AbstractService service = map.get(clazz.getSimpleName());
         if (service == null) {
-            System.out.println(serviceName + "服务不存在！");
+            System.out.println(clazz.getSimpleName() + "服务不存在！");
             return;
         }
         service.doSomething();

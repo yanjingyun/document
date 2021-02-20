@@ -14,6 +14,6 @@ public class ServiceB extends AbstractService {
     public void callA(){
         this.doSomething();
         System.out.println("调用Service A");
-        registerCenter.call(ServiceA.class.getSimpleName());
+        registerCenter.call(ServiceA.class);
     }
 }
