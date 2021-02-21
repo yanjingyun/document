@@ -30,3 +30,13 @@ com.yjy.test02_nio_server_client // NIO实现Socket通信(处理BIO的两处阻�
 		启动服务端，再连续启动两个客户端，三个服务都能正常运行；
 		过一段时间关闭某个客户端，能看到服务端会抛出一个异常，但还是能正常运行的。
 
+
+
+com.yjy.test03_reactor	// 测试reactor模型
+	理论：https://www.cnblogs.com/hyy9527/p/13064347.html
+	v1版本：单reactor单线程
+	v2版本：单reactor多线程
+	v3版本：主从reactor多线程（未开发）
+
+
+
